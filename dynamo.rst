@@ -22,12 +22,15 @@ General
 Query Model
 ^^^^^^^^^^^
 Simple read and write operations to a data item that is uniquely identified by a key. State is stored as binary objects (blobs) identified by unique keys. No operations span multiple data items and there is no need for relational schemas. Dynamo targets applications that need to store relatively small objects (sub 1MB).
+
 ACID Properties
 ^^^^^^^^^^^^^^^
 Atomicity, Consistency, Isolation, Durability. A set of properties that guarantee a database transaction is processed reliably. Typically, ACID model software will sacrifice availability over consistency. Dynamo targets services which operate with weaker consistency needs in any case where it is advantageous for higher availability. It does not provide any isolation guarantees, and only permits single-key updates.
+
 Efficiency
 ^^^^^^^^^^
 Latency is of utmost importance in Dynamo. Throughput is next. Applications must be able to configure Dynamo such that they can consistently (99.9% percentile distribution) achieve their latency and throughput requirements. Cost efficiency, availability, and durability guarantees can all be traded off in order to prioritize latency and throughput.
+
 Other
 ^^^^^
 Dynamo was designed to be an internal, "in a safe network" service. There are no security related requirements such as authorization/authentication. Additionally, each service is expected to have its own Dynamo cluster. As such, Dynamo is only expected to scale to hundreds of storage hosts. More on scalability limitations later.
@@ -46,7 +49,7 @@ A typical page request may cause the page rendering engine to request data from 
 
 Describing an average, median, and expected variance is not good enough if you want to provide a good experience to all users. For example, a heavy user may have a longer buy history, and therefore could have their page loads perform worse that a less preferred customer. To avoid this, you must calculate the costs associated with providing a higher percentile of distribution in relation to response time. Amazon found anything beyond 99.9% (and whatever their latency target is) to be cost prohibitive.
 
-    Of note: a load balancer's selection of which write coordinator to pass 
+    Note: a load balancer's selection of which write coordinator to pass 
     a request to is very important when targeting performance at a 99.9% 
     percentile distribution. Pay some attention to it.
 
@@ -100,16 +103,16 @@ Architecture
    "Recovering from permanent failures", "Anti-entropy using Merkle trees", "Synchronizes divergent replicas in the background"
    "Membership and failure detection", "Gossip-based membership protocol and failure detection", "Preserves symmetry and avoids having a centeralized registry for storing membership and node liveness information (ie:zookeeper)"
 
-TODO - note, look for explanations below in this section too
-Consisten hashing: :ref:`distributedsystems-hashing`
 
-Vector clocks: :ref:`distributedsystems-vectorclock`
+TODO Consistent hashing: :ref:`distributedsystems-hashing`
 
-Sloppy quorum and hinted handoff: :ref:`distributedsystems-quorum`  Useful: http://jimdowney.net/2012/03/05/be-careful-with-sloppy-quorums/
+Vector clocks: :ref:`dynamo-vectorclocks`
 
-Gossip protocols: :ref:`distributedsystems-gossip`
+TODO Sloppy quorum :ref:`distributedsystems-quorum`  Useful: http://jimdowney.net/2012/03/05/be-careful-with-sloppy-quorums/
 
-Merkle tree: :ref:`compsci-merkle`
+TODO Gossip protocols: :ref:`distributedsystems-gossip`
+
+Merkle tree: :ref:`dynamo-merkle`
 
 Dynamo shares the same needs that any distributed architecture needs to address. Mainly, scalable and robust solitions for:
 - Load balancing
@@ -170,6 +173,7 @@ Most of the time, new versions subsume the previous version(s), and the system i
 
 It is important to emphasize that if you don't want to "lose" data, the client code you're writing needs to explicitly acknowledge the possibility of multiple versions of the same data.
 
+.. _dynamo-vectorclocks:
 
 Vector Clocks
 ^^^^^^^^^^^^^
@@ -224,11 +228,13 @@ If node A is temporarily down or unreachable during a write operation, then a re
 
 This ensures availability even in the event of network segmentation or server failures, at the expense of resiliency. For applications requiring the highest level of availability, you can set W (minimum number of confirmed writes) to 1, which ensures that a write is accepted so long as a single node has durably written the key to its local store. In practice, most applications set W to 2 or more. More details about N, R, and W later.
 
+.. _dynamo-merkle:
+
 Merkle Trees
 ^^^^^^^^^^^^
 Hinted handoff works best if system membership churn is low and server/network problems are transient. Should that not be the case and some scenario occurs where a node fails forever before it can pass back its hinted replica to the proper node, dynamo uses a replica synchronization method involving Merkle Trees.
 
-A Merkle tree is a hash tree where each leaf is the hash of an individual key. Parent nodes higher in the tree are hashes of their respective children. So let's think of a merkle tree with 20 leaves, a parent responsible for 4 leaves each, and a grandparent (root) responsible for those 5 parents. If a node wants to know whether another node has the same keys as them, they just need to compare each others root (grandparent) hashes. If they differ, then they can check the next level down for differing hashes. They may only find 1 out of 5 different, and can then compare the hashes of each leaf to see what is different or missing. This allows an efficient comparison of data without having to scan through every value.
+A Merkle tree is a hash tree where each leaf is the hash of an individual key. Parent nodes higher in the tree are hashes of their respective children. So let's think of a merkle tree with 20 leaves, a parent responsible for 4 leaves each, and a grandparent (root) responsible for those 5 parents. If a node wants to know whether another node has the same keys as them, they just need to compare each others root (grandparent) hashes. If they differ, then they can check the next level down for differing hashes. They may only find 1 out of 5 different, and can then compare the hashes of each leaf in only that 1 branch to see what is different or missing. This allows an efficient comparison of data without having to scan through every value.
 
 In Dynamo, each node maintains a separate Merkle tree for each key range that it hosts (ie: a Merkle tree for every virtual node). This allows nodes to exchange the root node of the Merkle tree with all other nodes which have the same key ranges (virtual nodes) in common. The disadvantage with this approach is that when a node joins or leaves the system/virtual nodes are redistributed, key ranges change and require the tree to be recalculated. Mitigation of this effect is discussed later on.
 
@@ -240,7 +246,11 @@ It is beneficial however to have some sort of global cluster state for when perm
 
 When a node starts for the first time, it chooses its set of tokens (virtual nodes) and maps nodes to their respective token sets. That mapping is then persisted on disk and initially only contains the local node and the token set. During the gossip-based random-node-every-second process, nodes will compare their mapping and token set information with each other and reconcile that information. So, a new node will very likely gossip an existing node that is already fully aware of the rest of the cluster, getting the new node up to speed right away. 
 
-.. note:: The above method of cluster data discovery can be fouled up a bit if you're adding multiple nodes at once. If an administrator added node A, then added node B, these nodes would not be immediately known to each other. To mitigate this, a user can configure something called "seed" nodes, which are nodes that all other nodes can eventually reconcile with (outside of the random every second process). These nodes essentially have the best view of the current state of the cluster
+    Note:: The above method of cluster data discovery can be fouled up a bit if you're adding multiple nodes at once. 
+    If an administrator added node A, then added node B, these nodes would not be immediately known to each other. 
+    To mitigate this, a user can configure something called "seed" nodes, which are nodes that all other nodes can 
+    eventually reconcile with (outside of the random every second process). These nodes essentially have the best 
+    view of the current state of the cluster
 
 Addition/Removal of Storage Nodes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
