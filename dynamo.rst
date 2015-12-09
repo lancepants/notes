@@ -64,6 +64,8 @@ A typical replication model performs a synchronous replication across some inter
    :alt: Partitioning and replication of keys in Dynamo ring.
    :align: center
 
+  **Figure 2: Partitioning and replication of keys in Dynamo ring.**
+
 Other Considerations
 ^^^^^^^^^^^^^^^^^^^^
 *Incremental Scalability:* Scale out one storage node at a time, with minimal ineraction and minimal to no performance impact.
@@ -134,6 +136,8 @@ Let's reference this image again:
    :alt: Figure 2: Partitioning and replication of keys in Dynamo ring.
    :align: center
 
+  **Figure 2: Partitioning and replication of keys in Dynamo ring.**
+
 **Consistent hashing** works by treating the output range of a hash function as a fixed circular space or "ring" (ie: the largest hash value wraps around to the smallest hash value). Each node in the system is assigned a random value within this space, which represents is "position" in the ring. When a data item represented by a key comes in, the key is hashed in order to get a value, and then the ring is walked **clockwise** until a node is found with a position larger than the data item's position. That node, the first node found with a position larger than the data item, is assigned to be the coordinator for that key+data. As such, each node becomes responsible for the region in the ring between itself and its **predecessor** node. Because of this, we can see in Figure 2 that Key K would be owned by Node B. Node B owns the whole range between itself and Node A.
 
 The main advantage of consistent hashing is that departure or arrival of a node only affects its immediate neighbours, and other nodes remain unaffected. The output range of the hash stays the same - the new node is just plopped down between two other nodes. This seems bad because if a new node got placed **directly** counterclockwise of, say, node D, wouldn't that mean that node D would be responsible for a very tiny portion of ranges and therefore get less load and datat? Correct. The picture above shows nodes in nice and symmetrical placements, but in reality that node placement in the ring is random. This leads to non-uniform data distribution and load. And what if one of your nodes is a lot more powerful than the others, so you want it to be responsible for a larger portion of the hash?  
@@ -185,6 +189,8 @@ With the above in mind, let's go through an example:
    :alt: Figure 3: Version evolution of an object over time
    :align: center
 
+   **Figure 3: Version evolution of an object over time.**
+
 Let's assume that we're using a load balancer to distribute requests. A client is doing a fresh write, a new object, and the request gets routed to Node X. Node X hashes the key and sees that it belongs in the top N nodes of that key's preference list, and as such is able to perform this operation. It writes out that new object D1 and assigns a vector clock (X, 1). Another write comes in for the same object, and it gets loadbalanced to X again, who then *creates a new object* D2 and assigns a vector clock to it of (X, 2). At this point D1 will be cleaned up on node X because D2 descends from D1, but other nodes might not have D2 yet due to replication lag or failure, so D1 might still be lingering out there.
 
 Now let's say the same client updates D2, but the request this time is routed to Node Y. Node Y creates a new object, D3, and assigns a vector clock [(X, 2), (Y, 1)]. All good so far, as both X and Y are part of the top N preference list.
@@ -210,6 +216,8 @@ If Dynamo used a traditional quorum approach, it would be unavailable during ser
    :alt: Figure 2: Partitioning and replication of keys in Dynamo ring.
    :align: center
 
+  **Figure 2: Partitioning and replication of keys in Dynamo ring.**
+
 If node A is temporarily down or unreachable during a write operation, then a replica that would normally have lived on A will now be send to node D. The replica sent to D will have a hint in its metadata that suggests which node was the intended recipient of the replica (in this case, A). Nodes that receive hinted replicas will keep them in a separate local database that is scanned periodically. Once A is detected as having recovered, D will attempt to deliver the replica to A. Once the transfer succeeds, D will then delete the object from its local store (but it will still have the replicated copy in its regular datastore). During this whole process, the same amount of object replicas are kept.
 
 If node A is temporarily down or unreachable during a write operation, then a replica that would normally have lived on A will now be send to node D. The replica sent to D will have a hint in its metadata that suggests which node was the intended recipient of the replica (in this case, A). Nodes that receive hinted replicas will keep them in a separate local database that is scanned periodically. Once A is detected as having recovered, D will attempt to deliver the replica to A. Once the transfer succeeds, D will then delete the object from its local store (but it will still have the replicated copy in its regular datastore). During this whole process, the same amount of object replicas are kept.
@@ -232,12 +240,13 @@ It is beneficial however to have some sort of global cluster state for when perm
 
 When a node starts for the first time, it chooses its set of tokens (virtual nodes) and maps nodes to their respective token sets. That mapping is then persisted on disk and initially only contains the local node and the token set. During the gossip-based random-node-every-second process, nodes will compare their mapping and token set information with each other and reconcile that information. So, a new node will very likely gossip an existing node that is already fully aware of the rest of the cluster, getting the new node up to speed right away. 
 
-- The above method of cluster data discovery can be fouled up a bit if you're adding multiple nodes at once. If an administrator added node A, then added node B, these nodes would not be immediately known to each other
-- A user can configure something called "seed" nodes, which are nodes that all other nodes can eventually reconcile with (outside of the random every second process). These nodes essentially have the best view of the current state of the cluster
+.. note:: 
+   - The above method of cluster data discovery can be fouled up a bit if you're adding multiple nodes at once. If an administrator added node A, then added node B, these nodes would not be immediately known to each other
+   - A user can configure something called "seed" nodes, which are nodes that all other nodes can eventually reconcile with (outside of the random every second process). These nodes essentially have the best view of the current state of the cluster
 
 Addition/Removal of Storage Nodes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-When a new node (say, X) is added into the system, it is assigned a random scattering of virtual nodes (tokens) around the ring. Let's just use one virtual node as an example using Figure 2. Let's say that virtNodeX is added to the ring between virtNodeA and virtNodeB. As such, with N=3, X is now responsible for the ranges between F-G, G-A, and A-X. As a consequence, nodes B, C, and D no longer have to store the keys in their respective tail ranges. So, upon confirmation from X, they will then transfer the appropriate set of keys to X. When a node is removed from the system, this proces happens in reverse.
+When a new node (say, X) is added into the system, it is assigned a random scattering of virtual nodes (tokens) around the ring. Using Figure 2, let's just use one virtual node as an example. Let's say that virtNodeX is added to the ring between virtNodeA and virtNodeB. As such, with N=3, X is now responsible for the ranges between F-G, G-A, and A-X. As a consequence, nodes B, C, and D no longer have to store the keys in their respective tail ranges. So, upon confirmation from X, they will then transfer the appropriate set of keys to X. When a node is removed from the system, this proces happens in reverse.
 
 
 .. _dynamo-implementation:
@@ -279,9 +288,11 @@ Partitioning
    :alt: Figure 7: Partitioning and placement of keys in three strategies. N=3 in this example. A, B, and C represent unique nodes that form a preference list for key k1. Black arrows are tokens (ie:virtual nodes).
    :align: center
 
-Figure 7: Here we have an N=3 consistent hashing ring. A, B, and C are unique nodes which are part of the preference list for key k1. The arrows represent tokens. A, B, and C happen to be responsible for tokens beside each other.
+   **Figure 7: Here we have an N=3 consistent hashing ring. A, B, and C are unique nodes which are part of the preference list for key k1. The arrows represent tokens. A, B, and C happen to be responsible for tokens beside each other.**
 
 *Strategy 1: T random tokens per node and partition by token value:* In this model, when a physical node joins the ring, a random set of tokens are **created** at "random but uniform" locations around the ring and then these tokens are assigned to the new node. The token ranges are not perfectly uniform, and get worse when plopped down between existing tokens at various distances. All other existing nodes which have a new token plopped down between a token range they control then need to redefine their own token ranges. This also necessitates that they update their Merkle trees, and they also need to start up a background thread to scan their local storage and transfer the keys that they own over to the new node. This kinda sucks and takes a long time under high load.
+
 *Strategy 2: T random tokens per node and equal sized partitions:* in this model, the hash space is divided up evenly while the token placement remains "random but uniform." Not sure about this one, seems dumb
+
 *Strategy 3: Equal distribution of tokens and partitions:* Hash space is divided evenly, and a token is placed at each segment. This doesn't change. A node is added, and it steals tokens from other nodes in order to take on some load. Same happens if a node leaves. This strategy still has the problem of needing to transfer replicas in a background thread, but avoids merkle tree rebuilds and uneven hash sizes.
 
