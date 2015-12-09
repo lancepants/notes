@@ -1,0 +1,165 @@
+:::::::: RUN / INSTALL NOTES, KAFKA RELATED :::::::
+
+---TOPIC CREATION, METADATA, TOPIC DELETION, ETC---
+./kafka-topics.sh --zookeeper srd1003:2181 --create --topic 3p1r --partitions 3 --replication-factor 1
+# 86400000s is 24hrs
+./kafka-topics.sh --zookeeper srd1003:2181 --create --topic 3p2r --partitions 3 --replication-factor 2 --config max.message.bytes=6553600 --config segment.bytes=8589934592 --config delete.retention.ms=86400000
+./kafka-topics.sh --describe --zookeeper srd1002:2181
+
+#conf/server.properties:delete.topic.enable=true
+./kafka-run-class.sh kafka.admin.TopicCommand --zookeeper 192.168.100.102:2181 --delete --topic stabtest
+
+./kafka-topics.sh --zookeeper localhost:2181 --alter --topic my-topic --config max.message.bytes=128000 --config retention.bytes=6000000000000
+./kafka-topics.sh --zookeeper localhost:2181 --alter --topic my-topic --deleteConfig max.message.bytes
+
+kafkacat -L -b srd1005
+
+---PRODUCER/CONSUMER RUNNING + PERFORMANCE TESTING---
+#Test multithreaded, 100byte msg default. Sync by default (acks=-1).
+./kafka-producer-perf-test.sh --broker-list srd1005:9092,srd1007:9092,srd1008:9092 --messages 50000000 --topics 3p1r --threads 16
+#64KB message size
+#REQUIRES: Modify perf-test.sh KAFKA_HEAP_OPTS="-Xmx24576M" , or whatever you RAM situation permits
+./kafka-producer-perf-test.sh --broker-list srd1005:9092,srd1007:9092,srd1008:9092 --messages 100000 --topics 3p1r --threads 16 --message-size 64000 --batch-size 50
+
+
+./durr.sh | kafkacat -b srd1005 -t omgwtfbbq & CHILD_PID=$! ; sleep 5s ; kill -HUP $CHILD_PID
+cat 50mlinesofstuff |kafkacat -b srd1005,srd1007,srd1008 -t testymctesttopic
+#Can kick out ~184k msgs/sec single threaded, 100byte messages on crappy blade. Very fast single threaded performance, twice that of perf-test single threaded.
+
+---MIRRORMAKER---
+bin/kafka-run-class.sh kafka.tools.MirrorMaker --consumer.config sourceCluster1Consumer.config --consumer.config sourceCluster2Consumer.config --num.streams 2 --producer.config targetClusterProducer.config --whitelist=".*"
+
+#Producer/Consumer config options are in documentation under Configuration. Here are some minimal examples:
+$ cat sourceCluster1Consumer.config
+group.id=mirrormaker.las1
+zookeeper.connect=fdod-zoo0000.hkg1.fanops.net:2181
+offsets.storage=kafka
+dual.commit.enabled=true
+
+#Note these are OLD producer config options. Use doc section "3.4 New Producer Configs" for 0.8.3+
+$ cat targetClusterProducer.config
+metadata.broker.list=fdod-kaf0000.las1.fanops.net:9092,fdod-kaf0001.las1.fanops.net:9092,fdod-kaf0002.las1.fanops.net:9092
+#-1=wait for all ISRs. 0=dont wait. 1=wait for leader response
+request.required.acks=-1
+producer.type=sync
+serializer.class=kafka.serializer.DefaultEncoder
+compression.codec=snappy
+batch.num.messages=50
+
+TEST IT:
+bin/kafka-run-class.sh kafka.tools.ConsumerOffsetChecker --group mirrormaker.las1 --zookeeper dc1-zookeeper:2181 --topic test-topic
+
+EXAMPLE:
+./bin/kafka-run-class.sh kafka.tools.MirrorMaker --consumer.config config/mm.hkg1.consumer.config --num.streams 2 --producer.config config/mm.hkg1.producer.config --whitelist=".*"
+./bin/kafka-run-class.sh kafka.tools.ConsumerOffsetChecker --group mirrormaker.las1 --zookeeper fdod-zoo0000.hkg1.fanops.net:2181
+
+
+---MONITORING---
+kafka-server-start.sh:export JMX_PORT=9999
+kafka-run-class.sh:KAFKA_JMX_OPTS="-Dcom.sun.management.jmxremote=true
+kafka-run-class.sh:KAFKA_JMX_OPTS="$KAFKA_JMX_OPTS -Dcom.sun.management.jmxremote.port=9999 "
+service kafka restart ; netstat -pantu|grep 9999
+
+https://github.com/m-szalik/tjconsole
+[broker-srd1005 #] java -jar tjconsole-1.5-all.jar
+TJConsole> ? 
+TJConsole>connect 127.0.0.1:9999 
+TJConsole>use kafka<tab> ... kafka.server<tab> ...kafka.server:type=BrokerTopicMetrics,name= <tab> <etc etc etc etc> 
+TJConsole>use kafka.server:type=BrokerTopicMetrics,name=BytesInPerSec 
+TJConsole>get 
+
+https://github.com/jmxtrans/jmxtrans
+-Make your .json. This is ugly as hell. Use srd1005:/usr/share/jmxtrans/kafka.json as example, or google for stackdriver's jmxtrans kafka.json (incompatible with 0.8.2, incorrect mbean names and quotes usage. Only use as an example.). Also use TJConsole above in order to find interesting metrics and proper mbean metric names.
+[srd1005 /usr/share/jmxtrans]# ./jmxtrans.sh start kafka.json 
+-tail -f /tmp/JMXTrans/kafkaStats/BytesInPerSec.txt or whatever 
+
+
+---MAINTENANCE---
+!!PARTITION REBALANCING is automatic as of 0.8.2. Ensure the following is still relevant to your install.!!
+Let's say you've got three brokers, 1005,1006,1007. let's say 1006 has died horribly. So, you added a new broker...1008. Kafka will not automatically re-assign partitions or replication pairs because it doesn't know if 1006 is coming back. As such, if 1006 is not coming back in a reasonable time period, you have to re-assign topic partitions with ./bin/kafka-reassign-partitions.sh
+
+In our example, p3r3 is a topic with...3 partitions and 3 replications.
+
+#If you don't have / haven't built your --reassignment-json-file, do below to generate one. Otherwise, skip to last command.
+#Create a json file which includes topics you want to rebalance
+> cat topics-to-move.json
+{"topics":
+       [{"topic": "p3r3"},{"topic": "list_example"}],
+"version":1
+}
+
+#Run the tool to --generate a json line you need to use later
+#--broker-list includes your new broker, and excludes your broken one.
+./kafka-reassign-partitions.sh --generate --broker-list 1005,1007,1008 --topics-to-move-json-file topics-to-move.json --zookeeper srd1002:2181 
+
+#Look at the output. If it's doing what you want, put the final line into a file
+!! | tail -1 > my-generated.json
+
+#Now run the tool with --execute and --reassignment-json-file in place of generate and topics-to-move
+./kafka-reassign-partitions.sh --execute --broker-list 1005,1007,1008 --reassignment-json-file my-generated.json --zookeeper srd1002:2181
+
+#All this thing does is modify zookeeper, then kafka picks up the changes.
+#You may want to run kafka-preferred-replica-election.sh after this if your LEADER is not your PREFERRED replica.
+
+---COMMON ERRORS---
+"failed due to Leader not local for partition|NotLeaderForPartitionException" :: This usually just means that a producer/consumer tried to produce/consume to a broker which was not leader for that partition. These errors will occur when brokers get restarted, ISR's get shifted, partition reassignment happens, etc. etc. and can usually be ignored unless they come in high volume or repeat for longer than 5 seconds. Clients should use this error as a queue to re-request updated metadata to find a new leader. Note: You may also get this error if a metadata update request fails...
+
+
+---PERFORMANCE---
+::Memory Related::
+kafkaServer-gc.log will let you know when you're hitting garbage collection:
+2015-04-29T13:48:02.610-0700: 89.811: [GC (Allocation Failure) 89.812: [ParNew: 279664K->48K(314560K), 0.0037317 secs] 284469K->4856K(1013632K), 0.0038937 secs] [Times: user=0.04 sys=0.00, real=0.00 secs]
+
+Generally we want to reserve a ton of our RAM for filesystem caching, rather than giving a bunch of it to JVM. Still, lets try to give JVM an efficient amount such that garbage collection doesn't take too long.
+
+Connect to your kafka broker under load using jconsole and then click the Memory tab and wait a few seconds. The bars marked "Heap" in the bottom right are what you're wanting to pay attention to - CMS, Eden, and Survivor. 
+-You generally want CMS to be low to nothing. This gets cleared out when ConcurrentMarkSweep runs.
+-It's ok for Eden space to bounce around a lot
+-If survivor space is often filling up, you need to allocate more memory to your heap. This is where you run into java.outofMemory errors.
+
+You also want to pay attention to the GC time: text to see how long garbage collection is taking. ConcurrentMarkSweep is a very expensive operation, so it's important that it runs fast.
+
+With kafka 0.8.2 and producer-perf-test running pushing around 400-500mbit (its advertised maximum on a 1gig connection), you'll generally fill 1gig of CMS every ~45mins (no consumers).
+
+Note consumers have a large impact on memory usage. Do your memory tweaking both with and without consumers running.
+Note that if you're seeing a lot of rebalances in your consumer log, you probably need to increase the amount of memory you've given your consumer process.
+
+::Partition Rebalancing::
+Your producers might spew a bunch of these after adding/removing a producer or experiencing some sort of temporary outage on one/all of your brokers:
+[2015-04-29 14:18:44,139] WARN Produce request with correlation id 10556 failed due to [perf_test6p2r,0]: kafka.common.NotLeaderForPartitionException (kafka.producer.async.DefaultEventHandler)
+
+You might see this in your controller.log:
+[2015-04-29 14:18:38,826] TRACE [Controller 1]: checking need to trigger partition rebalance (kafka.controller.KafkaController)
+
+This is normal if you have recently had a broker shut down for a length of time, or have added a new broker, experienced a disruption, etc etc. Kafka is rebalancing partitions by possibly saying "hey (new|formerlyfailed) broker, you handle these partitions", setting as an ISR, waiting until it is in sync, and then promoting that broker to be leader for a certain partition.
+During this failover, if you want guaranteed delivery of messages, your producer must be able to catch kafka.common.NotLeaderForPartitionException and re-send its message(s) a few seconds later.
+
+::SO_SIZES::
+You may see socket.send.buffer.bytes & socket.receive.buffer.bytes in kafka's server.properties. I didn't see any performance increase/decrease moving these from 1MB -> 10MB when pushing 500Mbit x 3 producers -> 3 node hkg1 cluster, no matter the buffer size. The limitation in this case appears to be the producer-perf-test suite.
+
+
+---KAFKA RELATED TOOLS/CLIENTS SETUP DEETS---
+::flasfka::
+https://github.com/travel-intelligence/flasfka :: Expose kafka over python's simple web framework flask(http)
+
+yum install python-devel
+git clone https://github.com/travel-intelligence/flasfka
+python setup.py #DEPS WARN: This will grab both kafka and flask python modules
+
+/etc/flasfka/conf.py:
+HOSTS=["srd1005:9092","srd1007:9092","srd1008:9092"]
+DEFAULT_GROUP="flasfka"
+CONSUMER_TIMEOUT=0.1
+CONSUMER_LIMIT=100
+
+export FLASFKA_CONFIG=/etc/flasfka/conf.py #Don't forget me.
+
+/usr/lib/python2.7/site-packages/flasfka-0.0.1-py2.7.egg/flasfka/__init__.py:
+import logging
+logging.basicConfig()
+app.run(host='0.0.0.0') #Add to BOTTOM
+
+/usr/bin/flasfka-serve & ; netstat -pantu|grep 5000
+curl http://localhost:5000/topic-name/
+
+

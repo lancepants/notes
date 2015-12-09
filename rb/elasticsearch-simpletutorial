@@ -1,0 +1,194 @@
+----------------------------
+RECOMMENDED
+-This doc is based exactly on the tutorial found here:
+http://www.elastic.co/guide/en/elasticsearch/guide/current/index.html
+
+-These commands are SHORTHAND. This means that this:
+GET /_count?pretty
+-Might actually mean this:
+curl -XGET 'http://server1:9200/_count?pretty'
+
+
+-Try out these commands as you go in marvel/sense.
+./bin/plugin -i elasticsearch/marvel/latest  #install if you don't already have it
+http://srd1002:9200/_plugin/marvel/sense/index.html
+
+-Skim other elasticsearch-* notes
+
+----------------------------
+SIMPLE TUTORIAL
+
+~~PUT
+-Index a document per employee, which contains all the details of a single employee.
+-Each document will be of type employee.
+-That type will live in the megacorp index.
+-That index will reside within our Elasticsearch cluster.
+
+#This will auto-create 'megacorp' index if it's not already created. In these examples, we're specifying the document ID we want, but we can omit if wanted (Elasticsearch can generate for us):
+PUT /megacorp/employee/1
+{
+    "first_name" : "John",
+    "last_name" :  "Smith",
+    "age" :        25,
+    "about" :      "I love to go rock climbing",
+    "interests": [ "sports", "music" ]
+}
+PUT /megacorp/employee/2
+{
+    "first_name" :  "Jane",
+    "last_name" :   "Smith",
+    "age" :         32,
+    "about" :       "I like to collect rock albums",
+    "interests":  [ "music" ]
+}
+PUT /megacorp/employee/3
+{
+    "first_name" :  "Douglas",
+    "last_name" :   "Fir",
+    "age" :         35,
+    "about":        "I like to build cabinets",
+    "interests":  [ "forestry" ]
+}
+
+~~GET
+-So, we just added three documents (with ID's 1,2,3) indexed under type 'employee' inside index 'megacorp.'
+-Let's GET employee 2 now:
+GET /megacorp/employee/2
+-You can DELETE in the same fashion
+
+~~SEARCH
+-Now let's do a simple search. This will return all results for type 'employee' (default limit 10 results returned):
+GET /megacorp/employee/_search
+
+-Now let's search with a query:
+GET /megacorp/employee/_search?q=last_name:Smith
+
+-The above search can also be represented as a "Query DSL" search:
+GET /megacorp/employee/_search
+{
+    "query" : {
+        "match" : {
+            "last_name" : "Smith"
+        }
+    }
+}
+-Notice we are using the 'match' query type. There are several others. Here's a more complicated example that adds a filter which does a range search for employees older than 30:
+GET /megacorp/employee/_search
+{
+    "query" : {
+        "filtered" : {
+            "filter" : {
+                "range" : {
+                    "age" : { "gt" : 30 }
+                }
+            },
+            "query" : {
+                "match" : {
+                    "last_name" : "smith"
+                }
+            }
+        }
+    }
+}
+
+~~SEARCH FULL_TEXT+RELEVANCE SCORES
+GET /megacorp/employee/_search
+{
+    "query" : {
+        "match" : {
+            "about" : "rock climbing"
+        }
+    }
+}
+{
+   ...
+   "hits": {
+      "total":      2,
+      "max_score":  0.16273327,
+      "hits": [
+         {
+            ...
+            "_score":         0.16273327,
+            "_source": {
+               "first_name":  "John",
+               ...
+               "about":       "I love to go rock climbing",
+               ...
+            }
+         },
+         {
+            ...
+            "_score":         0.016878016,
+            "_source": {
+               "first_name":  "Jane",
+               ...
+               "about":       "I like to collect rock albums",
+               ...
+            }
+         }
+      ]
+   }
+}
+
+-So, it returned both results even though only the first had both 'rock' and 'climbing' in it. Check out the RELEVANCE score "_score". It's higher for the better match, and lower for the partial match.
+
+-Don't want partial matches? Do an exact match with match_phrase, and let's use the highlight feature:
+GET /megacorp/employee/_search
+{
+    "query" : {
+        "match_phrase" : {
+            "about" : "rock climbing"
+        }
+    },
+    "highlight": {
+        "fields" : {
+            "about" : {}
+        }
+    }
+}
+
+-This passes back our exact result, as well as an extra 'highlight' field that reformats the 'about' message with html highlight code ("I love to go <em>rock</em> <em>climbing</em>")
+
+~~ANALYTICS
+-Let's use the 'aggregations' functionality of elasticsearch to see what interest keywords are most popular:
+GET /megacorp/employee/_search
+{
+  "aggs": {
+    "all_interests": {
+      "terms": { "field": "interests" }
+    }
+  }
+}
+-If you want to see what are the popular interests of only people with last name 'smith', just add it as a query:
+GET /megacorp/employee/_search
+{
+  "query": {
+    "match": {
+      "last_name": "smith"
+    }
+  },
+  "aggs": {
+    "all_interests": {
+      "terms": {
+        "field": "interests"
+      }
+    }
+  }
+}
+
+-Now something more complex, let's find the average age of employees who share a particular interest:
+GET /megacorp/employee/_search
+{
+    "aggs" : {
+        "all_interests" : {
+            "terms" : { "field" : "interests" },
+            "aggs" : {
+                "avg_age" : {
+                    "avg" : { "field" : "age" }
+                }
+            }
+        }
+    }
+}
+-This passes back a list of keyword matches, but also adds an avg_age value per keyword to see the average age of someone who has 'x' interest
+

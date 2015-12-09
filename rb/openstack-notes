@@ -1,0 +1,30 @@
+==Nomenclature (Required services)==
+Compute/instance mgmt: Nova
+Networking: Neutron
+Image Service: Glance
+
+==Nomenclature (Optional)==
+Object store: Swift
+Block store: Cinder
+Dashboard: Horizon
+Orchestration: Heat
+Identity service: Keystone
+Telemetry: Ceilometer
+
+
+==CLI TOOLS==
+### http://docs.openstack.org/cli-reference/content/ ###
+
+# Source appropriate environment variables. Eg:
+OS_AUTH_URL=https://rubicon.platform9.net/keystone/v2.0
+OS_USERNAME=pf9api@rubiconproject.com
+OS_TENANT_NAME=service
+OS_PASSWORD=myassword
+
+# list VMs, VM flavors available
+nova list
+nova flavor-list
+
+
+juno
+

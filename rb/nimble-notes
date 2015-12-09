@@ -1,0 +1,59 @@
+##
+# VPS reqs
+###
+Our "VPS" or whatever (malware VM team) has 2 or 3 base images, and they run about 1200 vms at once, 100k iops total. Expected to scale to 2000 or 3000 and 200 or 300k iops. #Note: this is unrealistic. That IOPS usage is because they aren't intelligently spinning up vm's - their current procedure is to fully copy a base image, use it to spawn a new VM, maybe write some stuff (for some reason), then at the end destroy the VM and associated vmdk.
+
+iops are generally sustained, not too bursty. Spin up, run add, compare registry and files for changes, etc.
+
+very small space req's, high iops req's
+
+##
+# nimble general notes
+##
+4 hr rma, 4hr on site
+
+automated ticket creation & hw replacement
+
+$40k for the cs300 30k iop 12TB
+
+
+Dual controller, active standby
+
+-variable block sizing, blocks compressed, set to a 4.5mb stripe. Then that stripe is written to disk
+-Due to this grouping together of blocks, you end up moving, say, 1100 4k blocks (1100iops) into one big 4.5Mb write iop. With compression, you might even have 2200 4k blocks fit into a 4.5mb stripe, so 2200iops -> 1. Important to note that this is write ops...
+-Each block has an index on it
+-data is put int ssd layer based on "hotness"
+-When a 4.5MB stripe needs to be changed, it just invalidates whatever block has changed in the stripes' index. The actual write ends up on a different stripe
+-Supports cache pinning, pin a whole volume to the SSD's
+-166GB up to 1.6TB of SSD's. Each controller has 4 ssd bays, the rest spinning. If you wanna add ssd's, you just add an ssd shelf
+-sfp+, 10gig eth, or fiber channel
+-has full vmware integration. Can create luns from vsphere
+-all features are free. thin provisioning, training, dedup, ...
+
+triple parity
+
+##
+# VMWare and its interactions
+##
+
+-Nimble has a vmware plugin. What this does is let you, from the vSphere web client, create a new datastore which will automatically create a volume on the nimble storage, expose that volume over iscsi, and add it to the appropriate initiator group such that it is available to your esxi hypervisors.
+-The plugin also lets you, in the web client, right click on a datastore and choose to clone it - and allow you to specify the number of clones you would like.
+-Nimble vmware plugin operations are not available via CLI tools (afaik)
+
+Current process for mass spinup of VMs using only nimble's RESTful API and vmware cli tools could look like this:
+-You have a base datastore/nimble volume, with your base windows image on it. This base volume is already part of appropriate iscsi initiator group that VMware can see
+-Nimble CLI: Snapshot base volume (if necessary), then create new volume (type:clone) based on that snapshot
+-VMWare CLI: Add new datastore. Target is the new zero copy clone volume you just created
+-Generate vmx file. Point storage for it at the datastore you just created
+-register and start VM
+-VMWare CLI: Remove datastore
+-Nimble CLI: offline and destroy zcc'd vols
+
+Alternate:
+-Pre-create all datastores+volumes, all ZCC'd from a base vol. This can be done (slowly) from the vSphere web client
+-Generate a .vmx for each vol, each pointing to their own datastore. Snapshot each vol.
+-(option1)Nimble CLI: Before a run, revert all VM volumes to original snapshot
+-Start VM's. Do work. Stop VMs.
+-(option2)Nimble CLI: After a run, revert to original snapshot
+
+

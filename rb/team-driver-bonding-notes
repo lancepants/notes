@@ -1,0 +1,63 @@
+# https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/7/html/Networking_Guide/ch-Configure_Network_Teaming.html
+# srd0003: et7+8
+# srd0005: et5+6
+
+
+teamd --help
+teamd -t team0 -d  # Run teamd. Create new device team0 and daemonize
+ip link set team0 up  # ifup the interface
+ip a add 10.10.10.115/24 dev team0  # ip the interface
+teamdctl --help  # check out the general team driver utility
+teamdctl team0 state  # not much to see yet
+teamdctl team0 port add p2p1  # this will fail if p2p1 has been set to UP already. ip link set p2p1 down if error
+teamdctl team0 port add p2p2
+teamdctl team0 state  # This should now show you more infos
+ping 10.10.10.1  # Might take a couple seconds before successful
+
+teamd -t team0 -k  # Terminate teamd and remove team0 device
+
+
+# Alternately, the ip utility can set you up; however, use of teamd binary as above is reccommended
+ip link add name team0 type team
+ip link set eth0 master team0
+# To remove:
+ip link set eth0 nomaster
+ip link del team0
+
+
+# Using a config file with teamd
+teamd -f team0.json -d
+
+# Example config (man teamd.conf):
+{
+        "device": "team0",
+        "runner": {
+                "name": "lacp",
+                "active": true,
+                "fast_rate": true,
+                "tx_hash": ["p2p", "ipv4", "ipv6"]
+        },
+        "link_watch": {"name": "ethtool"},
+        "ports": {"p2p1": {}, "p2p2": {}}
+}
+
+# Something like "runner": {"name": "roundrobin"}, may be easier for initial link testing
+
+
+# LACP on your switch (ARISTA!)
+conf t
+int et5-6
+channel-group 100 mode active  # Active on the switch. Switch sends the LACP Protocol Data Units to form link with partner
+int po100 ; no shut  # You might need to do this
+# Check your shit
+exit ; exit
+sh int po100
+sh int status connected # You should see po100 with status "connected"
+sh port-channel summary # You should see Protocol: LACP(a)
+
+# Back on your teamd box
+teamdctl team0 state  # Should show runner: lacp and link up on all interfaces.
+ip a add 10.10.10.115/24 dev team0
+ping 10.10.10.1
+
+# Back on switch, sh port-channel summary should show an accurate number of channels in use.

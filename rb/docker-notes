@@ -1,0 +1,85 @@
+GENERAL
+-Docker daemon runs on whatever host you want to have containers running on
+-The docker client communicates with the daemon. It tells the daemon to run, pull, do other stuff
+-The docker client does not have to run on the same box as the daemon. It uses a RESTful API
+-Containers have their own internal IP's. You have to bind a container port with a host system port in order for communication to happen
+
+COMPONENTS
+IMAGES
+-A Docker image is a read-only template. For example, an image could contain an Ubuntu operating system with Apache and your web application installed. Images are used to create Docker containers. You can run your own registry, or use docker hub to get or share
+-Images use UnionFS to "layer" changes. This is where you've got a base filesystem, then you can overlay another set of "branches" (directory trees) overtop of the base filesystem. Upon matching filenames, you can define which filename takes precedence (ie: the newest one).
+--You can define read only or read/write branches. The filesystem does copy-on-write
+--When you change a docker image (for example, updating a package), all changes are copy-on-writed such that the docker image changes incrementally. This saves you from having to roll an entire new image upon each change.
+-The idea here is to have a base image as whatever, ubu-web or something, and then you have dockerfiles which provide docker with instructions to build layers on top of the base image, in order to come up with a final container.
+
+REGISTRY
+https://github.com/docker/docker-registry
+-Docker registries hold images. These are public or private stores from which you upload or download images. The public Docker registry is called Docker Hub.
+-You can run your own registry in a docker container (shocker):
+docker run -p 5000:5000 registry #dload registry image from docker hub and start it up in a container
+--There's a config_sample.yaml inside the image that the registry image uses to set things up. You can override defaults by setting these variables when you do your docker run command (-e SETTINGS_FLAVOR=s3 -e AWS_BUCKET...)
+--You can set a handful of different "flavours." These flavors hold all the settings you need to use numerous storage backends for your images. local storage, s3, ceph, google cloud, openstack swift or/and glance, elliptics...
+
+CONTAINERS
+-A container consists of an operating system, user-added files, and meta-data
+-Each container is built from an image. That image (with dockerfile) tells docker what the container holds and what to run when launching the container.
+-When docker runs a container from an image, it adds a read-write layer on top of the image (using a union file system) in which your application can then run
+
+LXC/CONTAINERS/GENERAL
+NAMESPACES
+-Docker uses the following namespaces: pid(process isolation), net(network interface handling), ipc(interprocess communication), mnt(mountpoints), uts(kernel and version identifiers)
+-These namespaces allow a degree of isolation from the OS and other containers
+CONTROL GROUPS
+cgroups let you define resource sharing, limits etc. For example, limiting the amount of memory available to a specific container.
+
+WORKFLOW
+docker run -i -t ubu /bin/bash #start a container and drop to interactive bash shell
+#dockerd then does the following:
+-options -t assignes a pseudo-terminal, and -i grabs stdin on the container
+-pulls the "ubu" image. If it can't find it locally, it'll download it from docker hub. If the image exists already (on another container), then docker uses it for the new container
+-creates a container, lays out a filesystem, then mounts a read-write layer on top of it using unionfs
+-creates a network interface (bridge) that lets the container talk to localhost
+-finds and attaches an available IP address from a pool
+-Executes dockerfile / processes that you specify / your application
+-Captures and provides application output (stdin, stdout, stderr)
+
+docker run -d -P mywebimage python app.py # -d=run in bg -P=auto map port binds from container to host 
+docker ps #container list. notice the NAMES field. it's auto-assigned, or user specified
+docker logs -f herp_derp #look at stdout, -f=follow
+docker exec -it herp_derp bash #run a terminal
+docker stop herp_derp
+
+docker run -i -t c6rpmb:v3 /bin/bash	#-interactive -tty(allocate one)
+docker images [-q] 	#list images
+docker rm -v $(docker ps -a|grep Exited|awk '{print $1}')	#Remove exited containers
+docker rmi 5e90445a9bac	#Remove an image
+
+docker commit 526ff7852ccd c6rpmb:v4
+
+docker pull centos:7	#grab an image from the repo. docker run will do this automatically
+
+
+DOCKER AND IPv6
+-Run like so: 
+  # Replace cccc with the last 4 characters of the docker hosts' MAC
+  /usr/bin/docker -d --ipv6 --fixed-cidr-v6=2000:beef:0:0:cccc::/80 ; sysctl net.ipv6.conf.eth0.accept_ra=2 ; ndppd -c /etc/ntppd.conf
+  # Containers will still automatically address themselves based on MAC when using a /80, but the SLAAC bit switch and FF:FE insert does not happen.
+-currently pretty hopeless. The main expectation (as of docker 1.5) is that each docker host is treated as a router. That means your upstream router needs to have a route to your docker host, saying "traffic for 2000:beef::/64 goes to 2000:beef::1" where ::1 is your docker host. So, that means a route entry/removal on your router for each docker host you spin up/spin down
+-Alternately, you can run a neighbour discovery proxy (such as ndppd) on each of your docker hosts. What this does is take neighbour discovery requests and forwards them on to a specified subnet/interface (ie: docker0). A container responds, and then ndppd responds to your router on behalf of the container, with the FE80 of your docker host. Traffic then routes to your docker host, hits its routing table, and gets forwarded on to the container. 
+--This is currently pretty shit. You *must* define your --fixed-cidr-v6 as a smaller subnet than your docker host or routing won't work. Eg:
+  docker host:
+    eth0(slaac)=2000:beef::f816:3eff:fedf:6bca/64
+    fixed-cidr-v6=2000:beef:0:0:cccc::/80
+    ends up with route=2000:beef:0:0:cccc::/80 dev docker0
+    NEEDS: sysctl net.ipv6.conf.eth0.accept_ra=2
+    NEEDS: ndppd -c /etc/ntppd.conf
+       proxy eth0 {
+         router yes
+         rule 2000:beef::/64 {
+           auto
+         }
+       }
+--If you're using a "non-routed-to" docker, you need to set sysctl net.ipv6.conf.eth0.accept_ra=2 in order for router advertisements to get through.
+--Given a /80, containers will auto configure their ipv6 address as their mac address. They won't do the bit shift or the FF:FE insert though, as that requires a /64.
+--The bad: Docker generates container MACs that are based on whatever IP it assigns to docker0 (typically in subnet 172.17.0.0/16). This means that if two servers running docker end up picking the same subnet, there is a chance you can end up with containers on separate hosts having the same MAC, which in turn would cause ipv6 address collisions at your upstream router. This issue can be lessened by choosing a unique fixed-cidr prefix per docker host, such as the above example which sets cccc (the last 4 chars of your docker host mac)
+

@@ -1,0 +1,179 @@
+########
+#
+# AWS CLI Install
+#
+########
+
+# Docs
+http://docs.aws.amazon.com/cli/latest/reference/s3/index.html
+http://docs.aws.amazon.com/cli/latest/reference/glacier/index.html
+
+# Install it. Needs at least python 2.6.5. All dependencies are in Operations-[5|6]-x86_64 repo. Here are 3 different methods to get it installed:
+sudo yum install awscli
+sudo yum install python27-awscli #Use this if you're installing on a CentOS5 box. REQ: Operations-5 repo
+sudo yum install python-pip ; pip install awscli  #Use this for an install on your local machine
+## Note that if you don't have sudo, you may still install the package as a bundle in your home dir. Refer to http://docs.aws.amazon.com/cli/latest/userguide/installing.html#install-bundle-user
+
+
+
+# Now run aws configure. 
+aws configure
+  AWS Access Key ID [None]: your-key-id
+  AWS Secret Access Key [None]: your-secret-key
+  Default region name [None]: us-west-2
+  Default output format [None]:
+## We use us-west-2. It's cheapest.
+## You can enter 'json', 'text', or nothing at all in the output format depending on your preference.
+## If you don't have an access key, ask Lance for the one we're using
+
+
+# Verify your access to both S3 and Glacier by listing buckets and vaults respectively.
+aws s3 ls
+aws glacier list-vaults --account-id -
+## The - at the end of account-id tells the glacier module to use existing credentials.
+## If the "glacier" command is not found, ensure you are using awscli 1.7 or greater (as packaged in our Operations repos).
+
+########
+#
+# S3
+#
+# Region: us-west-2
+# Bucket: rp.mysql.backups
+#
+# We keep daily backups in S3. A daily cron process
+# exists on frpp-bas0000|bas0001 which uploads all
+# files on the revvdb/backups export which have been
+# modified or created in the last 24 hours.
+#
+# All files are COMPRESSED prior to uploading, and
+# a .gz extension is added to their name.
+#
+########
+
+###
+# See what's in the bucket
+###
+
+# ls what's at the root of the bucket
+aws s3 ls s3://rp.mysql.backups/
+## The s3 uploader currently preserves the absolute path to files uploaded from the bas000[0|1] boxes
+
+# ls with recursion (ie: find .)
+aws s3 ls s3://rp.mysql.backups/mnt/backups/db/adquality --recursive
+
+###
+# Download/Upload files from/to s3
+###
+
+# Copy a single file to current directory
+aws s3 cp s3://rp.mysql.backups/mnt/backups/db/adquality/current/raw_webscancalls_20150427.MYI.gz .
+
+# Copy a whole directory tree
+aws s3 cp s3://rp.mysql.backups/mnt/backups/db/adquality . --recursive
+
+# Upload an entire directory tree, excluding everything but .gz files
+aws s3 cp /tmp/bkups/ s3://rp.mysql.backups/mystuff --recursive --exclude "*" --include "*.gz"
+
+###
+# Sync
+##
+
+# Take what's in S3 and sync it to your local current directory. Only sync files matching *20150501*
+aws s3 sync s3://rp.mysql.backups/mnt/backups/db/revv/current/stats/ . --exclude "*" --include "*20150501*"
+## The exclude here is important, though I'm not sure why they chose to do it this way.
+## Swap this command around if you'd like to sync the contents of your local directory up to S3
+## Use --delete to keep it really in-sync...delete a file if it doesn't exist remotely
+
+###
+# Docs
+###
+
+# You can do much more with the aws s3 module. Look here for command specifics:
+http://docs.aws.amazon.com/cli/latest/reference/s3/index.html
+
+
+########
+#
+# GLACIER
+#
+# Region: us-west-2
+# Vault: rubi_cold_storage
+#
+# An upload run grabbing db/revv/current/stats/*20{00..14}*
+# was performed on March 17, 2015. These are stored as objects, and
+# are named after their "absolute/directory/path/to/file.gz"
+#
+# !! Beware of archiveID's which start with a -. awscli has a bug in their
+# handling of arguments in regards to this. I currently have a git issue open with them.
+#
+########
+
+###
+# Download a file from glacier
+###
+
+# First  you must initiate a job. This moves the file (probably off a tape somewhere) to somewhere
+# accessible to you
+# http://docs.aws.amazon.com/cli/latest/reference/glacier/initiate-job.html
+
+aws glacier initiate-job --account-id - --vault-name rubi_cold_storage --cli-input-json '
+{
+    "jobParameters": {
+        "Type": "archive-retrieval",
+        "ArchiveId": "ufLbiL3wZGTeX-HhdUDVRPMifkOOeyHcmb7x1ifRrPUTJ7izFfxh9kN_U48obULOhoWpeTZfrlIjVvZrO36SYQqN2W_FSbyNLfBVQpqahYPQTEsTDB7aBZ3TIBl_avWSsRLFqaJ1OA"
+    }
+}
+'
+# You can cram all that json into a single line if you like, just remove the newlines
+# EXAMPLE OUTPUT:
+{
+    "location": "/747429369124/vaults/rubi_cold_storage/jobs/ETi8NyT_SXvcZgPE-c6CfxDidsV22VUxQjbf5e6a-3A8M8YXTR_b6NiYxHapX_Gd93TDVOm77GBSAIELmvcstsR6ysB7",
+    "jobId": "ETi8NyT_SXvcZgPE-c6CfxDidsV22VUxQjbf5e6a-3A8M8YXTR_b6NiYxHapX_Gd93TDVOm77GBSAIELmvcstsR6ysB7"
+}
+
+# *Take note of your jobID*
+
+# Now you wait for 2-3 days
+
+# Show your job status to see if it's complete yet:
+# This will list ALL of specified vaults' jobs
+# http://docs.aws.amazon.com/cli/latest/reference/glacier/list-jobs.html
+aws glacier list-jobs --account-id - --vault-name rubi_cold_storage
+
+# You may also show status of a specific job
+# http://docs.aws.amazon.com/cli/latest/reference/glacier/describe-job.html
+aws glacier describe-job --account-id - --vault-name rubi_cold_storage --job-id ETi8NyT_SXvcZgPE-c6CfxDidsV22VUxQjbf5e6a-3A8M8YXTR_b6NiYxHapX_Gd93TDVOm77GBSAIELmvcstsR6ysB7
+
+# Once your job is ready, you can now download your file
+# http://docs.aws.amazon.com/cli/latest/reference/glacier/get-job-output.html
+aws glacier get-job-output --account-id - --vault-name rubi_cold_storage --job-id ETi8NyT_SXvcZgPE-c6CfxDidsV22VUxQjbf5e6a-3A8M8YXTR_b6NiYxHapX_Gd93TDVOm77GBSAIELmvcstsR6ysB7 my_output_file.txt
+
+
+###
+# Practical use case
+# Loop example
+###
+
+# You may want to queue up many jobs. If you populate a file with a list of lines each containing:
+# <filename> <archive_id>
+# You can do something like this to initiate jobs and save the returned jobID's for later:
+cat cold_storage_files | while read fname id ; do echo -n "$fname " ; aws glacier initiate-job --account-id - --vault-name rubi_cold_storage --cli-input-json "{\"jobParameters\": {\"Type\": \"archive-retrieval\", \"ArchiveId\": \"$id\"}}" |grep jobId|awk -F'"' '{print $4}' ; done > job_ids
+
+# You can then use this list to iterate over when checking your job status a day or two later.
+# Note that if you don't get any output beside your filename, the aws command returned an unexpected response.
+# Note that you may think you can omit <file> in your output. Don't, we use it when we're doing get-job-output!
+
+# Grab all your jobs once they're ready:
+cat job_ids | while read fname jobid ; do aws glacier get-job-output --account-id - --vault-name rubi_cold_storage --job-id "$jobid" "$fname"
+
+# Note here that we have "preserved" our directory structure in the fname (filename) of the object.
+# Object stores do not care about directory hierarchies. As such, to restore these files to their
+# original positions on the filesystem, further logic is required to parse the filename, mkdir -p,
+# and place the file in its original location.
+
+###
+# Alternatives
+###
+
+Feel free to look into GUI-based glacier tools such as FastGlacier(windows only) and SimpleGlacierUploader(java cross platform). These make small workloads much easier, but are not flexible enough to deal with large numbers of files (where you would use the loop example above). Additionally, we will not be supporting these tools.
+

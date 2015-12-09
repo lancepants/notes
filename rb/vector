@@ -1,0 +1,17 @@
+# git pull vector and npm its requirements, npm install, then
+cd git/vector/dist
+python -m SimpleHTTPServer 8080
+
+# Remote:
+cat > bintray-pcp-el6.repo
+[bintray-pcp-el6]
+name=bintray-pcp-el6
+baseurl=https://dl.bintray.com/pcp/el6
+gpgcheck=0
+enabled=1 
+proxy=http://fopp-pxy9000.las1.fanops.net:80
+
+yum install pcp pcp-webapi
+for s in pcp pmwebd ; do service $s start ; done
+
+

@@ -1,0 +1,97 @@
+###
+# Intro
+###
+esxi6 host: srd0005-mgt.trp-srd.com
+vSphere host: srd0013.trp-srd.com
+
+Note that below, anywhere where we use -s, --server=, or -H, we can specify either the vCenter server or a target ESXi host. If you are specifying -s vcenter.server , then you need to also specify -h esxihost or --vihost=esxihost (or equivalent vmware-cmd or other binary-cmd option).
+
+###
+# Getting vCLI working
+###
+
+Download VMware vSphere CLI 6.0 (x86_64, second .tar.gz package), extract it
+
+yum install openssl-devel
+cd vmware-vsphere-cli-distrib/ ; ./vmware-install.pl
+# Keep running vmware-install.pl and installing deps until it reports no errors and you have /usr/bin/esxcli
+
+# Now try to connect. Get an error about untrusted key.
+esxcli -s srd0005-mgt.trp-srd.com -u root -p 'mypasswd' system version get
+Connect to srd0005-mgt.trp-srd.com failed. Server SHA-1 thumbprint: A3:41:17:09:90:6E:E9:9C:A5:73:27:A2:E9:B4:73:9E:E7:E8:02:88 (not trusted).
+
+cat > ~/.visdkrc.hostname.trp-srd.com
+VI_SERVER = srd0005-mgt.trp-srd.com
+VI_USERNAME = root
+VI_PASSWORD = mypasswd
+VI_CACERTFILE = A3:41:17:09:90:6E:E9:9C:A5:73:27:A2:E9:B4:73:9E:E7:E8:02:88
+
+# You can also add this server to your credstore
+/usr/lib/vmware-vcli/apps/general/credstore_admin.pl add --server srd0005-mgt.trp-srd.com --username root --password mypasswd
+/usr/lib/vmware-vcli/apps/general/credstore_admin.pl add --server srd0005-mgt.trp-srd.com --thumbprint A3:41:17:09:90:6E:E9:9C:A5:73:27:A2:E9:B4:73:9E:E7:E8:02:88
+# After you do this, you should remove VI_CACERTFILE from your ~/.visdkrc.hostname.trp-srd.com , otherwise
+# you may get the following error:
+# Connect to srd0005-mgt.trp-srd.com failed with ssl error 0xb084002
+
+# Example usage:
+esxcli -c .visdkrc.srd0005-mgt.trp-srd.com system version get
+esxcli -c .visdkrc.srd0005-mgt.trp-srd.com storage san iscsi list
+
+
+###
+# Adding a new datastore
+#  An ESXi host can discover storage devices to which it has access, and format them as datastores. Typically iscsi devices are formatted VMFS.
+#  Depending on the storage vendor, one iscsi target may provide multiple LUNs (not in our nimble case). ESXi nomenclature expects this, so keep that in mind
+###
+# Do a storage rescan to check for new iscsi targets
+esxcli -s srd0005-mgt.trp-srd.com -u root -p 'trpadmin' storage core adapter rescan --all
+# So long as your iscsi target vol is exposed to a group that your esx host has access to, it will be able to see it with this command (after a rescan, above):
+esxcli -s srd0005-mgt.trp-srd.com -u root -p 'trpadmin' storage core path list|grep myvolname
+esxcli -s srd0005-mgt.trp-srd.com -u root -p 'trpadmin' storage core path list --device eui.b29afd547df4fdc16c9ce90022351dd5
+# See the Devfs Path: /vmfs/devices/disks/eui.b29a... ? You will use this path to format the device to vmfs filesystem:
+vmkfstools --server srd0005-mgt.trp-srd.com --username root --password trpadmin --diskformat thin --createfs -S mysecondapiclone /vmfs/devices/disks/eui.b29afd547df4fdc16c9ce90022351dd5
+# Now check your filesystem list to make sure it showed up
+esxcli -s srd0005-mgt.trp-srd.com -u root -p 'trpadmin' storage filesystem list
+
+
+
+# ESXi calls a LUN within a target a "device". eg: eui.98071249812... get a list of devices like so:
+esxcli -s srd0005-mgt.trp-srd.com -u root -p 'trpadmin' storage core device list
+# Note that found devices on scan are automatically "attached"
+esxcli -s srd0005-mgt.trp-srd.com -u root -p 'trpadmin' storage core device list -d eui.b29afd547df4fdc16c9ce90022351dd5
+
+
+# See storage adapters like this. Shows you the HBA name assigned to the iscsi initiator you've configured:
+esxcli -s srd0005-mgt.trp-srd.com -u root -p 'trpadmin' storage core adapter list
+# See volume name -> mountpoint mappings like this:
+esxcli -s srd0005-mgt.trp-srd.com -u root -p 'trpadmin' storage filesystem list
+
+###
+# To use vmware-cmd
+#  You need to use vmware-cmd to do virtual machine mgmt
+###
+sudo cpan ExtUtils::CBuilder
+sudo cpan Path::Class
+sudo cpan Crypt::SSLeay
+
+# Usage example
+vmware-cmd -H srd0005-mgt.trp-srd.com -U root -P mypasswd -l
+
+
+###
+# Create a VM walkthrough
+#  This assumes you've already created your datastore & {..FILL ME IN..} in the vSphere interface
+###
+
+# Check out your available datastores
+vifs --server srd0005-mgt.trp-srd.com -S
+
+
+###
+# extra
+###
+# Disable SSL cert checking entirely (untested)
+vi (command-youre-using).pl
+#After all the use statements add the following line
+$ENV{PERL_LWP_SSL_VERIFY_HOSTNAME} = 0;
+

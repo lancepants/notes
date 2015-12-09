@@ -1,0 +1,20 @@
+-A "foreign stream" is input from something else, such as kafka
+-MySQL uses the words SCHEMA and DATABASE interchangably. It appears that SQLStream prefers the word SCHEMA. 
+-Since SCHEMA is synonymous with DATABASE, first you have to define a schema name, and then SET SCHEMA myschema;  . This works like SET DATABASE mydatabase; - ie: there's no {braces} or other wrappers. When you create a stream after doing a set schema, the stream is created under that schema (aka database)
+-The format of this input stream is defined when you create the stream. This sets out what fields you've got on your incoming foreign stream
+
+
+EG1: Stream capturing order data from e-commerce pipeline
+CREATE OR REPLACE SCHEMA "WebData";
+SET SCHEMA '"WebData"';
+CREATE OR REPLACE STREAM "OrderData" (
+   "key_order"    BIGINT NOT NULL,
+   "key_user"     BIGINT,
+   "country"      SMALLINT,
+   "key_product"  INTEGER,
+   "quantity"     SMALLINT,
+   "eur"          DECIMAL(19,5),
+   "usd"          DECIMAL(19,5)
+) DESCRIPTION 'conditioned order data, ready for analysis';
+
+

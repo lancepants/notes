@@ -1,0 +1,99 @@
+HARDWARE
+~~Blade 1~~
+-all good
+
+~~Blade 2~~
+-blade 2 is getting a battery missing or not charged, and you have vd's configured for write-back mode. vd's affected:01. Write-through mode is active when battery failed, so these disks are gonna be real slow.
+-all disks reporting good
+
+~~Blade 3~~
+-has one failed disk, 1:0
+
+~~Blade 4~~
+-all good
+
+~~Blade 5~~
+-Will not install
+-has two dead disks, 1:2 and 1:6  (they go 0-6)
+--1:2 is "not responding"
+--1:6 is "FOREIGN, BAD"
+
+~~Blade 6~~
+-has a bad disk or three, and is crashing hard upon install with some sort of IRQ error. might be the controller. Getting a timeout checking "scsi-1", and just after some initial mount stuffs. it sometimes gets to package installation. it even installed after several reboots. getting buffer i/o error on device sdb..dunno wtf cause it was trying to write to /boot on /dev/sda. Running memtest but this looks like the controller or some super screwed disks on it
+
+~~Blade 7~~
+-all good
+
+~~Blade 8~~
+-all good
+
+~~Blade 9~~
+-Gets through install fine, then reports no OS found. Reconf'd raid...seeing system config error pre-bios message. Might just wanna recycle this
+
+~~Blade 10~~
+-good other than one disk
+-1:5 is reporting FOREGIN and did have UNCONF-BAD. Doesn't seem to be affecting anything though. Disk might have formerly been configured in a different raid controller. Rebuild reports "Failed to start operation on physical drive"
+
+Todo
+-Replace blades 2,6,9
+-Get 4 replacement disks
+--blade3 1:0
+--blade5 1:2
+--blade5 1:6
+--blade10 1:5
+
+
+
+
+-Seagate ST9300603SS
+-Default vg conf is dg0-4 with one disk in each of those. Then two spares or something?
+
+TODO:
+-Define partitioning in kickstart. Don't let autopart do it. (ref srd1001 anaconda-ks.cfg)
+-Re-partition 1002-1010 after ks with partition shit is correct
+-
+
+
+
+Connect to VNC server in dev rack:
+sh ~llaursen/git/mgmt/scripts/setup_vnc_tunnel.sh
+xtightvncviewer localhost:5901
+
+---------------Dec 9 2014--------------
+~~supermicro~~
+supermicro chassis - lab
+ADMIN : get keypass db from pete
+192.168.100.16 (can http to this)
+00:30:48:9c:fe:29
+
+super micro chassis switch 1 (top)
+100.17
+00:30:48:d9:4c:ac
+
+super micro chassis switch 2 (bottom)
+100.18
+00:30:48:d9:4c:b6
+
+1-10 are uplink ports (visible on back), 11-20 are blade switch ports (connected internally)
+~~~~
+
+~~Thor~~
+srd1.trp-srd.com
+root : trpadmin
+em0 : dhcp : 100.19 : 00:15:17:8f:ee:80  ##ETH0 INFO, NOT MGMT??
+~~~~
+
+~~HP Procurve 2650 (very top switch)~~
+srd2650
+Console cabled (serial to jumpbox) 
+
+telnet: 100.3 (might be 100.20!! we want 100.3 but manual config is jacked)
+00:17:08:e6:6d:80
+~~~~
+
+~~arista 7050S-64 (second switch from top. mostly fiber)~~
+Mgmt ethernet cabled to: procurve 2650 port 44
+IP: 192.168.100.2
+d8:50:e6:07:8e:26
+ssh admin : trpadmin
+~~~~

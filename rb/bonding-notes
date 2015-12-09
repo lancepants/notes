@@ -1,0 +1,40 @@
+# CentOS 6 bonding. If you are using C7+ using the team driver instead of bonding is much preferred
+
+# Set up your bond0 interface. mode=4 is lacp
+cat > /etc/sysconfig/network-scripts/ifcfg-bond0 
+DEVICE=bond0
+IPADDR=10.10.10.113
+NETMASK=255.255.255.0
+ONBOOT=yes
+BOOTPROTO=none
+USERCTL=no
+NM_CONTROLLED=no
+BONDING_OPTS="miimon=100 mode=4 lacp_rate=1"
+
+# Set up your member interfaces
+cat > /etc/sysconfig/network-scripts/ifcfg-p2p1 
+DEVICE=p2p1
+BOOTPROTO=none
+ONBOOT=yes
+MASTER=bond0
+SLAVE=yes
+USERCTL=no
+NM_CONTROLLED=no
+cat > /etc/sysconfig/network-scripts/ifcfg-p2p2
+DEVICE=p2p2
+BOOTPROTO=none
+ONBOOT=yes
+MASTER=bond0
+SLAVE=yes
+USERCTL=no
+NM_CONTROLLED=no
+
+# Restart network
+service network restart
+
+# Check your shit
+cat /proc/net/bonding/bond0
+## Bonding mode should be 802.3ad. MII status for both interfaces should be UP (assuming your switch is set up)
+
+# There are a lot of bonding mode options. Check some out here:
+https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html/Deployment_Guide/sec-Specific_Kernel_Module_Capabilities.html#sec-Using_Channel_Bonding

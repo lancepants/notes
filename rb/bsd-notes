@@ -1,0 +1,3 @@
+netstat -pantu|grep processname alternative:
+sockstat
+

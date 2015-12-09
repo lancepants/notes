@@ -1,0 +1,11 @@
+zkEnv.sh sets your java bin path. It looks for $JAVA_HOME. You have to "export JAVA_HOME". zkEnv.sh will add a /bin/java to whatever you've exported. Look in zookeeper.out for error...the start script reports STARTED even when it fails.
+
+CLI examples:
+bin/zkCli.sh -server 127.0.0.1:2181
+help
+ls /
+create /omg oh-my-god-data-string
+create /omg/wtf wut-the-fuck
+set /omg/wtf wut-the-eff
+get /omg
+

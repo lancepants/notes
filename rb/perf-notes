@@ -1,0 +1,149 @@
+Get the image of the OS stack from brendan gregg's webpage
+also this slide:
+http://www.slideshare.net/brendangregg/linux-performance-tools
+--grab the sar observability slide, pg 32
+
+--------BASIC--------
+CPU
+mpstat
+--look for uneven load, hot cpu's
+
+MEMORY
+free -m
+--buffers col shows your block device i/o cache
+--cached shows your virtual page cache
+vmstat -Sm 1
+--Virtual memory stats and more.
+swapon -s
+--show swap usage (if you have swap enabled)
+
+DISK
+iostat -xmdz 1
+--reads&writes/sec, blocks, avg request size, await:average wait for a request to disk to succeed, %util per disk
+
+
+-------INTERMEDIATE-------
+NETWORK
+tcpdump -i eth0 -w /tmp/out.tcpdump
+--Look for packets dropped by kernel, study packets blah blah
+netstat -s ; netstat -i
+--Stats. Conns dropped, retransmits, etc etc
+
+KERNEL/MULTI
+strace -tttT -p 123
+--system call tracer.
+-- -ttt:time(us) since epoch, -T: syscall time (<shown at the end>)
+--massive overhead. >100x. caution
+pidstat -d|-t 1
+--show CPU or disk IO stats of anything active over the last (1) second
+--more concise than top
+sar
+--lots of observability here (get picture, slide 32)
+
+-------ADVANCED------
+CPU
+perf_events, tiptop
+
+NETWORK
+ss -mop
+--socket statistics.
+
+DISK
+iotop
+--block device disk i/o by process. Per-process reads/writes
+--needs kernel support enabled CONFIG_TASK_IO_ACCOUNTING
+
+KERNEL/MULTI
+-perf_events, ftrace, eBPF, SystemTap, ktap, LTTng, dtrace4linux, sysdig...
+-ltrace, ss, iptraf, ethtool, snmpget, lldptool, iotop, blktrace, slabtop, /proc
+slabtop
+--kernel slab allocator memory usage
+--seems to show memory allocated for various functions (eg: ext4_inode_cache, sysfs_dir_cache...)
+ltrace -p 123
+--library call tracer. This is your glibc layer
+--eg: run cat > derp and don't type anything. now run ltrace -p <your-cat-pid> and then type and enter into your cat window. you should see librbary calls to read() and write(), then close() and exit() once you ctrl+d
+perf (aka perf_events)
+--perf lets you count how many performance counters or tracepoints are hit during a specified operation, or in general running of the system
+--Performance counters are CPU hardware registers that count hardware events such as instructions executed, cache-misses suffered, or branches mispredicted. 
+--Tracepoints are instrumentation points placed at logical locations in code, such as for system calls, TCP/IP events, file system operations etc.
+--You can also dynamically create tracepoints using the kprobes and uprobes frameworks - very powerful
+--perf stat -B dd if=/dev/zero of=/dev/null count=1000000 ::will show you general stats (in -Big numbers) on what the system is doing while running this command.
+--You can also specify which event type to follow, like so. You can do cycles or cycles:u or whatever. In this case, cycles:uk means measure at both User and Kernel levels:
+  perf stat -e cycles:uk dd if=/dev/zero of=/dev/null count=100000
+--perf record -e skb:consume -ag  ;  perf report
+taskset
+--assign a process to a certain CPU
+ftrace
+--ftrace is the new shit. Demoed on linux 3.2. No debuginfo or extra bits needed.
+--bgregg has developed apps on top of this like iosnoop, iolatency, opensnoop, funcgraph (trace a graph of kernel code flow), kprobe
+SystemTap
+--compiles tracing programs into kernel modules. Usually requires kernel debuginfo
+sysdig fd.type=file and evt.failed=true
+sysdig evt.type=open and fd.name contains /etc
+sysdig -p"%proc.name %fd.name" "evt.type=accept and proc.name!=httpd"
+--New tracer. Simple expressions. May be a replacement for strace
+--currently does syscalls and user-level processing only. May not be enough for kernel tracing
+ktap -le #list all probes
+ktap -le 'syscalls:sys_enter_*'  #list all probes of that type
+ktap -e 'trace syscalls:sys_enter_connect { print("connect() by: ", execname); }' #Trace connect() syscalls by process name
+--Currently unstable, but high ease of use and high scope/capability
+--http://www.brendangregg.com/ktap.html
+
+------WORKFLOW------
+Today:
+-ftrace can serve many needs today
+-perf_events can get even more detail, esp. with debuginfo
+-can use SystemTap, ktap as needed
+
+Sysdig has high ease of use, but is also not very mature and has a smaller scope/capability
+perf is a good middle ground
+ftrace is great, fully featured, and mature, but pretty hard to use
+systemtap is mature and kind of easy to use, but you need debuginfo
+
+Check out flame graphs. http://www.brendangregg.com/flamegraphs.html . They are svg's that let you visualize what calls are the most common. 
+
+
+-------JAVA---------
+jvisualvm
+jprofiler
+
+~Profiling java with perf~
+1) Prerequisites
+#JDK is required for various profiling tools. Also grab -debuginfo to remove some of those [unknown] entries in your perf record output
+yum install java-1.8.0-openjdk-debuginfo.x86_64 java-1.8.0-openjdk-devel.x86_64 java-1.8.0-openjdk.x86_64
+
+2) Java symbol translations
+#This is a "JVMTI" agent which can provide us with a java symbol table that perf can read (/tmp/perf-PID.map)
+https://github.com/jrudolph/perf-map-agent
+-OpenJDK REQUIRED TO BUILD (cmake .)
+-You will probably also have to add your jdk path to /usr/share/cmake/Modules/FindJava.cmake (JAVA_PATHS section) and FindJNI.cmake (JAVA_AWT_LIBRARY_DIRECTORIES section)
+-Once compiled, you need attach-main.jar, perf-java, and libperfmap.so. Copy them to the servers you are profiling. if you get library errors upon running, just copy the whole folder up...
+-EDIT YOUR perf-java FILE such that JAVA_HOME is set correctly (ie: to your jdk path, something like JAVA_HOME=/usr/lib/jvm/java)
+-./perf-java 1234   will generate /tmp/perf-1234.map. It doesn't stay "fresh" forever, so run your perf record straight away
+
+3) Collect cpu samples
+perf record -F 99 -a -g -- sleep 10
+perf script > out.perf
+
+4) Grab bgreggs flamegraph shit and make a flamegraph
+git clone https://github.com/brendangregg/FlameGraph
+cd FlameGraph
+cat out.perf | ./stackcollapse-perf.pl | ./flamegraph.pl --color=java > out-withmap.svg
+
+5)
+-Open your svg in a browser
+-If you see [unknown] and it's red, make sure your -debuginfo package is installed.
+-Better insight into java crap may be had by looking into bgreggs jdk patch https://bugs.openjdk.java.net/browse/JDK-8068945
+
+
+~The problem with hprof and other java profilers~
+http://www.brendangregg.com/blog/2014-06-09/java-cpu-sampling-using-hprof.html
+Summary: hprof includes "blocking time", so results are misleading. hprof (and others) sample the java RUNNABLE state - this does not mean RUNNING state. Stuff like epollWait will sit there not doing anything but staying in a runnable state, heavily skewing your results.
+
+There are commercial profilers out there such as YourKit, JProfiler, JRocket Flight Recorder(Note: -XX:+UnlockCommercialFeatures works to unlock). These do a bit better but not in all cases; beware.
+
+~Lightweight profilers~
+java-lightweight-profiler   #This was pretty buggy when I tried it, and collects limited samples.
+honest-profiler  #this project is more up to date than jlp. Try it out
+
+

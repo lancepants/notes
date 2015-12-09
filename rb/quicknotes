@@ -1,0 +1,91 @@
+# ip suite
+ip link # provides the ability to display link layer information, activate an interface, deactivate an interface, change link layer state flags, change MTU, the name of the interface, and even the hardware and Ethernet broadcast address. Output similar to ip addr, but is only concerned with link layer stuff (incl bonding, etc).
+ip link set eth3 up  # Same as ifconfig eth3 up
+ip a add 1.2.3.4/24 dev eth3
+ip r add default via 1.2.3.1 dev eth3
+
+# X redirect, virt-manager. Remote box needs xauth package installed.
+ssh -Y root@srd0009
+  virt-manager
+  #do shit to image. Now prep it (remove identifying info from ifcfg, udev, other...)
+  virt-sysprep -a c67.img
+  cp c67.img /var/opt/pf9/imagelibrary/data/
+  chown pf9:pf9group /var/opt/pf9/imagelibrary/data/*
+
+
+# pf bsd fw
+vim /etc/pf.conf.srd 
+pfctl -s all | vim -R -
+#q for pete: how does it know to use pf.conf.srd? where is /etc/rc.d/pf gettign $pf_program from?
+
+#pf writes logs in binary format. You gotta use tcpdump to view. This also means you can use
+#tcpdump's various filters to be more specific about your logs
+tcpdump -n -e -ttt -r /var/log/pflog   #This is not real time
+tcpdump -vv -n -e -ttt -i pflog0   #This is real time
+
+#Remember
+net.inet6.ip6.forwarding=1
+
+# You may encounter syntax errors when using commands that otherwise work using ipv4
+# "expression primitives have to be AND'd"
+tcpdump -v -i tun2 ip6 host 2000:beef:666::1000
+tcpdump -vv -i bxe1 ip6 and not host 2000:beef::1234:1234:0:1
+tcpdump -v -i bxe1 host _remote_ and udp and ip6
+
+
+# Virtual Interface Types
+aliases: eth0:2, eth0:3, eth2:6...
+  IP-aliases are now obsolete, but still backwards compatible. iproute2 supports multiple address/prefixes per interface without needing to create aliases
+
+VLANs: eth2.0, eth1.6, vlan0...
+  These let you partition a single interface into multiple broadcast domains. Your network card drivers have to support IEEE 802.1Q in order for this to work. This allows up to 4096 VLANs (12 bits)
+
+Stacked VLANs: 
+  Basically allows you to do trunking. IEEE 802.1ad support was mainlined in 2013 and is configured using ip link. eg: ip link add link eth0 eth0.1000 type vlan proto 802.1ad id 1000 ; ip link add link eth0.1000 eth0.1000.1000 type vlan proto 802.1q id 1000
+
+Bridges: br0, br172, ...
+  These are used to make multiple virtual or physical network interfaces act as if they were just one network interface. The linux ethernet bridge can be used for connecting multiple ethernet devices together. The connecting is fully transparent: hosts connected to one ethernet device see hosts connected to other ethernet devices which are part of the same bridge.
+   Bridges pretty much work like switches. They do not consult the ip headers but the ethernet frame headers. The first packet to an unknown ethernet destination is simply broadcasted to all ports, then the bridge remembers on which port the yet unknown ethernet destination replies. This knowledge is then put into a learning table. The next time a packet is sent to that specific ethernet mac, the learning table is consoluted to see which port the mac is at, then traffic is only forwarded to that specific port.
+
+ Tunnel interfaces: pppoe-dsl, tun0, vpn1 ...
+   These are used to send packets over a tunneling protocol such as GRE, IPsec, PPPoE, etc. This is simply an encapsulation of traffic in said protocol. *need more info here about routing and encapsulation path*
+
+
+# VNC alternative, way better way faster
+X2go
+
+
+# Cascading failure - Controlled Delay
+http://queue.acm.org/detail.cfm?id=283946
+n analyzing past incidents involving latency, we found that many of our worst incidents involved large numbers of requests sitting in queues awaiting processing. The services in question had a resource limit (such as a number of active threads or memory) and would buffer requests in order to keep usage below the limit. Because the services were unable to keep up with the rate of incoming requests, the queue would grow larger and larger until it hit an application-defined limit. To address this situation, we wanted to limit the size of the queue without impacting reliability during normal operations. We studied the research on bufferbloat as our problems seemed similar—the need to queue for reliability without causing excessive latency during congestion. We experimented with a variant of the CoDel1 (controlled delay) algorithm:
+
+  if (queue.lastEmptyTime() < (now - N seconds)) { 
+     timeout = M ms 
+  } else { 
+     timeout = N seconds; 
+  } 
+  queue.enqueue(req, timeout)
+
+Example:
+if 2950 < (3000 - 100)
+ timeout = 5ms
+else
+ timeout = 100ms
+queue.enqueue(req, timeout)
+
+Let's say it is 3000 right now, and the last time the queue was empty was at 2950. This algorithm runs and finds that now - N, 3000-100, 2900. Is 3000 less than 2950? No. So set the timeout to 100ms. This essentially means that yes, the queue is keeping up, as its contents have been emptied within the last 100ms. If they have not been emptied in the last 100ms, then start queuing up requests with a much more aggressive timeout of 5ms.
+
+The implication here is that queue items time out faster and get dropped from the queue, preventing a "standing queue". The application keeps running without suffering any major performance impact, but, messages are getting dropped (and whatever application is pushing requests to this queue may get an error back or have to deal with an incomplete request).
+
+An attractive property of this algorithm is that the values of M and N tend not to need tuning. Other methods of solving the problem of standing queues, such as setting a limit on the number of items in the queue or setting a timeout for the queue, have required tuning on a per-service basis. 
+We have found that a value of 5 milliseconds for M and 100 ms for N tends to work well across a wide set of use cases. Facebook's open source Wangle library provides an implementation of this algorithm which is used by their Thrift framework.
+
+# Cascading Failure - Adaptive LIFO (last-in, first-out)
+Most services process queues in FIFO (first-in first-out) order. During periods of high queuing, however, the first-in request has often been sitting around for so long that the user may have aborted the action that generated the request.
+During normal operating conditions, requests are processed in FIFO order, but when a queue is starting to form, the server switches to LIFO mode. FB looks to stay in FIFO mode until around 20% of the queue is in use.
+Once in LIFO mode, controlled delay (described above) will have kicked in as well, setting a short timeout on all requests. LIFO places new requests at the front of the queue, therefore giving that request the best chance to meet the deadline (5ms) set by Controlled Delay. The older requests in the queue are taken care of (ie: dropped) by CoDel if they aren't gotten to within their timeout.
+
+# Cascading Failure - Concurrency Control
+The client side code on facebook also does some overload prevention. It does this by keeping, per service, a number of outstanding requests in progress. If that number gets too high, any further requests immediately report failure.
+
+

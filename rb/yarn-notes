@@ -1,0 +1,15 @@
+OVERVIEW
+YARN (Yet Another Resource Negotiator) is Hadoop’s next-generation cluster scheduler. It allows you to allocate a number of containers (processes) in a cluster of machines, and execute arbitrary commands on them.
+
+When an application interacts with YARN, it looks something like this:
+
+1. Application: I want to run command X on two machines with 512MB memory.
+2. YARN: Cool, where’s your code?
+3. Application: http://path.to.host/jobs/download/my.tgz
+4. YARN: I’m running your job on node-1.grid and node-2.grid.
+
+Yarn has three important pieces: a ResourceManager, a NodeManager, and an ApplicationMaster.
+In a YARN grid, every machine runs a NodeManager, which is responsible for launching processes on that machine.
+Applications talk to ResourceManager when they wish to run something on the cluster, and the ResourceManager talks to every NodeManager in order to tell them what to run
+The ApplicationManager "application specific code which runs on the YARN cluster" which is responsible for asking for containers, handling notifications when a container fails, and "managing the application's workload" whatever that means.
+

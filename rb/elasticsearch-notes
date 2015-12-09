@@ -1,0 +1,229 @@
+THE DEFINITIVE GUIDEBOOK
+http://www.elastic.co/guide/en/elasticsearch/guide/current/index.html
+
+INSTALL
+./plugin --install lmenezes/elasticsearch-kopf/master
+./bin/plugin -i elasticsearch/marvel/latest
+
+
+----------------------------
+TERMINOLOGY
+
+Cluster: A cluster consists of one or more nodes which share the same cluster name. Each cluster has a single master node which is chosen automatically by the cluster and which can be replaced if the current master node fails.
+Node: one elasticsearch instance. Usually one instance per machine. At startup, a node will use unicast (or multicast, if specified) to discover an existing cluster with the same cluster name and will try to join that cluster.
+
+Index: An index is a logical namespace that groups together one or more shards. A shard is a lucene instance which contains documents. Documents are json objects that hold our data. One document is akin to saying one message. We don't want to interact with each shard from our application, so the idea of an index abstracts that away. We interact with the index, and elasticsearch takes care of the backend. An index has zero or more 'types,' which you define when you're doing a PUT to insert a document. These 'types' can logically group documents.
+
+Types: conceptually similar to a table in a database. This is used to relate data. Type's are "things" such as an employee, blog post, comment, or an email. You might PUT mycompany/employee/32 -d '{json data... when inserting a new document (index:mycompany type:employee docID:32) per employee. Types are 'mapped' automatically or via user definition in order to define how the data in each document of that type should be indexed.
+
+Document: conceptually similar to a row in a database. Can be thought of as 1 "message". A document has its own ID, 'belongs' to a type, which 'belongs' to an index. This is part of its metadata. A document has a _version which is incremented every time a change is made to a document (including deletion). Documents are IMMUTABLE: ie doing a PUT on an existing document to update its values will result in a NEW document being indexed (with an incremented _version, and created:false) and the old document marked as deleted. The deleted doc will eventually be cleaned up.
+
+Mapping: A mapping describes the schema definition used to describe each field in a JSON document (and its data type), as well as how they should be indexed in the Lucene indexes that lie under the hood. You can define your own, or let elasticsearch do it for you based on analyzing your document. Sometimes detected types might not be correct, or may be duplicates, or might not detect a date field as a date - if this happens, look at custom mapping.
+https://www.found.no/foundation/elasticsearch-mapping-introduction/
+
+Shard: because elasticsearch is a distributed search engine, an index can reside on one or more nodes. In order to accomplish this, an elasticsearch index is split into chunks, called shards. A shard is a single instance of Lucene, and a complete search engine in its own right.
+
+Primary vs Replica shards: elasticsearch will create, by default, 5 primary shards and one replica for each index. That means that each elasticsearch index will be split into 5 chunks and each chunk will have one copy, for high availability. The main difference between a primary and a replica shard is that only the primary shard can accept indexing requests. On the other hand both replica and primary shards can serve querying requests.
+
+ID: When combined with _index and _type, can uniquely identify a document. You can let elasticsearch generate an ID for you if you like, but it'll be an ugly 22char string.
+
+----------------------------
+SHORTHAND, MARVEL, SENSE
+./bin/plugin -i elasticsearch/marvel/latest
+http://srd1002:9200/_plugin/marvel/sense/index.html
+
+In examples you find in elasticsearch docs, they are dropping a bunch of information. They shorthand the following:
+curl -XGET 'localhost:9200/_count?pretty' -d '
+{
+    "query": {
+        "match_all": {}
+    }
+}'
+
+to this:
+GET /_count
+{
+    "query": {
+        "match_all": {}
+    }
+}
+
+Incidentally, this shorthand notation is what works in the marvel sense console link above.
+
+
+----------------------------
+ANATOMY OF A REQUEST
+curl -X<VERB> 'http(s)://srd1234:9200/<PATH>?<QUERY_STRING>' -d '<BODY>'
+
+VERB: GET, POST, PUT, HEAD, DELETE
+PATH: a path has an ENDPOINT in it. eg: _search,_search/template,_count,_cat,_settings,_warmer,etc.etc. 
+QUERY_STRING: optional sub-actions. eg: pretty,_source=indexnam*,fields=message,etc.etc. For a list, use /marvel/sense autocomplete.
+BODY: Your JSON-encoded request body. Whether you need this depends on which ENDPOINT you're using.
+
+-If you are getting 'invalidindexnameexception' or something of the like, be sure you're not including a BODY when you shouldn't be (like running _cat or _settings with a BODY will not work)
+
+-Read elasticsearch-simpletutorial for a handle on simple requests
+
+----------------------------
+FEATURES
+
+/~~ROUTING:
+
+Routing lets you hash based on something in order to determine which shard to put/get the document to/from. A normal search will hit all shards in an index, so using routing can be much more efficient.
+
+#Post a document, hash on user
+curl -XPOST 'http://localhost:9200/twitter/tweet?routing=kimchy' -d '{
+    "user" : "kimchy",
+    "postDate" : "2009-11-15T14:12:12",
+    "message" : "trying out Elasticsearch"
+}
+'
+#Now search for this using the same routing hash
+curl -XGET 'http://localhost:9200/twitter/tweet/_search?routing=kimchy' -d '{
+    "query": {
+        "filtered" : {
+            "query" : {
+                "query_string" : {
+                    "query" : "some query string here"
+                }
+            },
+            "filter" : {
+                "term" : { "user" : "kimchy" }
+            }
+        }
+    }
+}
+'
+~~/
+
+
+/~~PERCOLATOR: 
+A 'reverse-search' feature. This is hella confusing. Let's start by looking at a regular document:
+PUT /twitter/tweet/1 -d '
+{
+  "tweet": "percolators are confusing",
+  "nick": "@rubitweeter",
+  "name": "RP Ops",
+  "date": "2015-03-23",
+  "rt": 5,
+  "loc": {
+    "lat": 13.4,
+    "lon": 52.5
+  }
+}
+'
+Here we are pushing to the 'twitter' index, with documentation type 'tweet', and documentation id '1'
+
+PUT /_percolator/twitter/es-tweets
+#Finish me...
+~~/
+
+
+/~~CAT: 
+Prints out cluster information in pretty human-readable columns rather than ugly json.
+http://www.elastic.co/guide/en/elasticsearch/reference/current/cat.html  #Look at list in right column
+
+curl 'server1:9200/_cat/master?v'  #check out who the cluster master is. v is for verbose (show column headers)
+curl 'srd1004:9200/_cat/indices?bytes=b' | sort -rnk8 #show me all my indices, largest first. show bytes rather than human readable (so we can sort). pipe to sort, sort on size column
+curl 'server1:9200/_cat/nodes?h=ip,port,heapPercent,name' #only print certain columns
+curl 'server1:9200/_cat/allocation?v'
+...etc etc.
+~~/
+
+----------------------------
+QUICKIES
+
+-Create a new index, and specify number_of_shards and replicas:
+PUT /blogs
+{
+   "settings" : {
+      "number_of_shards" : 3,
+      "number_of_replicas" : 1
+   }
+}
+
+-Let's say we have an 8 node cluster. The above would only take advantage of a maximum of 6 of those nodes (3 primary shards, 3 replica shards). Let's double the amount of 'read-only' replicas:
+PUT /blogs/_settings
+{
+   "number_of_replicas" : 2
+}
+-ES will auto rebalance shards
+
+
+-Only care about two of the fields. Use source=:
+GET /website/blog/123?_source=title,text
+-Or you only care about the fields and don't want metadata, just use _source:
+GET /website/blog/123?_source
+
+-Check if a document exists. Only get the header:
+curl -i -XHEAD http://localhost:9200/website/blog/123
+-In the return output, filter for 200 OK or 404 or whatever
+
+-"Update" (and by update I mean write a new document and delete the old one) an existing document by doing GET /myindex/mytopic/123, saving and modifying that JSON data, then PUT /myindex/mytopic/123 {..new_json..} it back.
+
+-To update PART of the document or add fields, you gotta use POST with /_update and specify either 'doc' OR a script.
+-doc example, change about value and add a new field "herp":
+POST /megacorp/employee/1/_update
+{
+    "doc" : {
+        "about" :      "I like turtles",
+        "herp" :       "derp"
+    }
+}
+-This does a simple recursive merge against the existing json
+-Internally, ES is still creating a new document and marking the old for deletion (this read/write work now happens inside a lucene shard), this just saves you the normal GET/PUT overhead
+-Use this if you expect a document to be updated by multiple different processes at the same time:
+POST /amazon/widgets/123/_update?retry_on_conflicts=5 {...}
+
+-script example, use a _source builtin to incrememt the age field of our existing doc:
+POST /megacorp/employee/1/_update
+{
+  "script" : "ctx._source.age+=1"
+}
+-Groovy "dynamic" scripting is disabled by default due to (valid) security concerns. This value is passed to ES and compiled by groovy server-side, which obviously is a huge concern as anyone posting to the cluster could potentially craft an exploity command. Newer versions of ES recommend the use of pre-written scripts and script_id (https://www.elastic.co/blog/running-groovy-scripts-without-dynamic-scripting)
+
+
+-Ensure you're not "overwriting" an existing document by using either of these:
+PUT /website/blog/123?op_type=create {...}
+PUT /website/blog/123/_create {...}
+-If a document with that type and ID already exist in the website index, you'll get a 409 Conflict passed back
+
+-Delete is straightforward. Deleting a document doesn't immediately remove it from disk, it just marks it as deleted.
+DELETE /website/blog/123
+-ES cleans up deleted documents in the background as you index more info
+
+-Retrieve multiple documents at once by using _mget. _mget expects a docs [array]. Specify _source if you only want to see results of a certain field:
+GET /_mget
+{
+   "docs" : [
+      {
+         "_index" : "website",
+         "_type" :  "blog",
+         "_id" :    2
+      },
+      {
+         "_index" : "website",
+         "_type" :  "pageviews",
+         "_id" :    1,
+         "_source": "views"
+      }
+   ]
+}
+-Or if your mget is all in one index:
+GET /website/blog/_mget
+{
+   "docs" : [
+      { "_id" : 2 },
+      { "_type" : "pageviews", "_id" :   1 }
+   ]
+}
+
+-Or even easier, if all the docs have the same _index and _type, just pass an array of docIDs:
+GET /website/blog/_mget
+{
+   "ids" : [ "2", "1" ]
+}
+-_mget will return 200 OK if formed correctly, even if a listed docID is not of type "blog." In this event, ES will pass back a found:false in its response if your specified docID is not of type "blog"
+
+
+

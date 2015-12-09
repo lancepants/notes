@@ -1,0 +1,9 @@
+If its software that was dev'd externally, but we built internally - thats what the `Operations` repos are for. If something was dev'd and built internally (adengine, tomcat applictions) then they belong in the TRP "promotion" repos
+
+#fpm can use specified pyth+pip version, and can even replace the #! at the top of all scripts with a specified python binary path:
+for i in awscli bcdoc colorama docutils rsa argparse jmespath python-dateutil ordereddict simplejson six pyasn1 ; do fpm -s python -t rpm -m "Lance Laursen <llaursen@rubiconproject.com>" --vendor "Rubicon Project" -d "python27" --python-package-name-prefix python27 --python-bin /usr/local/bin/python2.7 --python-easyinstall /usr/local/bin/easy_install-2.7 --python-scripts-executable /usr/local/bin/python2.7  $i ; done
+
+#make your own dependencies too:
+fpm -s python -t rpm -m "Lance Laursen <llaursen@rubiconproject.com>" --vendor "Rubicon Project" --no-auto-depends -d "python27-jmespath >= 0.7.1" -d "python27-simplejson >= 3.3.0" -d "python27-dateutil >= 2.1" -d "python27" --python-package-name-prefix python27 --python-bin /usr/local/bin/python2.7 --python-easyinstall /usr/local/bin/easy_install-2.7 --python-scripts-executable /usr/local/bin/python2.7 botocore
+
+

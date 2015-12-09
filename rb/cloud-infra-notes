@@ -1,0 +1,23 @@
+Inventory Mgmt
+-Some people generate internal hostnames/dns config based on instance tags. ie: instance0001, nginx, zone3, lb2 = 0001-nginx-z3-lb2.mydomain.net . airbnb's "zonify" application does exactly this, generating output for amazon's route53
+--The above assumes you're getting some sort of unique number/string (instance0001) so that if you have two nginx servers in the same zone they won't end up with duplicate hostnames. This might become tricky/cause problems
+-Collins looks like it might be alright. Basically duplicates cobbler fields as well as tags field in pf9 though. It does add IP management, next avail IP etc.
+
+Docker and ipv6
+-currently pretty hopeless. The main expectation (as of docker 1.5) is that each docker host is treated as a router. That means your upstream router needs to have a route to your docker host, saying "traffic for 2000:beef::/64 goes to 2000:beef::1" where ::1 is your docker host. So, that means a route entry/removal on your router for each docker host you spin up/spin down
+-Alternately, you can run a neighbour discovery proxy (such as ndppd) on each of your docker hosts. What this does is take neighbour discovery requests and forwards them on to a specified subnet/interface (ie: docker0). A container responds, and then ndppd responds to your router on behalf of the container, with the FE80 of your docker host. Traffic then routes to your docker host, hits its routing table, and gets forwarded on to the container.
+--This is currently pretty shit. You *must* define your --fixed-cidr-v6 as a smaller subnet than your docker host or routing won't work. Eg:
+  docker host:
+    eth0(slaac)=2000:beef::f816:3eff:fedf:6bca/64
+    fixed-cidr-v6=2000:beef:0:0:c::/80
+    ends up with route=2000:beef:0:0:c::/80 dev docker0
+    NEEDS: sysctl net.ipv6.conf.eth0.accept_ra=2
+    NEEDS: ndppd -c /etc/ntppd.conf
+       proxy eth0 {
+         router yes
+	 rule 2000:beef::/64 {
+	   auto
+	 }
+--If you're using a "non-routed-to" docker, you need to set sysctl net.ipv6.conf.eth0.accept_ra=2 in order to continue doing SLAAC on your docker host properly
+--The bad: Docker generates container MACs that are based on whatever IP it assigns to docker0 (typically in subnet 172.17.0.0/16). This means that if two servers running docker end up picking the same subnet, there is a chance you can end up with containers on separate hosts having the same MAC, which in turn would cause ipv6 address collisions at your upstream router. This issue can be avoided by choosing a unique fixed-cidr prefix per docker host rather than just using 'c' like in the example above...
+

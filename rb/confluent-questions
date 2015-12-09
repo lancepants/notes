@@ -1,0 +1,4 @@
+-Is it better to run mirrormaker at the source or at the destination? Why?
+-Why is it recommended that the offsets topic be more than 50 partitions in production?
+-What tools do you guys use for troubleshooting performance issues and bugs?
+-How do I recover data from an inoperable cluster/corrupt log? Work on individual log segments?

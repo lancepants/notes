@@ -1,0 +1,56 @@
+~~REST API QUICKSTART/SETUP~~
+# Get the ca.crt for your nimble appliance. In chrome, browse to its web interface then click on the lock beside https in the bar. Click the "Details" tab, then click the "export" button. Name it srdnimble-ca.crt
+
+# Make sure the API is active
+curl -i --insecure --cacert './srdnimble-ca.crt' -X 'GET' https://nimble-mgmt.trp-srd.com:5392/versions
+# Should return name: v1 or similar. You use this in subsequent api requests.
+
+# Get an auth token
+curl -i --insecure --cacert './srdnimble-ca.crt' -X 'POST' -d '{"data":{"password":"admin","username":"admin"}}' https://nimble-mgmt.trp-srd.com:5392/v1/tokens
+# Should return "session_token":"lalalae99198db650ee0fd4bf9d8blabla". You use this in subsequent api requests.
+
+# Test your auth token by getting a list of available arrays
+curl -i --insecure --cacert './srdnimble-ca.crt' -X 'GET' -H "X-Auth-Token:a65f14a6e99198db650ee0fd4bf9d8ba" https://nimble-mgmt.trp-srd.com:5392/v1/arrays
+
+
+~~VOLUME OPERATIONS~~
+# Create a 1024MB volume
+curl -i --insecure --cacert './srdnimble-ca.crt' -X 'POST' -d '{"data":{"name":"myfirstapivol","size":"1024"}}' -H "X-Auth-Token:a65f14a6e99198db650ee0fd4bf9d8ba" https://nimble-mgmt.trp-srd.com:5392/v1/volumes
+# See the "id":"0248712410bebc289070000" or whatever passed back? That's your volume ID
+
+# Retrieve a volumeID through a read
+curl -i --insecure --cacert './srdnimble-ca.crt' -X 'GET' -H "X-Auth-Token:a65f14a6e99198db650ee0fd4bf9d8ba" https://nimble-mgmt.trp-srd.com:5392/v1/volumes?name=myfirstapivol
+
+# Offline and then Delete a vol
+curl -i --insecure --cacert './srdnimble-ca.crt' -X 'PUT' -d '{"data":{"online":"false"}}' -H "X-Auth-Token:a65f14a6e99198db650ee0fd4bf9d8ba" https://nimble-mgmt.trp-srd.com:5392/v1/volumes/06264b0888f3563daa000000000000000000000077
+curl -i --insecure --cacert './srdnimble-ca.crt' -X 'DELETE' -H "X-Auth-Token:a65f14a6e99198db650ee0fd4bf9d8ba" https://nimble-mgmt.trp-srd.com:5392/v1/volumes/06264b0888f3563daa000000000000000000000077
+
+
+~~SNAPSHOT OPERATIONS~~
+# Create a snapshot of an existing volume
+curl -i --insecure --cacert './srdnimble-ca.crt' -X 'POST' -d '{"data":{"name":"SNAPmyfirstapivol","vol_id":"06264b0888f3563daa000000000000000000000077"}}' -H "X-Auth-Token:4511d9744ce92703c0a1ac9769bccac" https://nimble-mgmt.trp-srd.com:5392/v1/snapshots
+# You should get back a json with an id like this "id":"04264b0888f3563daa000000000000007700000156" . It's your snapshot ID. Save for later.
+
+# Get a list of snapshots avail from a certain vol_name (can also use /snapshots/{vol_id} or /snapshots/detail?vol_name= or detail/{vol_id})
+curl -i --insecure --cacert './srdnimble-ca.crt' -X 'GET' -H "X-Auth-Token:4511d9744ce92703c0a1ac9769bccac" https://nimble-mgmt.trp-srd.com:5392/v1/snapshots?vol_name=myfirstapivol
+
+# Read the REST API Reference doc for UPDATE and DELETE.
+
+
+~~Zero Copy Clones~~
+# You must first make a snapshot of the volume you would like to clone
+curl -i --insecure --cacert './srdnimble-ca.crt' -X 'POST' -d '{"data":{"name":"SNAPmyfirstapivol","vol_id":"06264b0888f3563daa000000000000000000000077"}}' -H "X-Auth-Token:4511d9744ce92703c0a1ac9769bccac" https://nimble-mgmt.trp-srd.com:5392/v1/snapshots
+# Keep the snapshot ID you get back from this command. Or, use -X 'GET' https://nimble/v1/snapshots?vol_name=vol_I_am_cloning as documented above to get a snapshot ID to use
+
+# Now create the vol, passing in extra opts for clone stuff
+curl -i --insecure --cacert './srdnimble-ca.crt' -X 'POST' -d '{"data":{"name":"myfirstapiclone","clone":"true","base_snap_id":"04264b0888f3563daa000000000000007700000156","online":"true"}}' -H "X-Auth-Token:4511d9744ce92703c0a1ac9769bccac" https://nimble-mgmt.trp-srd.com:5392/v1/volumes
+# Note cloned vols inherit access control records from their parent. This can be changed after the vol is created.
+
+~~ACCESS CONTROL RECORDS~~
+# Add a volume to an existing iscsi initiator group
+curl -i --insecure --cacert './srdnimble-ca.crt' -X 'POST' -d '{"data":{"initiator_group_id":"02264b0888f3563daa000000000000000000000004","vol_id":"06264b0888f3563daa00000000000000000000007a"}}' -H "X-Auth-Token:48c83a85d6e63b777c52266318d57ba5" https://nimble-mgmt.trp-srd.com:5392/v1/access_control_records
+# Note that VMware still requires you to "add storage", it won't automatically add whatever it finds in the initiator group target list provided by your SAN/other
+
+
+
+

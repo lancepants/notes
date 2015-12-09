@@ -1,0 +1,25 @@
+-Create a dict with infos like this (seamicro 64 server = 4x4x4):
+dicky = {
+'server1' : (x1, y1, z1)
+'server2' : (x2, y1, z1)
+'server3' : (x3, y1, z1)
+'server4' : (x4, y1, z1)
+'server5' : (x1, y2, z1)
+'server6' : (x1, y3, z1)
+....
+'server64' : (x4, y4, z4)
+}
+
+Bash gen: for x in 1 2 3 4 ; do for y in 1 2 3 4 ; do for z in 1 2 3 4 ; do printf "($x, $y, $z)\n" ; done ; done; done
+
+
+Then use euclidean distance (numpy is easiest module) to calculate distance between two nodes:
+
+a = numpy.array(dicky['server1'])
+b = numpy.array(dicky['server2'])
+dist = numpy.linalg.norm(a-b)
+
+#numpy.array expects a tuple. eg numpy.array((1,1,2))
+
+Formula for distance between two 3d points:
+dist = sqrt((xa-xb)^2 + (ya-yb)^2 + (za-zb)^2)

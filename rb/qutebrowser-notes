@@ -1,0 +1,21 @@
+Run :help for the quickstart/keybindings page
+Run :adblock-update occaisionally
+
+:set content allow-plugins true  -- enable flash and other plugins 
+
+cd -- remove all finished downloads
+ad -- cancel download
+
+gl -- move tab to the left
+gr -- move tab to the right
+
+:set tabs background-tabs true
+:set colors tabs.bg.selected white
+:set colors tabs.bg.even grey
+:set colors tabs.bg.odd grey
+:set colors tabs.fg.selected.odd black
+:set hints opacity 0.9
+:set storage prompt-download-directory false
+:set searchengines DEFAULT https://google.com/search?q={}
+
+

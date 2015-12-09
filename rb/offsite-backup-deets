@@ -1,0 +1,7 @@
+
+
+13:34 PM
+[llaursen@frpd-sql0000.lab1 ~]$ df /mnt/backups/
+Filesystem           1K-blocks      Used Available Use% Mounted on
+10.83.17.21:/export/revvdb/backups
+                     18253611008 15056889664 3196721344  83% /mnt/backups

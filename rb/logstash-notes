@@ -1,0 +1,116 @@
+http://logstash.net/docs/1.4.2/tutorials/getting-started-with-logstash
+
+~~ULTRA QUICKSTART~~
+elasticsearch-1.4.2/bin/elasticsearch  #port 9200 default
+#exec on cmd line with -e
+bin/logstash -e 'input { stdin { } } output { elasticsearch { host => localhost } stdout { } }'
+  blah blah lalala
+curl 'http://localhost:9200/_search?lalala'
+~~~~~~~~~
+
+~~QUICKSTART~~
+Grab the tar, then run logstash like this:
+bin/logstash -e 'input { stdin { } } output { stdout {} }'
+  hello world
+  2013-11-21T01:22:14.405+0000 0.0.0.0 hello world
+
+Now run again but change the output 'codec':
+bin/logstash -e 'input { stdin { } } output { stdout { codec => rubydebug } }'
+  goodnight moon
+  {
+   "message" => "goodnight moon",
+   "@timestamp" => "2013-11-20T23:48:05.335Z",
+   "@version" => "1",
+   "host" => "my-laptop"
+  }
+
+Now set up and run elasticsearch (grab the tar, extract) and run it:
+  elasticsearch-1.4.2/bin/elasticsearch
+This defaults to port 9200
+
+Now run logstash again with output to elasticsearch running on localhost:
+  bin/logstash -e 'input { stdin { } } output { elasticsearch { host => localhost } }'
+  blah blah lalala
+
+Now search for your message in elasticsearch:
+  curl 'http://localhost:9200/_search?lalala'
+  (returns a bunch of json)
+
+Now run logstash with two outputs so it's sent to elasticsearch and you see output:
+  bin/logstash -e 'input { stdin { } } output { elasticsearch { host => localhost } stdout { } }'
+
+kopf is a web administration tool for elasticsearch:
+  https://github.com/lmenezes/elasticsearch-kopf
+  (or) elasticsearch-1.4.2/bin/plugin -install lmenezes/elasticsearch-kopf
+Also, lots of plugins avail at http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-plugins.html
+
+You might notice that Logstash was smart enough to create a new index in Elasticsearch… The default index name is in the form of logstash-YYYY.MM.DD, which essentially creates one index per day. At midnight (GMT?), Logstash will automagically rotate the index to a fresh new one, with the new current day’s timestamp. This allows you to keep windows of data, based on how far retroactively you’d like to query your log data. Of course, you can always archive (or re-index) your data to an alternate location, where you are able to query further into the past. If you’d like to simply delete old indices after a certain time period, you can use the Elasticsearch Curator tool.
+
+You can also shove this stuff in a config file:
+cat > /etc/logstash/conf.d/stdinreader.conf
+input { stdin { } }
+output {
+  elasticsearch { host => localhost }
+  stdout { codec => rubydebug }
+}
+
+And then run:
+logstash -f /etc/logstash/conf.d/stdinreader.conf
+
+We've got it set up so whatever you put in /etc/logstash/conf.d gets read upon service start. Look in work/elk for more interesting config examples (conditionals, etc).
+~~~~~~~~~
+
+INPUTS
+Common:
+Syslog, file (ie:tail -f), redis, lumberjack (from logstash_forwarder)
+
+Logstash_forwarder (formerly lumberjack) is a client that is meant to sit as a client on machines, or at some sort of proxy point. It'll do SSL, you can pipe stuff to it, and it's meant to be lightweight.
+
+FILTERS
+grok: 
+  parses arbitrary text and structures it. Grok is currently the best way in Logstash to parse unstructured log data into something structured and queryable. With 120 patterns shipped built-in to Logstash, it’s more than likely you’ll find one that meets your needs!
+mutate:
+  The mutate filter allows you to do general mutations to fields. You can rename, remove, replace, and modify fields in your events.
+drop:
+  drop an event completely, for example, debug events.
+clone:
+  make a copy of an event, possibly adding or removing fields.
+geoip:
+  adds information about geographical location of IP addresses (and displays amazing charts in kibana)
+
+OUTPUTS
+Some of the more popular: elasticsearch, file, graphite, statsd
+
+CODECS
+These are basically just like a filter. You put them on either your input or your output. They can match incoming data format, or push data out as a certain data format. They allow you to easily separate out your message/serialized content from the surrounding transport information.
+popular: json (encode or decode data in JSON format), multiline(take multiline and merge to single event. eg: java exception / stacktrace msgs)
+
+
+!!There's a bigass list of inputs, codecs, filters, and outputs available here under plugin documentation: http://logstash.net/docs/1.4.2/ !!
+
+
+cat > /tmp/access_log
+71.141.244.242 - kurt [18/May/2011:01:48:10 -0700] "GET /admin HTTP/1.1" 301 566 "-" "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.2.3) Gecko/20100401 Firefox/3.6.3"
+134.39.72.245 - - [18/May/2011:12:40:18 -0700] "GET /favicon.ico HTTP/1.1" 200 1189 "-" "Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0; .NET CLR 2.0.50727; .NET CLR 3.0.4506.2152; .NET CLR 3.5.30729; InfoPath.2; .NET4.0C; .NET4.0E)"
+98.83.179.51 - - [18/May/2011:19:35:08 -0700] "GET /css/main.css HTTP/1.1" 200 1837 "http://www.safesand.com/information.htm" "Mozilla/5.0 (Windows NT 6.0; WOW64; rv:2.0.1) Gecko/20100101 Firefox/4.0.1"
+
+bin/logstash -f /etc/logstash/conf.d/
+~~~~~~~~
+
+~~MISC~~
+http://logstash.net/docs/1.4.2/life-of-an-event
+Logstash is not intended to be a data storage mechanism. As such, it does not provide on-disk buffering. It simply has separate ruby "SizedQueue"'s for each of input, filter, and output definitions. When a queue gets full, it BLOCKS.
+
+https://github.com/logstash-plugins/logstash-output-kafka
+As of 1.5, logstash has a built-in kafka support, with logstash-output-kafka and logstash-input-kafka. Prior to 1.5 a separate project existed(joekiller), which was then merged into 1.5.
+~~~~~~~~
+
+~~PERFORMANCE~~
+The thread model in logstash is currently:
+input threads | filter worker threads | output worker
+
+You might not even have a filter thread. So, you've got at a minimum 2 or 3 threads running. These typically run on separate CPUs.
+Logstash names its threads something descriptive like so:
+'Inputs will show up as "<inputname" and filter workers as "|worker" and outputs as ">outputworker" (or something similar). Other threads may be labeled as well, and are intended to help you identify their purpose should you wonder why they are consuming resources'
+Maybe one of your CPUs is pinned. Which thread is the offender?? A faulty filter? or output? Use jtop and top to find out! http://www.semicomplete.com/blog/geekery/debugging-java-performance.html
+~~~~~~~~

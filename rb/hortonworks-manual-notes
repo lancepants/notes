@@ -1,0 +1,323 @@
+remember to start up zkfc once HDFS NameNode is installed and HA is enabled
+/usr/hdp/current/hadoop-client/sbin/hadoop-daemon.sh start zkfc
+
+Namenode: srd1002
+SecondaryNameNode: srd1003
+DataNodes: srd1002,3,4
+ResourceManager: srd1003
+{YARN,MAPRED}JobHistoryServer: srd1003
+NodeManager: srd1002,3,4
+
+NEW:
+Namenode: srd1002
+SecondaryNameNode: srd1003
+DataNodes: srd1002,3,4
+Resourcemanager: srd1002
+JobHistoryServer: srd1002
+NodeManager: srd1002,3,4
+
+
+
+\~~~~BEGIN BASH_PROFILE~~~~\
+# Set up hortonworks env variable crap
+/opt/hdp_manual_install_rpm_helper_files-2.2.0.0.2041/scripts/directories.sh
+/opt/hdp_manual_install_rpm_helper_files-2.2.0.0.2041/scripts/usersAndGroups.sh
+#!/bin/bash
+
+#
+# Users and Groups
+#
+
+# User which will own the HDFS services.
+export HDFS_USER=hdfs ;
+
+# User which will own the YARN services.
+export YARN_USER=yarn ;
+
+# User which will own the MapReduce services.
+export MAPRED_USER=mapred ;
+
+# User which will own the Pig services.
+export PIG_USER=pig ;
+
+# User which will own the Hive services.
+export HIVE_USER=hive ;
+
+# User which will own the Templeton services.
+export WEBHCAT_USER=hcat ;
+
+# User which will own the HBase services.
+export HBASE_USER=hbase ;
+
+# User which will own the ZooKeeper services.
+export ZOOKEEPER_USER=zookeeper ;
+
+# User which will own the Oozie services.
+export OOZIE_USER=oozie ;
+
+# User which will owen the Accumulo services.
+export ACCUMULO_USER=accumul ;
+
+# A common group shared by services.
+export HADOOP_GROUP=hadoop ;
+#!/bin/bash
+
+#
+# Directories Script
+#
+# 1. To use this script, you must edit the TODO variables below for your environment.
+#
+# 2. Warning: Leave the other parameters as the default values. Changing these default values will require you to
+#    change values in other configuration files.
+#
+
+#
+# Hadoop Service - HDFS
+#
+
+# Space separated list of directories where NameNode will store file system image. For example, /mnt/grid/hadoop/hdfs/nn /mnt/grid1/hadoop/hdfs/nn
+export DFS_NAME_DIR="/mnt/grid/hadoop/hdfs/nn /mnt/grid1/hadoop/hdfs/nn";
+
+# Space separated list of directories where DataNodes will store the blocks. For example, /mnt/grid/hadoop/hdfs/dn /mnt/grid1/hadoop/hdfs/dn /mnt/grid2/hadoop/hdfs/dn
+export DFS_DATA_DIR="/mnt/grid/hadoop/hdfs/dn /mnt/grid1/hadoop/hdfs/dn /mnt/grid2/hadoop/hdfs/dn";
+
+# Space separated list of directories where SecondaryNameNode will store checkpoint image. For example, /mnt/grid/hadoop/hdfs/snn /mnt/grid1/hadoop/hdfs/snn /mnt/grid2/hadoop/hdfs/snn
+export FS_CHECKPOINT_DIR="/mnt/grid/hadoop/hdfs/snn /mnt/grid1/hadoop/hdfs/snn /mnt/grid2/hadoop/hdfs/snn";
+
+
+
+# Directory to store the HDFS logs.
+export HDFS_LOG_DIR="/var/log/hadoop/hdfs";
+
+# Directory to store the HDFS process ID.
+export HDFS_PID_DIR="/var/run/hadoop/hdfs";
+
+# Directory to store the Hadoop configuration files.
+export HADOOP_CONF_DIR="/etc/hadoop/conf";
+
+#
+# Hadoop Service - YARN 
+#
+
+# Space separated list of directories where YARN will store temporary data. For example, /mnt/grid/hadoop/yarn/local /mnt/grid1/hadoop/yarn/local /mnt/grid2/hadoop/yarn/local
+export YARN_LOCAL_DIR="/mnt/grid/hadoop/yarn/local /mnt/grid1/hadoop/yarn/local /mnt/grid2/hadoop/yarn/local";
+
+# Directory to store the YARN logs.
+export YARN_LOG_DIR="/var/log/hadoop/yarn"; 
+
+# Space separated list of directories where YARN will store container log data. For example, /mnt/grid/hadoop/yarn/logs /mnt/grid1/hadoop/yarn/logs /mnt/grid2/hadoop/yarn/logs
+export YARN_LOCAL_LOG_DIR="/mnt/grid/hadoop/yarn/logs /mnt/grid1/hadoop/yarn/logs /mnt/grid2/hadoop/yarn/logs";
+
+# Directory to store the YARN process ID.
+export YARN_PID_DIR="/var/run/hadoop/yarn";
+
+#
+# Hadoop Service - MAPREDUCE
+#
+
+# Directory to store the MapReduce daemon logs.
+export MAPRED_LOG_DIR="/var/log/hadoop/mapred";
+
+# Directory to store the mapreduce jobhistory process ID.
+export MAPRED_PID_DIR="/var/run/hadoop/mapred";
+
+#
+# Hadoop Service - Hive
+#
+
+# Directory to store the Hive configuration files.
+export HIVE_CONF_DIR="/etc/hive/conf";
+
+# Directory to store the Hive logs.
+export HIVE_LOG_DIR="/var/log/hive";
+
+# Directory to store the Hive process ID.
+export HIVE_PID_DIR="/var/run/hive";
+
+#
+# Hadoop Service - WebHCat (Templeton)
+#
+
+# Directory to store the WebHCat (Templeton) configuration files.
+export WEBHCAT_CONF_DIR="/etc/hcatalog/conf/webhcat";
+
+# Directory to store the WebHCat (Templeton) logs.
+export WEBHCAT_LOG_DIR="var/log/webhcat";
+
+# Directory to store the WebHCat (Templeton) process ID.
+export WEBHCAT_PID_DIR="/var/run/webhcat";
+
+#
+# Hadoop Service - HBase
+#
+
+# Directory to store the HBase configuration files.
+export HBASE_CONF_DIR="/etc/hbase/conf";
+
+# Directory to store the HBase logs.
+export HBASE_LOG_DIR="/var/log/hbase";
+
+# Directory to store the HBase logs.
+export HBASE_PID_DIR="/var/run/hbase";
+
+#
+# Hadoop Service - ZooKeeper
+#
+
+# Directory where ZooKeeper will store data. For example, /mnt/grid1/hadoop/zookeeper/data
+export ZOOKEEPER_DATA_DIR="/mnt/grid1/hadoop/zookeeper/data";
+
+# Directory to store the ZooKeeper configuration files.
+export ZOOKEEPER_CONF_DIR="/etc/zookeeper/conf";
+
+# Directory to store the ZooKeeper logs.
+export ZOOKEEPER_LOG_DIR="/var/log/zookeeper";
+
+# Directory to store the ZooKeeper process ID.
+export ZOOKEEPER_PID_DIR="/var/run/zookeeper";
+
+#
+# Hadoop Service - Pig
+#
+
+# Directory to store the Pig configuration files.
+export PIG_CONF_DIR="/etc/pig/conf";
+
+# Directory to store the Pig logs.
+export PIG_LOG_DIR="/var/log/pig";
+
+# Directory to store the Pig process ID.
+export PIG_PID_DIR="/var/run/pig";
+
+
+#
+# Hadoop Service - Oozie
+#
+
+# Directory to store the Oozie configuration files.
+export OOZIE_CONF_DIR="/etc/oozie/conf"
+
+# Directory to store the Oozie data.
+export OOZIE_DATA="/var/db/oozie"
+
+# Directory to store the Oozie logs.
+export OOZIE_LOG_DIR="/var/log/oozie"
+
+# Directory to store the Oozie process ID.
+export OOZIE_PID_DIR="/var/run/oozie"
+
+# Directory to store the Oozie temporary files.
+export OOZIE_TMP_DIR="/var/tmp/oozie"
+
+#
+# Hadoop Service - Sqoop
+#
+export SQOOP_CONF_DIR="/etc/sqoop/conf"
+
+#
+# Hadoop Service - Accumulo
+#
+export ACCUMULO_CONF_DIR="/etc/accumulo/conf";
+
+export ACCUMULO_LOG_DIR="/var/log/accumulo"
+
+/~~~~END BASH_PROFILE~~~~/
+
+
+
+
+yum install -y snappy snappy-devel lzo lzo-devel hadooplzo hadooplzo-native hadoop hadoop-hdfs hadoop-libhdfs hadoop-yarn hadoop-mapreduce hadoop-client openssl
+mkdir -p $DFS_DATA_DIR;
+chown -R $HDFS_USER:$HADOOP_GROUP $DFS_DATA_DIR;
+chmod -R 750 $DFS_DATA_DIR;
+mkdir -p $YARN_LOCAL_DIR;
+chown -R $YARN_USER:$HADOOP_GROUP $YARN_LOCAL_DIR;
+chmod -R 755 $YARN_LOCAL_DIR;
+mkdir -p $YARN_LOCAL_LOG_DIR;
+chown -R $YARN_USER:$HADOOP_GROUP $YARN_LOCAL_LOG_DIR;
+chmod -R 755 $YARN_LOCAL_LOG_DIR;
+mkdir -p $HDFS_LOG_DIR;
+chown -R $HDFS_USER:$HADOOP_GROUP $HDFS_LOG_DIR;
+chmod -R 755 $HDFS_LOG_DIR;
+mkdir -p $YARN_LOG_DIR;
+chown -R $YARN_USER:$HADOOP_GROUP $YARN_LOG_DIR;
+chmod -R 755 $YARN_LOG_DIR;
+mkdir -p $HDFS_PID_DIR;
+chown -R $HDFS_USER:$HADOOP_GROUP $HDFS_PID_DIR;
+chmod -R 755 $HDFS_PID_DIR
+mkdir -p $YARN_PID_DIR;
+chown -R $YARN_USER:$HADOOP_GROUP $YARN_PID_DIR;
+chmod -R 755 $YARN_PID_DIR;
+mkdir -p $MAPRED_LOG_DIR;
+chown -R $MAPRED_USER:$HADOOP_GROUP $MAPRED_LOG_DIR;
+chmod -R 755 $MAPRED_LOG_DIR;
+mkdir -p $MAPRED_PID_DIR;
+chown -R $MAPRED_USER:$HADOOP_GROUP $MAPRED_PID_DIR;
+chmod -R 755 $MAPRED_PID_DIR;
+hdp-select set all 2.2.0.0-2041
+mkdir -p $ZOOKEEPER_LOG_DIR;chown -R $ZOOKEEPER_USER:$HADOOP_GROUP $ZOOKEEPER_LOG_DIR ; chmod -R 755 $ZOOKEEPER_LOG_DIR; mkdir -p $ZOOKEEPER_PID_DIR;chown -R $ZOOKEEPER_USER:$HADOOP_GROUP $ZOOKEEPER_PID_DIR; chmod -R 755 $ZOOKEEPER_PID_DIR; mkdir -p $ZOOKEEPER_DATA_DIR; chmod -R 755 $ZOOKEEPER_DATA_DIR;chown -R $ZOOKEEPER_USER:$HADOOP_GROUP $ZOOKEEPER_DATA_DIR
+vi $ZOO_DATA_DIR/myid
+vi scripts/directories.sh 
+export ZOOKEEPER_DATA_DIR="/var/lib/zookeeper";
+mkdir -p $ZOOKEEPER_DATA_DIR; chmod -R 755 $ZOOKEEPER_DATA_DIR;chown -R $ZOOKEEPER_USER:$HADOOP_GROUP $ZOOKEEPER_DATA_DIR
+mkdir /usr/hdp/2.2.0.0-2041/hadoop-yarn/logs
+mkdir /usr/hdp/2.2.0.0-2041/hadoop-mapreduce/logs
+chown -R hdfs:hadoop /usr/hd*
+chown -R yarn:hadoop /usr/hdp/2.2.0.0-2041/hadoop-yar*
+chown -R mapred:hadoop /usr/hdp/2.2.0.0-2041/hadoop-mapre*
+
+MODIFY:
+core-site.xml 
+hdfs-site.xml 
+yarn-site.xml 
+mapred-site.xml
+
+ENV ON ALL NODES:
+for i in hdfs yarn mapreduce; do echo 'export JAVA_HOME="/usr"' >> /var/lib/hadoop-${i}/.bash_profile ; done
+
+EXECUTE ON NAMENODE:
+su - hdfs
+/usr/hdp/current/hadoop-hdfs-namenode/../hadoop/bin/hdfs namenode -format
+/usr/hdp/current/hadoop-hdfs-namenode/../hadoop/sbin/hadoop-daemon.sh --config /etc/hadoop/conf start namenode
+
+EXECUTE ON SECONDARY NAMENODE:
+su - hdfs
+/usr/hdp/current/hadoop-hdfs-secondarynamenode/../hadoop/sbin/hadoop-daemon.sh --config /etc/hadoop/conf start secondarynamenode
+
+EXECUTE ON ALL DATA NODES:
+su - hdfs
+/usr/hdp/current/hadoop-hdfs-datanode/../hadoop/sbin/hadoop-daemon.sh --config /etc/hadoop/conf start datanode
+
+TEST IT OUT
+http://srd1002:50070  #works?
+su - hdfs ; hdfs dfs -copyFromLocal /tmp/lalala lalala ; hdfs dfs -ls  #Is the file there? local copy to hdfs works?
+http://srd1002:50075/browseDirectory.jsp?namenodeInfoPort=50070&dir=/&nnaddr=srd1002:8020 #Can see file in web browser?
+
+SECURE
+chown root:hadoop /etc/hadoop/conf/container-executor.cfg
+chmod 400 /etc/hadoop/conf/container-executor.cfg
+chown root:hadoop /usr/hdp/2.2.0.0-2041/hadoop-yarn/bin/container-executor
+chmod 6050 /usr/hdp/2.2.0.0-2041/hadoop-yarn/bin/container-executor
+chown -R root:hadoop /usr/hdp/2.2.0.0-2041/hadoop-yarn/bin/container-executor
+chmod -R 650 /usr/hdp/2.2.0.0-2041/hadoop-yarn/bin/container-executor
+
+NOW DO YARN & MAPREDUCE
+#Upload mapreduce tarball to hdfs:
+su - hdfs
+hdfs dfs -mkdir -p /hdp/apps/2.2.0.0-2041/mapreduce/
+hdfs dfs -put /usr/hdp/current/hadoop-client/mapreduce.tar.gz /hdp/apps/2.2.0.0-2041/mapreduce/
+hdfs dfs -chown -R hdfs:hadoop /hdp
+hdfs dfs -chmod -R 555 /hdp/apps/2.2.0.0-2041/mapreduce
+hdfs dfs -chmod -R 444 /hdp/apps/2.2.0.0-2041/mapreduce/mapreduce.tar.gz
+
+#Run on ResourceManager server:
+su -l yarn -c "/usr/hdp/current/hadoop-yarn-resourcemanager/sbin/yarn-daemon.sh --config /etc/hadoop/conf start resourcemanager"
+
+#Run on all NodeManager nodes (ie: all nodes..):
+su -l yarn -c "/usr/hdp/current/hadoop-yarn-nodemanager/sbin/yarn-daemon.sh --config /etc/hadoop/conf start nodemanager"
+
+START MAPRED JOBHISTORY:
+su -l yarn -c "/usr/hdp/current/hadoop-yarn-resourcemanager/sbin/yarn-daemon.sh --config /etc/hadoop/conf start resourcemanager"
+
+
+#UNFINISHED. USE AMBARI INSTEAD.

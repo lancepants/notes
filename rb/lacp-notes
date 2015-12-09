@@ -1,0 +1,12 @@
+RHEL 7 has a new interface bonding driver, called "team". It is more featureful and fast than the old bonding driver, but you need rhel7 and kernel 3.3+
+
+##
+# Gotchas
+People generally consider a 10% degredation in performance due to bonded interface overhead.
+
+The LACP protocol itself makes no mention of being able to route a *single* connection across multiple interfaces in order to speed it up. This means that if you have four 1gig uplinks, the most a single connection is going to get is 1gig.
+
+The switches themselves have logic in them in order to choose which physical interface to send traffic. Your target server has a single mac address (ie: the bonded virtual interface) presented across, say, four uplinks. So, the switch needs to decide which uplink to send the data to.
+Different switch manufacturers have different load balancing modes available. Some of them do it by destination subnet, and may have the option to change that to a hash based on destination address. Be aware of what your different switch softwares/vendors are doing, as it is easy to just send all traffic through one interface by default (for example, if the switch is load balancing based on destination subnet, and all your destination servers are in the same subnet. The hash of this will result in the same single port to your server being used every time).
+
+

@@ -1,0 +1,82 @@
+OVERVIEW
+-Samza consists of streams and jobs
+-To parallelize/scale, Samza chops up a stream into partitions, and a job into tasks.
+-So basically, a task consumes from a single partition in a stream (aka:kafka topic), does stuff with the data, and then outputs the result to an output stream.
+-A single task can consume from multiple streams(topics), but it will only be consuming from a single partition from each stream.
+-The number of tasks is determined automatically by the number of partitions in the input stream (and this number is fixed)
+-Tasks run inside cgroup'd containers. There can be one or more per container, and you can decide how much resources certain containers get and which tasks run in them.
+
+ARCHITECTUAL
+-Streaming layer : kafka (or other)
+-Execution layer : YARN (or other)
+-Processing layer : Samza API
+
+-This is similar to the hadoop layout which also uses YARN as execution layer, HDFS for storage, and MapReduce as processing API
+-Samza uses YARN to manage deployment, fault tolerance, logging, resource isolation, security, and locality of its jobs. Samza comes with a YARN ApplicationMaster and a YARN job runner out of the box.
+
+-So the workflow is this:
+--Samza client talks to YARN ResourceManager(RM) when it wants to start a new Samza job
+--The YARN RM talks to a YARN NodeManager(NM) to allocate space on the cluster for Samza's ApplicationMaster(AM)
+--The YARN NM allocates space and starts up the Samza AM
+--The Samza AM, once started up, talks to the Yarn RM to get one or more YARN containers to run SamzaContainers
+--The YARN RM again talks to YARN NMs to allocate space for containers
+--Once the space has been allocated, the YARN NMs start up the Samza containers.
+--While YARN starts and supervises one or more SamzaContainers, your processing code (using the StreamTask API) runs inside these containers. They churn out data, publishing data into a post-processed kafka topic
+
+
+SAMZACONTAINER
+#http://samza.apache.org/learn/documentation/0.8/container/samza-container.html
+The SamzaContainer is responsible for managing the startup, execution, and shutdown of one or more StreamTask instances. Each SamzaContainer typically runs as an indepentent Java virtual machine. A Samza job can consist of several SamzaContainers, potentially running on different machines.
+
+SIMPLE EXAMPLE
+So let's take this sql statement:
+
+  SELECT user_id, COUNT(*) FROM PageViewEvent GROUP BY user_id
+
+There are two jobs here. The first is GROUP BY, and the second is COUNT. We can also make the assumption that we want to take "user_id: myuser page_view_event: GET DERP browser: lalala ..." and just reduce that to "myuser" in our first job. We can conceptualize this as follows:
+First job: 
+-Read input from stream, reduce result message to just the user_id, then produce each message into a new topic, but KEY on user_id so that all instances of the same user_id end up in the same partition.
+Second job:
+-Read input from intermediary group by'd stream. Maintain a counter for each user_id you encounter in the partitions you're reading. Output number at the end of task.
+
+RUNBOOK
+~get example hello-samza pkg
+git clone git://git.apache.org/samza-hello-samza.git hello-samza
+cd hello-samza
+
+~modify all src/main/config/*.properties to use:
+yarn.package.path=hdfs://srd1002:8020/samza/target/hello-samza-0.9.0-dist.tar.gz
+systems.kafka.consumer.zookeeper.connect=srd1006:2181/
+systems.kafka.producer.bootstrap.servers=srd1005:9092
+
+~build your package
+(bin/grid bootstrap) #probably not needed, depends on 0.8.0 or 0.9.0
+mvn clean package
+
+~scp resulting samza job package to a node in your hadoop cluster (eg: one of your yarn nodes)
+scp ./target/hello-samza-0.9.0-dist.tar.gz srd1003:/opt/samza/
+ssh srd1003
+cd /opt/samza
+
+~put samza job file onto hdfs
+sudo -u hdfs hdfs dfs -mkdir /samza/target
+sudo -u hdfs hdfs dfs -put hello-samza-0.9.0-dist.tar.gz /samza/target/
+
+~extract the job locally
+mkdir -p deploy/samza
+tar -xvfz hello-samza-0.9.0-dist.tar.gz -C deploy/samza
+
+~send the job to YARN
+deploy/samza/bin/run-job.sh --config-factory=org.apache.samza.config.factories.PropertiesConfigFactory --config-path=file://$PWD/deploy/samza/config/wikipedia-feed.properties
+
+~check your job status
+http://srd1003:8088/cluster/apps
+
+~start some more jobs which consume from the wikipedia_raw topic that your previous job created
+deploy/samza/bin/run-job.sh --config-factory=org.apache.samza.config.factories.PropertiesConfigFactory --config-path=file://$PWD/deploy/samza/config/wikipedia-parser.properties
+deploy/samza/bin/run-job.sh --config-factory=org.apache.samza.config.factories.PropertiesConfigFactory --config-path=file://$PWD/deploy/samza/config/wikipedia-stats.properties
+
+~ensure topics are created and being populated
+kafkacat -L -b srd1005
+kafkacat -C -b srd1005 -t wikipedia-{raw|stats|edits} -o end
+

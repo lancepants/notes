@@ -1,0 +1,94 @@
+Good stackexchange answer: http://stackoverflow.com/questions/14388706/socket-options-so-reuseaddr-and-so-reuseport-how-do-they-differ-do-they-mean-t
+original article: https://lwn.net/Articles/542629/
+so_reuseport example: https://gist.github.com/carun/8146981
+python example: http://freeprogrammersblog.vhex.net/post/linux-39-introdued-new-way-of-writing-socket-servers/2
+
+
+Two topics here, SO_REUSEADDR and SO_REUSEPORT
+
+BSD sockets are the example here.
+
+{<protocol>, <local addr>, <local port>, <peer addr>, <peer port>}
+
+Any unique combination of these values identifies a connection. As a result, no two connections can have the same five values, otherwise the system would not be able to distinguish these connections any longer.
+
+Binding socketA to A:X and socketB to B:Y, where A and B are addresses and X and Y are ports, is always possible as long as X != Y holds true. However, even if X == Y, the binding is still possible as long as A != B holds true. E.g. socketA belongs to a FTP server program and is bound to 192.168.0.1:21 and socketB belongs to another FTP server program and is bound to 10.0.0.1:21, both bindings will succeed. Keep in mind, though, that a socket may be locally bound to "any address". If a socket is bound to 0.0.0.0:21, it is bound to all existing local addresses at the same time and in that case no other socket can be bound to port 21, regardless which specific IP address it tries to bind to, as 0.0.0.0 conflicts with all existing local IP addresses.
+
+
+SO_REUSEADDR
+
+If SO_REUSEADDR is enabled on a socket prior to binding it, the socket can be successfully bound unless there is a conflict with another socket bound to *exactly* the same combination of local address and port.
+
+Without SO_REUSEADDR, binding socketA to 0.0.0.0:21 and then binding socketB to 192.168.0.1:21 will fail (with error EADDRINUSE), since 0.0.0.0 means "any local IP address", thus all local IP addresses are considered in use by this socket and this includes 192.168.0.1, too. With SO_REUSEADDR it will succeed, since 0.0.0.0 and 192.168.0.1 are not exactly the same address, one is a wildcard for all local addresses and the other one is a very specific local address. 
+
+Note that the statement above is true regardless in which order socketA and socketB are bound; so long as one of them is/has called bind() with SO_REUSEADDR, it'll work.
+
+SO_REUSEADDR       socketA        socketB       Result
+---------------------------------------------------------------------
+  ON/OFF       192.168.0.1:21   192.168.0.1:21    Error (EADDRINUSE)
+  ON/OFF       192.168.0.1:21      10.0.0.1:21    OK
+  ON/OFF          10.0.0.1:21   192.168.0.1:21    OK
+  OFF             0.0.0.0:21   192.168.1.0:21    Error (EADDRINUSE)
+  OFF         192.168.1.0:21       0.0.0.0:21    Error (EADDRINUSE)
+  ON              0.0.0.0:21   192.168.1.0:21    OK
+  ON          192.168.1.0:21       0.0.0.0:21    OK
+  ON/OFF           0.0.0.0:21       0.0.0.0:21    Error (EADDRINUSE)
+
+Note that on Linux, if you bind a wildcard (0.0.0.0) address to a port first, all subsequent attempts at binding to the port will fail, regardless of whether SO_REUSEADDR is set on the original socket or is attempting to be set on the new socket. Note that if you have a non-wildcard address bound to a port first, then a subsequent attempt to bind a wildcard address/other will work as described above.
+
+Ok so that's all fine and dandy, it has an effect on wildcard addresses. But that's not its overly useful part. Let's discuss TIME_WAIT connections.
+
+A socket has a send buffer and if a call to the send() function succeeds, it does not mean that the requested data has actually really been sent out, it only means the data has been added to the send buffer. For UDP sockets, the data is usually sent pretty soon, if not immediately, but for TCP sockets, there can be a relatively long delay between adding data to the send buffer and having the TCP implementation really send that data
+
+So, you could be left in a position where the send() call succeeded and your program thinks it's all good so it goes ahead and closes the socket immediately. In this instance,  all the data in the send buffer would be lost. Sooo to counteract this, when there is data in the send buffer but you've sent a close to the socket, instead the connection will move into a TIME_WAIT state. It'll stay in this state until the send buffer is done sending data, or until a timeout is hit (in which case the socket will be closed forcefully). The time it waits is called the "linger time", and is usually set globally or via the per-socket option SO_LINGER. You can disable linger, which will cause sockets to be forcefully closed as soon as you call close, but it's generally a bad idea as you can lose your send buffer. Keep in mind that even if you disable linger, if your application calls exit() or is killed/crashed without sending a close(), your connection will linger regardless of what you do.
+
+So, let's get back to REUSEADDR. If SO_REUSEADDR is not set, then a socket in TIME_STATE is still considered bound to the local address and port and any attempt to bind a new socket to the same address and port will fail until the socket has really been closed, which may take as long as the configured Linger Time. If SO_REUSEADDR *is* set, then the TIME_WAIT is simply ignored, and the binding succeeds. Note that binding a socket to exactly the same address and port as a dying socket in TIME_WAIT state can have unexpected, and usually undesired, side effects in case the other socket is still "at work", but that is beyond the scope of this answer and fortunately those side effects are rather rare in practice.
+
+Everything written above will work as long as the socket you want to bind to has address reuse enabled. It is not necessary that the other socket, the one which is already bound or is in a TIME_WAIT state, also had this flag set when it was bound. The code that decides if the bind will succeed or fail only inspects the SO_REUSEADDR flag of the socket fed into the bind() call, for all other sockets inspected, this flag is not even looked at.
+
+
+SO_REUSEPORT
+
+So above we've got different IP's able to bind the same port, but not the same ip's binding to the same port. SO_REUSEPORT changes that by letting you bind however many sockets you like to exactly the same local address and port *so long as all prior bound sockets also had SO_REUSEPORT set before they were bound.*
+
+SO_REUSEPORT does not imply SO_REUSEADDR. If you try to bind a socket to the same local address and port as an existing socket which is in TIME_WAIT, it'll fail unless you're setting SO_REUSEADDR. If the TIME_WAIT socket has SO_REUSEPORT set, and your new socket also has SO_REUSEPORT set on it prior to binding, then it'll work. Of course it is allowed to set both, SO_REUSEPORT and SO_REUSEADDR, on a socket.
+
+With regards to Linux, to prevent port hijacking, all sockets that want to share the same address and port combo must belong to processes that share the same UID. This prevents one user from stealing ports of another user. 
+
+Additionally, the linux kernel will try to load balance udp datagrams evenly and for TCP listening sockets, it tries to distribute incoming connect requests (those accepted by calling accept()) evenly across all the sockets that share the same address and port combination. The algorithm used is a hash based on the 4-tuple of local ip and port and peer ip and port, so generally a peer should always get mapped to the same local socket (important with datagrams).
+
+
+GOTCHA - Connect() Returning EADDRINUSE?
+
+You might run into a situation where your connect() is returning EADDRINUSE. That's weird as it's usually the bind() that returns that error...
+
+Remember the tuple up top? A connection is defined by a tuple of five values. If the tuple is not unique, then the system cannot distinguish between two connections any longer. With SO_REUSEADDR you can bind two sockets of the same protocol to the same local address and port. That means three of those five values are already the same for these two sockets. If you now try to connect both of these sockets also to the same peer address and port, you would create two connected sockets, whose tuples are absolutely identical. This cannot work, at least not for TCP connections (UDP connections are no real connections anyway). If data arrived for either one of the two connections, the system could not tell which connection the data belongs to. 
+
+At least the peer address or peer port must be different for either connection, so that the system has no problem identifying which connection incoming data belongs to.
+
+
+MULTICAST ADDRESSES
+
+SO_REUSEADDR behaviour changes for multicast addresses. With multicast, reuseaddr is allowed to bind to exactly the same combination of local multicast address and port. In other words, it behaves exactly the same way as SO_REUSEPORT does for unicast addresses.
+
+
+SO_REUSEPORT FLOW
+
+Your application creates a socket, sets socket options (specifically reuseport), then binds to that socket. It kicks that socket into listen() mode. This process can then sit in a while loop blocking on accept(), doing stuff once accept() passes, then looping back to blocking on accept().
+You can then spawn a bunch of copies of your application, all of them with their own sockets and all of them sitting at accept().
+The kernel gets a connection request to whatever shared port you're using, say 1212. ??kernel process here??
+*UNCLEAR* perhaps it uses regular mechanisms to see what process is bound to port 1212, and is now passed back a list of pids rather than a single value. 
+*UNCLEAR* is the hash to distribute load still used with TCP? Or only UDP?
+
+
+USE CASES
+
+So, typically you've got this master thread that watches a port and takes incoming connection requests, and then either does a fork() to create a worker node to handle the request, or perhaps it already has a worker pool to shove requests to (for example, apache's prefork model).
+
+Prefork works well, but what happens when your master thread starts to get overwhelmed? It's single threaded because only one process can bind to a port at a time. The dude who did all the SO_REUSEPORT patches was facing a problem where his one master thread was getting 40,000 requests per second and couldn't keep up on a single processor thread.
+
+The second approach used in multithreaded servers operating on a single port is to have all threads (or processes) sit in a while loop doing an accept() on a socket, then kicking out a new file descriptor. The problem with this approach is that the wakeup on accept() is not fair (when a process has to access the socket file descriptor). Under high load, incoming connections may be distributed across cpu threads in an uneven manner (one cpu thread may be up to three times busier than the others)
+
+By contrast, with the SO_REUSEPORT implementation, each process/thread gets its own socket (file descriptor). This means that there is no contention over a shared socket file handle. Your process/thread sits there blocking on accept() (accept() is a blocking call by default. Once it gets to it, your application will just sit there waiting for accept() to return), and goes along its way after getting a connection.
+
+

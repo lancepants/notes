@@ -1,0 +1,134 @@
+::jconsole::
+Enable JMX on your java app, then fire up jconsole on your desktop and connect to the remote jmx server:port.
+
+Click the Memory tab and wait a few seconds. The bars marked "Heap" in the bottom right are what you're wanting to pay attention to - CMS, Eden, and Survivor, and as well you should pay attention to the GC time: text to see how long garbage collection is taking. ConcurrentMarkSweep is a very expensive operation, so it's important that it runs fast.
+
+If survivor is consistenly high, it's a good indicator that you need to increase your heap size.
+
+
+
+::Compiling java::
+Source code(.java) -> javac -> ByteCode(.class) -> java
+
+
+
+::Definition of an Object::
+package packageName;
+import ClassNameToImport;
+accessSpecifier class ClassName {
+  accessSpecifier dataType variableName [= initialValue];
+  accessSpecifier ClassName([argumentList]) {
+    constructorStatement(s)
+  }
+  accessSpecifier returnType methodName([argumentList]) {
+    methodStatement(s)
+  }
+  // This is a comment
+  /* This is a comment too */
+  /* This is a
+     multiline
+     comment */
+}
+
+Let's break this down.
+
+::Packages::
+The Java language lets you choose the names for your objects, such as Account, Person, or LizardMan. At times, you may end up using the same name to express two slightly different concepts. This is called a name collision, and it happens frequently. The Java language uses packages to resolve these conflicts. A Java package is a mechanism for providing a namespace: an encapsulated area in which names are unique, but outside of which they might not be. To identify a construct uniquely, you must fully qualify it by including its namespace. Packages also give you a nice way to build more complex applications into discrete units of functionality.
+
+-Each class belongs to a package
+-Classes in the same package serve a similar purpose
+-Packages are just directories
+-classes in other packages need to be imported
+-All classes "see" classes in the same package
+-All classes "see" classes in java.lang (eg: java.lang.String; java.lang.System)
+
+You define a package name at the top of your .java file. This places it into its package namespace. Since a package is also just a directory structure, your .java file should also exist at the appropriate directory structure...
+
+This is the de facto naming scheme for java packages:
+  package orgType.orgName.appName.compName;
+eg: package com.google.protobuf; package org.apache.kafka.clients.producer; package com.rubicon.rtb.services
+
+::Classes::
+-A class is a template for an object. It defines an object's basic structure. You create an instance of an object, whose structure is based off of a class. Java uses the word 'instance' a lot, it's synonymous with 'object.'
+-name with CamelCase
+
+Best practice is to import using fully qualified path:
+import com.google.protobuf.MessageLite
+import org.apache.kafka.clients.producer.KafkaProducer
+import org.rubicon.rtb.services.* <--you can wildcard, but it's not good practice. You can't tell right away what package your class names in your code came from
+
+-When writing code in the Eclipse editor, you can type the name of a class you want to use, followed by Ctrl+Shift+O. Eclipse figures out which imports you need and adds them automatically. If Eclipse finds two classes with the same name, it displays a dialog box asking you which class you want to add imports for.
+
+::Variables::
+-variableNames are camelCase starting with a lower case
+-Define a variable like so: 
+accessSpecifier dataType variableName [=initialValue]
+private String name;
+private int age;
+
+accessSpecifier
+-public: any object in any package can see this (don't ever use for variables)
+-protected: any object defined in the same package or a subclass of that package can see this
+-no specifier (aka friendly, or package private): only objects whose classes are defined in the same package can see this
+-private: only other objects in the same class can see this
+
+::Methods::
+accessSpecifier returnType methodName([argumentList]) {}
+
+-there are two categories of methods: constructors, and all other methods.
+-java uses "getters" and "setters." These simply set or get the values of an object, the same way you would get person.age or set person.age = 123 in python. These apparently are not builtins in java...you have to define the methods themselves in your class
+-when a method does not return anything, you must specify its 
+
+~Constructors~
+-Constructors are methods which instantiate a class, making an object/instance. 
+-This is how you declare a constructor:
+  accessSpecifier ClassName([argumentList]) {
+    constructorStatement(s)
+  }
+-constructors are OPTIONAL. If you don't specify one, the compiler will provide one for you. This is called the default (or no-argument) constructor. *need more explanation here
+
+Person class definition with a constructor
+package com.makotogroup.intro;
+public class Person {
+  private String name;
+  private int age;
+  private int height;
+  private int weight;
+  private String eyeColor;
+  private String gender;
+  public Person() {
+    // Nothing to do...
+  }
+  
+public Person(String name, int age, int height, String eyeColor, String gender) {
+    this.name = name;
+    this.age = age;
+    this.height = height;
+    this.weight = weight;
+    this.eyeColor = eyeColor;
+    this.gender = gender;
+  }
+}
+
+
+~Normal Methods~
+-You can define a normal method with options such as:
+  accessSpecifier returnType methodName([argumentList]) {
+    methodStatement(s)
+  }
+-avoid naming with numbers and use only alphabetic characters
+-if a method does not return anything (like with a SETTER method), you must specify a returnType of "void". Eg:
+  public void setName(String value) { name = value; }
+
+-In order to isolate/encapsolate an object's data from other objects, you declare its variables private and then provide accessor methods
+-accessor methods (eg: getAge, setName) follow a strict naming convention. If a variables name is age, the get/set is getAge/setAge.
+-generate getters and setters automatically in eclipse by highlighting your Class.java, then at the top going to source -> generate getters and setters
+
+::Operational::
+-Typically you've got this:
+  java -options -options -options -Dsystemproperty=value -cp :/path/to/*.jar:/other/path/to/jarfile.jar main.Class
+-the -cp above is a list of "class paths" which java will search in order to index all the packages classes therein. Hopefully your main.Class is found in one of those jars such that java can execute public static void main( inside it.
+-A jar is just a collection of .class files in a directory(package) structure. It may also contain .properties config files.
+-Remember above that .java is your source code, and this compiles to .class (java bytecode).
+-unzip file.jar works, so does jar -xvf file.jar
+

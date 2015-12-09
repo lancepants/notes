@@ -1,0 +1,29 @@
+yum install -y cobbler httpd dhcpd bind
+systemctl start xinetd.service
+systemctl start httpd.service
+systemctl start cobblerd.service
+systemctl start dhcpd.service
+systemctl start named.service
+systemctl enable xinetd.service
+systemctl enable httpd.service
+systemctl enable cobblerd.service
+systemctl enable dhcpd.service
+systemctl enable named.service
+systemctl stop firewalld.service
+systemctl disable firewalld.service
+
+/etc/cobbler:
+dhcpd.template
+bind.template
+zone.template
+
+/etc/cobbler/settings:
+manage_dns: 1
+manage_forward_zones: ['trp-srd.com']
+manage_reverse_zones: ['192.168.100']
+next_server: 192.168.100.5  #IP of cobbler server
+pxe_just_once: 1
+
+/var/lib/cobbler/kickstart.ks:
+include wget in %packages or %post hooks won't work
+take partitioning info from c7.ks

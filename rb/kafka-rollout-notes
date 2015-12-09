@@ -1,0 +1,221 @@
+OVERVIEW
+-We want to be able to do edge processing, cut down on inter-DC traffic, and not have to have such a massive install and influx of raw data into vegas.
+-We also want to increase the resiliency of our data pipeline at and between our datacenters (as in, find something better than using rsync and multicast round-robin against journalers)
+-We do 124TB uncompressed data/day. That is ~5.2TB/hour. IAD1 makes up just under 40% of that.
+-We currently have 3-node kafka clusters planned. These are specc'd with 22x900GB SAS drives in RAID10 (+2 SSD host OS)
+-Replication factor N means N-1 brokers can fail before the topic becomes unavailable. We are aiming for Repl factor 2 at the moment.
+
+
+PARTITIONING
+
+-3 node cluster on 1gig uplinks, no expansion expected, 6 partitions and repl factor 2 is a good default. Double or triple if your consumers are slow.
+-3 node cluster on 10gig uplinks, no expansion expected, 30 partitions and repl factor 2 is a good default. Double or triple if your consumers are slow or you have more consumers per group than num of partitions. 60+ partitions is better for bidengine topics as they have a high rate of data.
+-LINKEDIN:
+--Makes sure each individual partition is under 50GB over a 4 day retention period as they see spikey lag problems in mirrormaker when exceeding this limit. They sometimes see this problem even with 30GB partition sizes. We push more data than this (though probably less msgs/sec), and might have to consider using more than 60 partitions per BE topic.
+'''As a note, we have up to 5000 partitions per broker right now on current
+hardware, and we're moving to new hardware (more disk, 256 GB of memory,
+10gig interfaces) where we're going to have up to 12,000. Our default
+partition count for most clusters is 8, and we've got topics up to 512
+partitions in some places just taking into account the produce rate alone
+(not counting those 720-partition topics that aren't that busy). Many of
+our brokers run with over 10k open file handles for regular files alone,
+and over 50k open when you include network.'''
+
+--When choosing number of partitions, producer and consumer count and individual consumer bandwidth are of note. A minimum of ten 1gig consumers are needed to saturate a single topic from a single 10gig broker, therefore at least 10 partitions per broker would be needed in this scenario. This assumes your consumers can process at gigabit speeds!
+--Upon broker failure / unclean shutdown, partition leader election takes around 5ms per partition. Multiply this by 1000 partitions and you've got 5 seconds of downtime + however much time the broker failure took to detect
+--Suppose also that the controller broker fails. A new broker needs to be elected, which will then look in zookeeper to read the metadata of every partition. This may take around 2ms per partition, so with 1000 partitions factor in another 2 seconds downtime + broker controller election
+--Replicating 1000 partitions from one broker to another adds about 20ms of latency. If this is too much for your real-time application, use less partitions or share topic between a larger number of brokers
+--Giant partitions are not really wanted as they take longer to migrate and work with administratively. If a topic is expected to grow to a very large size, increase partition count a bit (with respect to num of brokers)
+--It's a good idea to keep partitions per broker below 4000. In general, the less partitions the better so long as you can keep your performance and per-partition size goals
+--LinkedIn runs 31k+ topics with 350k+ partitions on 1100+ brokers (http://events.linuxfoundation.org/sites/events/files/slides/Kafka%20At%20Scale.pdf). This averages ~11 partitions per topic (!!unknown average cluster size!!)
+-Ideally, in our publisher we want to use a partition key such that we can get common data onto the same partition. What can we key off of? This choice is determined by how we want to process the data on the other side. For example, if we partition by DSP and we have a samza/other job that wants to grab and calculate all metrics from a specific DSP, having that DSP exist on a single partition allows us to avoid a more costly multi-partition-consume operation.
+--It is possible to calculate partition key several times. ie: hash once for userID, hash a second time for adID, use result to choose partition
+--Key/hash is going to change if partition count for a topic changes. Keep this in mind when initially creating a topic, such that you don't have to increase partition count whenever you expand your broker count
+
+
+
+TOPIC NAMING
+
+Ultimately, our topic naming should be something that our devs across teams can expect and understand, and something that makes sense when considering an aggregation of topics being sent from multiple sites down to a larger data processing site (i.e. vegas).
+
+::Legend::
+proto: Synonymous with data definition. This is the .proto file, or if not a protobuf type, then some other descriptive data type
+cluster: Synonymous with chassis, since we isolate clusters by chassis. This is of course going to change now that seamicro is out of business - ensure this is considered in our naming.
+team: ae, be, bcb, etc. We might want to change the nomenclature here to "product" rather than "team" or something?
+
+~more or less final~
+env.team.proto.dc.cluster  ::  frpp.ae.eventjournaller.iad1.2
+This is the same as we do in hadoop, /env/team/proto/dc/cluster
+
+-protobuf definitions are shared between teams, so delineating topic naming based on team.proto might not make sense in some cases. Still, if an ae emits a bigMessage and an be also emits a bigMessage, we don't necessarily want those two events to end up in the same topic.
+-we do want team in there because we want to be able to delineate between ae and be data, even if they are using the same protobuf. Verify with Angel.
+-mirrormaker won't easily let us insert $dc. also, $dc makes it clear where data came from. include in origin
+-a cluster is "1000", "2000", "3000"... where the 1,2,3 are the cluster number. This limits us to 9 (or 10) clusters per DC. We are already hitting this limit; however, now is not the time to fix this. It is more beneficial to adopt existing hadoop naming and then change kafka along with everything else if that day ever comes.
+-an environment is frpp(rod) or frps(taging)
+
+
+1)
+-Suggestion: env.team.proto.dc.cluster
+--EG: frpp.ae.eventjournaller.iad1.2
+-Arguments:
+--We should go from mostBroad.lessSpecific.lessSpecific.less.... This allows us to form a logical tree when we want to aggregate data at a central location.
+--This model is appropriate for use cases where we want to start with broad strokes (how many impressions are we getting worldwide) down to finer details (get info from this adengine, from this data definition, in this datacenter, on this cluster)
+--This is the same model we currently use to store data in hadoop
+--Ideally our data model here should reflect how we are consuming and analyzing data from kafka
+
+2)
+-Alternate: dc.env.cluster.team.proto
+--EG: iad1.prod.chass0.adengine.eventjournaller
+--Advantage: This more closely matches our multicast registry format (http://wiki.rubiconproject.com/display/Tech/Multicast+Channels+Registry)
+--Advantage: From a systems operations perspective, it's easier to understand / isolate data
+--Disadvantage: silo's data by logically aggregating it into a specific datacenter
+--Disadvantage: devs, who will be consuming the data, do not know our infrastructure well enough to know which data would be stored where
+
+
+
+DELINEATING MESSAGES BY TIME:
+
+1)
+-Time based topic naming (eg: adengine.eventjournaller.iad1.chass0.prod.2015-04-18): 
+--Not recommended. Adds overhead to all consumer code, all producer code, and complexity in the event of failure. We have to keep track of consumer offset position regardless of whether we segregate topics by day.
+--Daily topic creation time could be x seconds off from timestamp inside protobuf msg due to clock drift
+
+2)
+-Daily timestamp published to every topic once daily at midnight:
+--The idea here is to have a separate publisher which, when the clock goes past midnight, will insert a 'timestamp interrupt' special message (eg: xxxxROLLOVERxxxx-2015-04-08) of which our consumers can parse such that they can know which messages were generated on which day.
+--Strong disadvantage due to us having to maintain and monitor a separate publisher process
+--If not using a separate publisher (ie: include the timestamp publish code in the same publishers that are pushing ae/be data to kafka):: 
+---When multiple publisher threads write to the same partition, the partition will end up with two or more of the same timestamp interrupt messages. Consumer logic everywhere will have to expect this.
+---Preventing multiple producers across several boxes from publishing to the same partition increases complexity
+---Business logic should ideally not exist in topic data
+-'timer interrupt' cutoff could be x seconds off from timestamp inside protobuf msg due to clock drift
+
+3)
+-Don't put time logic into kafka. Instead, Use 'timestamp' field in protobuf message:
+--This makes it the consumers / data processing application's responsibility to deserialize and parse the protobuf message in order to see which day the data is part of
+--This is the most accurate timestamp because it is generated by the AE/BE/Other
+--This keeps our messages clean and consistent per topic. Beneficial for simpler monitoring and malformed message / message structure exceptions
+--Disadvantage is that you have to deserialize the message in order to know whether you would like to continue processing further messages
+
+
+
+FAILURE PLANNING / HDD REQUIREMENTS
+-We're doing around 57TB/day (snappy compressed, ~55% efficiency) globally right now.
+-We're doing around 125TB/day uncompressed
+-We're doing round-robin multicast between 2 jrnlrs per ad cluster. HDD corruption = data loss, usually around 3GB sits on a jrnlr at any one time.
+-DC   uncompData        numJrnlrs   compData(55%)
+-IAD1 48TB/d:2T/h       21          26.5TB/day
+-SJC1 30TB/d:1.25T/h    22          16.5TB/day
+-AMS2 29TB/d:1.21T/h    18          16TB/day        
+-FRA1 18TB/d:0.75T/h    14          10TB/day        
+--Kafka spec box: 2xSSD(host), 20x900GSAS(raid10, -2 for hot spares) = ~9TB
+--We're planning for 3 node kafka clusters per DC to start. ~27TB
+--IAD1 :: 2T/hr*replFactor2 = 4T/hr :: 27T/4T = ~8hrs backlog possible
+
+COMPRESSION
+-The java producer has a built in compression feature, and the java consumer has a complimentary built in decompression feature.
+--Compression is performed by the producer, who takes a handful of messages, compresses them, wraps them in a "compressed message set" and then publishes that message set as a single message to kafka. This message is differentiated by a magic byte set in its header, letting downstream consumers know that it is a compressed set
+--When the provided java consumer sees this magic byte as it's consuming, it will grab the message and transparently unpack it, and then output one message at a time from that message set
+--The compressed message set is its own message, it has one offset. Therefore, when the consumer consumes the message set, it will only advance its consumer offset position by one, even though the message set has several messages in it. This is expected; however, in the event of consumer failure and message set re-transmission, you may end up with more duplicate messages than you may expect.
+-Most alternate clients i've seen (eg: kafkacat) offer compression/decompression per spec as well
+
+
+PRODUCING (0.8.2 Java producer)
+-Publish new messages to a specific topic *and an optional partition* (use partitioner.class to define part. scheme)
+-Threadsafe. You may share the same producer among your threads.
+-The producer manages a single background thread that does I/O, as well as a TCP connection to each broker it needs to communicate with.
+-Failure to close the producer after use will leak I/O resources
+-When writing to Kafka, producers can choose whether they wait for the message to be acknowledged by 0,1 or all (-1) replicas.
+--Note that -1 means all current in-sync replicas...if an ISR is currently out of sync, publishes with acks=-1 will still succeed. If this is not wanted, you may specify the number of ISR's you'd like a response from (eg:acks=2) before the write is successful. Keep in mind that this will halt all writes if your acks number is higher than the available brokers.
+
+
+CONSUMING
+-SimpleConsumer: Allows you to read a message multiple times
+-SimpleConsumer: Allows you to consume only a subset of partitions in a topic in a process
+-SimpleConsumer: Allows you fine grained transaction control, allows making sure a message is processed 'just once'
+-SimpleConsumer: You must keep track of your own offset to know where you left off consuming
+-SimpleConsumer: You must figure out which broker is lead broker for a topic and partition
+-SimpleConsumer: You must handle broker leader changes
+-HighLevelConsumer: Don't care about handling message offsets. Stores last offset read from a specific partition in Zookeeper, stored under a Consumer Group name
+-HighLevelConsumer: Kafka doles out partition assignments per thread connected to it under a certain consumer group. Your High Level Consumer should ideally have as many threads as there are partitions+replications
+-HighLevelConsumer: If you have less threads than there are partitions, there will be no guarantee of ordering aside from sequential offset number
+
+
+MIRRORMAKER
+-Best practice is to keep mirrormaker local to the target cluster. This means that we will run our mirrormaker processes in vegas. This makes sense as consuming can be controlled by offsets, so upon network interruption it's not a big deal. Network interruption when trying to produce, however, results in message timeouts and loss.
+-Target kafka clusters are termed "aggregate clusters". These clusters host an aggregate of topics from multiple other clusters in various DC's
+-LinkedIn triple bolds and shouts that you should never ever ever produce to an aggregate cluster. This means that your mirrormaker processes should be the only ones ever producing to your aggregate cluster.
+--This means if we have an adserving cluster in vegas, it should be producing to its own kafka cluster and then mirrormaker'd to an aggregate cluster just as the others are
+--Not a whole lot of detail as to why this segregation is so important. It's a good idea administratively, separating a 'frontline' service from an 'aggregate, back end' one, makes more sense when doing upgrades etc. but not sure about show stoppers that make it so terrible
+-We still need to investigate whether it will scale. Probably have to do multi-consumer mirrormakers
+-Mirrormaker usually needs to be more resilient than normal...might be able to afford smaller batches and acks=-1
+-Messages are still gonna be decompressed and recompressed every batch if we're storing compressed...a bit inefficient
+-Partitions are not preserved! screws up your key based partitioning. Look into this if becomes a problem
+-If your aggregate clusters are where you really need the data, then your retention period on your remote clusters should only be long enough to cover mirrormaker (read: network) problems
+-!!!Run a separate mirrormaker process for important topics!!!. If your main process fucks up, you don't want it affecting the high priority topics (ie: topics that are used for hourly reporting, or topics that change "live" search results etc)
+--You may also consider running a separate mirrormaker process for bloated topics, such that they won't affect the others
+--Less time to catch up if you fall behind
+
+
+MONITORING
+-Ensure JMX options are set in kafka-run-class.sh included with package, or call those out in puppet. This is the line you need:
+bin/kafka-run-class.sh:  KAFKA_JMX_OPTS="$KAFKA_JMX_OPTS -Dcom.sun.management.jmxremote.port=9999 "
+
+-In addition to your standard process, disk, other server monitoring, you should be watching at a bare minimum your consumer offset lag time, as well as your broker cluster health (number of in-sync-replicas, replica lag time)
+--Here’s a simple consumer offset lag checker one-liner: 
+LAG=$(/opt/kafka/kafka_install/bin/kafka-run-class.sh kafka.tools.ConsumerOffsetChecker --group "${GROUP}" --zkconnect "${ZK}" --topic "${TOPIC}" |grep $TOPIC |awk -F' ' '{ SUM += $6 } END { printf "%d", SUM/1024/1024 }')
+
+-https://engineering.linkedin.com/kafka/running-kafka-scale
+Linkedin uses an internal "Kafka Audit" tool. So, every producer keeps track of how many messages it has produced over a certain time period. It then periodically send this count to an auditing topic. Additionally, each consumer they use also has a counter for how many messages it has consumed over a certain time period. It also periodically sends this count to an auditing topic. A separate consumer then consumes this audit topic, pushes the numbers to a DB, and there is a UI in front of the DB. They then can compare the #produced and #consumed messages, spitting an alert if there's a mismatch (duplicates, missing, etc).
+--Audit message content includes a timestamp and service+hostname header, start and end timestamp (for the produced messages it counted), topic name, tier (tier is on what tier the audit message was generated, eg: 0=remote_source_application, 3=mirrormaker_aggregate), and message count itself.
+--Concerns here are that since we're only counting messages, duplicate messages can cover message loss. It's also difficult to keep track of complex message flows
+
+
+OPEN QUESTIONS
+-How much do we care about ordering?
+-What is going to be pulling data from kafka? 
+--(edge processing, send aggregate results to LAS? What do we want to process at the edge?)
+-Is all of our processing done in 24hr chunks?
+
+
+BUGS & GOTCHAS
+# This one can sometimes happen if your consumer breaks from zookeeper at the right time. 
+# To fix it, reset the offset for your consumer group in zookeeper and delete anything spurious/temporary. Alternately, restart your consumers with a different consumer group ID.
+[2015-11-13 11:36:40,299] FATAL [mirrormaker-thread-1] Mirror maker thread failure due to  (kafka.tools.MirrorMaker$MirrorMakerThread)
+kafka.common.ConsumerRebalanceFailedException:
+# You should avoid using zookeeper for your offset commits. Use 0.8.3 or newer and commit them to kafka instead.
+
+
+
+
+:::::::::OF NOTE:::::::::::
+Notables:
+-Kafka encourages large topics rather than many small topics
+-A producer can choose a random partition to write to, but in a production system, you probably want to choose which partition to write to.
+-Each partition must fit on one machine. Each partition is ordered. Each partition is made up of several log files..
+-Each partition is consumed by only one consumer in a consumer group. Many partitions can be consumed by a single process though. You could have 1000 partitions consumed by a single process
+-So, the partition count is a bound on the maximum consumer parallelism. More partitions means you can have more consumers, which means potentially faster consuming.
+-Taken to an extreme, too many partitions means many files. This can lead to smaller writes if you don't have enough memory to properly buffer a batch of writes. If you have enough brokers, this shouldn't be a problem.
+-Each partition corresponds to several znodes in zookeeper. Zookeeper keeps everything in memory, so beware
+-More partitions means longer leader failover time. Each partition can be handled in milliseconds, but with thousands of partitions, this can add up
+-The broker checkpoints the consumer position (as of 0.8.2) via an API call. It's stored at one offset per partition, so the more partitions, the more expensive the position checkpoint is
+-It is possible to later expand the number of partitions; however, the broker will not attempt to reorganize data in the topic. If you are depending on this key-based semantic and numpartitions/numkeys changes and your data isn't in the expected place, you have to manually copy messages over to where you expect them to be
+-Use a separate consumer connector per topic if feasible (https://cwiki.apache.org/confluence/display/KAFKA/FAQ#FAQ-Myconsumerseemstohavestopped,why?)
+
+-TIME: Kafka allows getting the latest or earliest message offset by unix timestamp, but it does so at log segment granularity. So to get more accurate results you should use log.roll.ms rather than log.segment.bytes to roll your log segments. Be careful of how many files you create here.
+
+
+From the internets:
+~~
+A few things I've learned:
+
+-Don't break things up into separate topics unless the data in them is truly independent.
+-Consumer behavior can be extremely variable, don't assume you will always be consuming as fast as you are producing. Don't assume the lag on all your partitions will be similar.
+-Keep time related messages in the same partition.
+-Design a partitioning scheme, so that the owner of one partition can stop consuming for a long period of time and your application will be minimally impacted. (for example, partitioning by transaction id). Knowing what data will end up on what partitions will allow you to differentiate between data you have and data you don't.
+
+
+~~
+To reduce # of open sockets, in 0.8.0 (https://issues.apache.org/jira/browse/KAFKA-1017), when the partitioning key is not specified or null, a producer will pick a random partition and stick to it for some time (default is 10 mins) before switching to another one. So, if there are fewer producers than partitions, at a given point of time, some partitions may not receive any data
+~~
+

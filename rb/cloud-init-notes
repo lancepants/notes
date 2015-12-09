@@ -1,0 +1,11 @@
+-Install cloud-init on your base vm. This is a package on c6, c7, ubu14+, etc
+-shut your base vm down. Find its .img file and run this:
+  virt-sysprep -a baseimage.img
+-virt-sysprep is part of the libguestfs-tools package. It will take care of cleaning unique identifiers and other shit from your base image (so you don't have to modify your udev rules or ifcfg files). It modifies your .img file in-place.
+
+-cloud-init's behaviour is configured via user-data. Cloud provider/openstack utils typically will provide a --user-data or --user-data-file option with their instance creation tools.
+-user data is usually limited to 16KB, so it is often compressed
+
+-cloud-init scripts by default try to contact an openstack metadata server using a "link-local" address, 169.254.169.254. This of course does not work with pf9 because their metadata server is in their DC, not ours. Failing the link local, the cloud-init scripts will instead attempt to call whatever nameserver is in your resolv.conf.
+-Not sure how exactly this works. Simply having cloud-init installed in your base image makes it function, not sure where the hook to the outside is (how the instance actually gets its user-config data). Perhaps 169.254.169.254 is temporarily bound on the hypervisor??
+

@@ -1,0 +1,76 @@
+-Elasticsearch starts up, takes a look at its cluster.name, and then uses multicast to find its cluster members and join a cluster.
+-One node is elected to be the master node. The master node takes care of cluster-wide stuff like creating or deleting an index, or adding or removing a node from the cluster. The master node is not involved with document-level changes or searches, and as such will not become a bottleneck
+-Clients can talk to any node in the cluster. All nodes know where a document resides and can forward our request directly to the node(s) that hold the data we want ON OUR BEHALF. So as a client, we talk to one node, and it goes out and gets the results from all the other nodes, then forwards the results to us.
+
+
+SHARD ALLOCATION
+-Choosing how many primary and replica shards is done at index creation time. It's as simple as PUT /mynewindex { "settings": { "number_of_shards...number_of_replicas...  Ref "QUICKIES" in -notes doc.
+-Be sure to have enough shards such that a single shard can easily fit on a single ES node. Know how big your index is expected to grow. 
+-You cannot add more primary shards after an index is created. If you need more shards, you have to create a new index and then re-index all your documents to the new index
+-A normal (non keyed) search has to hit a copy of every shard in an index. This is fine if your shards are sitting on separate servers; however, if you have overallocated your shards and multiple sit on the same servers, they will be competing for resources.
+-"Term statistics" are used to calculate relevance, and are per shard. Having a small amount of data per shard leads to poor relevance.
+-Shards+Replicas=#totalNumNodes gives the best spread, best performance. Be sure however that this matches your dataset. This does not make sense for a small, low performance dataset where it would be more optimal to have everythign in a single primary shard.
+
+PERFORMANCE NOTES
+-A good baseline performance number can be had by spinning up a single ES instance, creating an index with only one primary shard and no replicas, fill it with accurate data, and then run the queries you would be running in production. Do it till it breaks, then use that number as a per-node baseline.
+-Disable swap, or check to see if swapping is an issue on poor-performing nodes/indexes
+-Beware of wildcard search queries
+-In a heterogeneous hardware environment, you may want to use ./bin/elasticsearch --node.box_type {superfast,medium,sucky} to tag your faster boxes. You can then use index.routing.allocation.include.box_type in your index creation settings to place certain indexes on certain box types.
+
+
+INDEX CONSIDERATIONS
+-In a typical use case, the number of documents in an index grows rapidly, often accelerating with time. Documents are almost never updated, and searches mostly target the most recent documents. As documents age, they lose value. This is why logstash saves to a new elasticsearch index each day (eg:logstash-2015-03-20). This model may not fit every situation, but keep in mind that your performance may suffer by result of keeping 'historical' data that you don't really care to search anyways.
+-Using date-based indexes is a good idea. You can start with yearly/monthly then move to daily/hourly whenever you like. You can use the _aliases builtin so your application doesn't have to know which date index to write to (eg: etl_current points to etl-`date -I`, or etl_last_3_months points to etl-2015-03, etl-2015-02, etl-2015-01). This also allows you to delete by index, which is much more efficient that delete by document
+-You can enforce index templates, which can for example set all indexes created with prefix logstash-* to have a certain number of shards, disable certain options, auto-add to aliases etc.
+-ES has a builtin _flush and _close which you can use to twighlight old, unused indexes.
+
+MULTI-TENANCY
+-In this context, multi-tenancy simply means multiple people are using the elasticsearch cluster for different things
+-An index-per-customer approach does not make sense after a certain limit (on the order of 100's or 1000's of indexes) due to a per-shard memory requirement (even if the shard is empty), but can be appropriate otherwise.
+-A shared index while still wanting performance segregation between tenants is possible by using custom routing rules based on some ID or other thing in your input json that you key off of in a routing rule.
+
+
+MONITORING
+-This returns 'green', 'yellow', or 'red' among other stats
+GET /_cluster/health
+--green
+  All primary and replica shards are active.
+--yellow
+  All primary shards are active, but not all replica shards are active. This can happen when there are not enough nodes up in your cluster to replicate shards to (it does not make sense to replicate shards on the same machine, so elasticsearch will not do it) // if there aren't enough nodes up to satisfy your replica_count wishes.
+--red
+  Not all primary shards are active.
+
+
+SHARDING
+-Number of primary shards is a fixed value, set upon index creation. The number of replica shards can be changed any time
+-Elasticsearch auto-migrates shards around your cluster as your cluster grows and shrinks
+-There's primary and replica shards, and they do what the name says. Replica shards are also used to serve read only requests, such as searching/grabbing documents
+-ES will auto-promote its replication shard to primary shard when it notices the primary shard node has gone away. This is marked as "instantaneous"...not sure how true that is. Test
+-
+
+~~VERSION CONTROL, CONCURRENCY, AND CONFLICTS~~
+PUT-STYLE UPDATE
+-Let's pretend that we have an inv_num_widgets_in_stock value in one of our documents. When someone buys something, We need to GET the previous JSON, decrement the counters' value field, and then PUT all that JSON back to the same docID. 
+-Internally, ES will create a new document and see that you're posting it to an existing index/topic/documentID, grab the _version number from the old doc, increment it, and set that to your _version number in your new doc. ES then marks the 'old' document as deleted. It gets culled in the background as new data is indexed.
+-So what happens if we are running multiple webservers? Both webservers might do a GET at the same time, decrement, and then PUT back to ES with the same value. ES doesn't care, it just receives two PUT requests and increments _version twice accordingly.
+-The more time between the initial GET and following PUT, the more time for error.
+POST-STYLE UPDATE
+-With POST, you're skipping the GET step as you don't care about the values previously held. The whole GET, change-something, PUT still happens, but this time ElasticSearch (the index API) is handling it for you. The change happens within a shard, so the time window for error between GET and PUT is much less. Still, it's possible that a conflict can arise.
+
+-PESSIMISTIC CONCURRENCY CONTROL: Typical in a RelationalDB, upon update you first lock the row, then read the value, writeback a new value, then unlock the row
+
+-OPTIMISTIC CONCURRENCY CONTROL: ES uses its _version*'ing features to implement this. 
+PUT-STYLE CONFLICT RESOLUTION:
+-We can take advantage of the _version number as follows:
+--Do a GET for your original doc. Let's say you got _version=6. Update data as needed. Do a PUT *but specify the version number that you retrieved* like so PUT /amazon/widgets/123?version=6 {...}. When ES gets this and goes to update docID 123, it'll look at the existing _version number, and if it doesn't match _version=6 it will pass back a 409 Conflict
+--What we do upon conflict is up to us. We could simply do another GET and retry the PUT, or we could return an error
+-We don't have to rely on ES to make _version numbers for us - we can specify them ourselves by taking advantage of _version_type=external. For example, if we'd rather use _version=$current_epoch, we can do so like this:
+--PUT /amazon/widgets/123?_version=1427748684&version_type=external {...}
+--ES will then look at existing docID 123 and make sure the existing _version number is *less than* the supplied new _version number. If the supplied number is greater than the old one, the update happens and the old doc is marked for deletion.
+--epoc allows updates once per second. We can of course multiply epoc by 10 to allow a doc to be updated 10 times/sec etc etc. Upper bound is 9.2e+18 (java long)
+POST-STYLE CONFLICT RESOLUTION:
+-In this situation, it's ES that is handling the _version'ing for us. The index API does the same thing that we did above, it does reads the shard docID (ie: GET), then writes the doc back to itself (ie: POST) using the _version number from the original doc. You can specify how many retry conflicts to do with this:
+POST /amazon/widgets/123/_update?retry_on_conflicts=5 {...}
+-This works fine when doing things such as updating a counter
+
+

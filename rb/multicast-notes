@@ -1,0 +1,80 @@
+MULTICAST
+
+A multicast is similar to a broadcast in the sense that its target is a number of machines on a network, but not all. Where a broadcast is directed to all hosts on the network, a multicast is directed to a group of hosts. The hosts can choose whether they wish to participate in the multicast group (often done with the Internet Group Management Protocol).
+
+As you are aware, each host on an Ethernet network has a unique MAC address, so here's the million dollar question: How do you talk to a group of hosts (our multicast group), where each host has a different MAC address, and at the same time ensure that the other hosts, which are not part of the multicast group, don't process the information ?
+
+Multicast can be broken down into three sections:
+1) Hardware/Ethernet Multicasting
+2) IP Multicasting
+3) Mapping IP Multicast to Ethernet Multicast
+
+
+FLOW
+
+Your computer sends out a multicast datagram to IP 230.0.6.5. This gets translated to its equivalent multicast mac address.
+All devices along the way must at the least support forwarding packets onwards. Routers route this traffic using MOSPF, MBGP, PIM, or if really old, DVMRP. Routers typically get multicast member information via IGMP. The multicast router will then send infos out all relevant ports.
+Your receiving hosts must be configured to have "joined" a multicast group. They do this by using IGMP to inform their upstream multicast router that they are interested in receiving data send to a certain multicast group. Additionally, their kernel has configured their NIC drivers or some sort of layer 3 IP filtering to accept a multicast ip or mac address group.
+
+
+MULTICAST MAC(ETHERNET)
+
+When a computer joins a multicast group, it needs to be able to distinguish between normal unicasts (which are packets directed to one computer or one MAC address) and multicasts. With hardware multicasting, the network card is configured, via its drivers, to watch out for particular MAC addresses (in this case, multicast MAC addresses) apart from its own. When the network card picks up a packet which has a destination MAC that matches any of the multicast MAC addresses, it will pass it to the upper layers for further processing.
+
+A multicast mac address is identified as having its "least significant bit of the most significant address octet set to 1" which translates to having a 1 at the end of your first octet (eg: 0000 0001. An example multicast destination mac is 01-00-5e-00-00-05. You're basically always going to see 01-...something.
+
+Sidenote: the 01 you see prepended to pxeboot configs (for instance with cobbler generated pxelinux.cfg files) is a prepended value of its "ARP code". In this case, 01 means Ethernet. It is not part of the mac address.
+
+When your computer sends a multicast, it'll have a special destination mac address, for example 01-00-5e-00-00-05. The dest mac address will not match the unique mac address of any computer, but the computers that are part of the multicast group will recognize the destination mac address and accept it for processing.
+
+The example mac above, 01-00-5e-00-00-05, was defined by the IEEE to be used on networks where OSPF is present. Routers can use this address to identify other routers around it which are configured to respond to this address. It also maps to a specific IP address which is analysed in IP multicast. There are a handful of rules defined for varying network scenarios, look below for some special multicast groups.
+
+
+MULTICAST IP
+
+Once your first hop gets your mac multicast, it must map that to a multicast IP in order to forward it along, because it needs to replace the source mac with its own before sending the packet out. So, keeping with the OSPF example, the mac address above will get mapped to multicast IP 224.0.0.5. Multicast is part of the class D of addressing, 224.0.0.0/3 or 224-239.0.0.0.
+
+Multicast is used by routers often to do discovery. A router may do a hello packet to 224.0.0.5 to see which other routers may be part of its ospf routing path.
+
+Here are some special multicast groups:
+
+224.0.0.0 Base Address (Reserved) [RFC1112,JBP]
+224.0.0.1 All Systems on this Subnet [RFC1112,JBP]
+224.0.0.2 All Routers on this Subnet [JBP]
+224.0.0.3 Unassigned [JBP]
+224.0.0.4 DVMRP Routers [RFC1075,JBP]
+224.0.0.5 OSPFIGP OSPFIGP All Routers [RFC2328,JXM1]
+
+224.0.0.1 is the all-hosts group. If you ping that group, all multicast capable hosts on the network should answer, as every multicast capable host must join that group at start-up on all it's multicast capable interfaces.
+224.0.0.2 is the all-routers group. All multicast routers must join that group on all it's multicast capable interfaces.
+224.0.0.4 is the all DVMRP routers, 224.0.0.5 the all OSPF routers, 224.0.013 the all PIM routers, etc.
+
+New special groups are regularly published to the assigned numbers RFC, so in practice 224.0.0.0 through 224.0.0.255 are reserved for local purposes and datagrams destined to them are not forwarded by multicast routers. Also, the range 239.0.0.0 to 239.255.255.255 are reserved for "administrative scoping."
+
+
+MAPPING ETHERNET MULTICAST TO IP MULTICAST
+
+How'd we get those numbers above, and how to the map back to a specific mac address? How does 01-00-5e-00-00-05 turn into 224.0.0.5?
+
+Well, 01-00-5e + 1 bit is an rfc standard. The rest is the remaining 23 bits of ip address. EG:
+
+01-00-5e-00-00-05    <->      224.0.0.5
+[0000 0001 - 0000 0000 - 0101 1110 - 0]000 0000 - 0000 0000 - 0000 0101
+   INTERNET MULTICAST RFC 1112             REMAINING 23 BITS OF 0.0.5
+
+So, regarding 224.0.0.5, 1110 identifies it as multicast. The remaining 28 bits identify the multicast "group" that the datagram is sent to.
+
+
+ROUTING
+
+DVMRP and PIM are oldies, with PIM being a lot better. The newer ones are MOSPF and MBGP, which are multicast extensions to their regular counterparts.
+
+
+INFOS
+
+Multicast capable hosts join the all-hosts group at startup. So, ping all hosts in the network which have multicast enabled:
+ping 224.0.0.1
+
+There are various levels of conformance with the multicast specification. A lot of the time you find devices which don't support it, and this is because multicast support is not mandatory in IPv4. It is, however, mandatory in IPv6. Some devices support sending multicast ip datagrams, but not receiving them. A fully compliant device is able to send and receive multicast traffic. In order to do this, it needs to be able to join/leave multicast groups and propogate this info to multicast routers, and thereby usually use IGMP (internet group management protocol) in their TCP/IP stack.
+
+

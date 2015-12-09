@@ -1,0 +1,58 @@
+###
+# Intro
+###
+Note that below, anywhere where we use -s, --server=, or -H, we can specify either the vCenter server or a target ESXi host. If you are specifying -s vcenter.server , then you need to also specify -h esxihost or --vihost=esxihost (or equivalent vmware-cmd or other binary-cmd option).
+
+###
+# Getting vCLI working
+###
+
+Download VMware vSphere CLI 6.0 (x86_64, second .tar.gz package), extract it
+
+yum install openssl-devel
+cd vmware-vsphere-cli-distrib/ ; ./vmware-install.pl
+# Keep running vmware-install.pl and installing deps until it reports no errors and you have /usr/bin/esxcli
+
+# Now try to connect. Get an error about untrusted key.
+esxcli -s srd0005-mgt.trp-srd.com -u root -p 'mypasswd' system version get
+Connect to srd0005-mgt.trp-srd.com failed. Server SHA-1 thumbprint: A3:41:17:09:90:6E:E9:9C:A5:73:27:A2:E9:B4:73:9E:E7:E8:02:88 (not trusted).
+
+cat > ~/.visdkrc.hostname.trp-srd.com
+VI_SERVER = srd0005-mgt.trp-srd.com
+VI_USERNAME = root
+VI_PASSWORD = mypasswd
+VI_CACERTFILE = A3:41:17:09:90:6E:E9:9C:A5:73:27:A2:E9:B4:73:9E:E7:E8:02:88
+
+# You can also add this server to your credstore
+/usr/lib/vmware-vcli/apps/general/credstore_admin.pl add --server srd0005-mgt.trp-srd.com --username root --password mypasswd
+/usr/lib/vmware-vcli/apps/general/credstore_admin.pladd --server srd0005-mgt.trp-srd.com --thumbprint A3:41:17:09:90:6E:E9:9C:A5:73:27:A2:E9:B4:73:9E:E7:E8:02:88
+# After you do this, you should remove VI_CACERTFILE from your ~/.visdkrc.hostname.trp-srd.com , otherwise
+# you may get the following error:
+# Connect to srd0005-mgt.trp-srd.com failed with ssl error 0xb084002
+
+# Example usage:
+esxcli -c .visdkrc.srd0005-mgt.trp-srd.com system version get
+esxcli -c .visdkrc.srd0005-mgt.trp-srd.com storage san iscsi list
+
+###
+# To use vmware-cmd
+#  You need to use vmware-cmd to do virtual machine mgmt
+###
+sudo cpan ExtUtils::CBuilder
+sudo cpan Path::Class
+sudo cpan Crypt::SSLeay
+
+# Usage example
+vmware-cmd -H srd0005-mgt.trp-srd.com -U root -P mypasswd -l
+
+
+
+
+###
+# extra
+###
+# Disable SSL cert checking entirely (untested)
+vi (command-youre-using).pl
+#After all the use statements add the following line
+$ENV{PERL_LWP_SSL_VERIFY_HOSTNAME} = 0;
+

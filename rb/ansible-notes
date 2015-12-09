@@ -1,0 +1,137 @@
+--------------------------------
+RUNNOTES
+#Limit your run to hosts with a certain tag, or in secong example, hostname:
+sudo -u prodicon ansible-playbook /usr/local/etc/ansible/site.yaml --tags 'kafka'
+sudo -u prodicon ansible-playbook -i /usr/local/etc/ansible/cobblerinventory.py --limit srd1010 /usr/local/etc/ansible/site.yaml
+
+
+
+--------------------------------
+MODULES
+
+http://docs.ansible.com/modules_by_category.html
+
+You can run ansible modules like this:
+ ansible webservers -m service -a "name=httpd state=started"
+ ansible webservers -m ping
+ ansible webservers -m command -a "/sbin/reboot -t now"
+
+While in a playbook, they look like this:
+ - name: reboot the servers
+   action: command /sbin/reboot -t now
+
+Modules typically either gather facts, or run commands.
+
+Check this one:
+http://docs.ansible.com/lineinfile_module.html    EG:
+- lineinfile: dest=/etc/security/limits.conf regexp='^kafka' line="kafka    -    nofile    98304"
+
+You can also check http://docs.ansible.com/replace_module.html to replace all instances / use advanced regex. Eg:
+- replace: dest=/etc/hosts regexp='(\s+)old\.host\.name(\s+.*)?$' replace='\1new.host.name\2' backup=yes
+
+
+--------------------------------
+FACTS
+
+Check out what default facts are available to you:
+
+sudo -u prodicon ansible srd1007 -m setup
+
+You can then use these variables in your playbooks or templates like so:
+
+{{ ansible_devices.sda.model }}
+{{ ansible_hostname }}
+etc...
+
+--------------------------------
+TEMPLATES
+https://blog.codecentric.de/en/2014/08/jinja2-better-ansible-playbooks-templates/
+
+###EXAMPLE: iterate with two values
+{% for id in range(201,221) %}  
+192.168.0.{{ id }} client{{ "%02d"|format(id-200) }}.vpn  
+{% endfor %}
+
+First of all, you see {% and %} as delimiters for Jinja statement execution, in contrast to the already known {{ and }} for expression evaluation.
+The first line counts the numbers from 201 to 220, storing the value in the id variable for each loop iteration.
+The second line first simply evaluates id as the last byte of the IP address.
+Following that you see a more complicated expression: It filters the Python format string %02d into the format filter, which applies it to the value of id minus 200, leading to this nicely aligned output:
+
+192.168.0.201 client01.vpn  
+192.168.0.202 client02.vpn  
+…
+192.168.0.220 client20.vpn
+
+
+###EXAMPLE: iterate through all nodes in a group
+servers={{ groups["zookeeper"] | join(",") }}  #Produce a list of ndoe names joined by a comma. join() alone with separate them with a space.
+#but that resulted in a trailing ,! How do I get rid of that? - use jinja's loop.last variable so that the , is printed unless loop.last is true:
+servers={% for host in groups['zookeeper'] %}{{ host }}:5672{% if not loop.last %},{% endif %}{% endfor %}
+
+###EXAMPLE: using |default values if a variable's value is undefined ; or doing an if for possibly non existing variables:
+…  
+VOL_DATA="{{ item.data_volume | default('False') }}";  
+VOL_DATA_SIZE="{{ item.data_volume_size | default(0) }}";  
+…
+
+{% if derp.default_gateway is defined %}
+print stuff
+{% endif %}
+#There's a good network interfaces template example at the codecentric.de link above.
+
+
+--------------------------------
+PLAYBOOKS
+###EXAMPLE: Using registers to capture and save command output:
+#This register will capture the mktemp commands' stdout, stderr, exit code, and other stuff, and put it into a dict called tmp_file. We can then use this variable later on like so:
+- name: Create temp file for some later task  
+  command: mktemp /tmp/ansible.XXXXXXXXX  
+  register: tmp_file
+
+#mktemp will have ran and output to stdout ansible.10VmidRi0 or something. Let's replace the generated file with our source file:
+- name: Copy some file to the temp location  
+  sudo: True  
+  copy: src=sourcefile dest={{ tmp_file.stdout }}
+
+
+###EXAMPLE: Further using registers:
+#Perhaps you only want to run something if a previous command worked, or based on a registers' output. The below will take the output and return code of grep (0 = no match, 1 = match, 2+=error), and fail if grep outputs an error return code:
+- name: check for gpg public key  
+  sudo: true  
+  shell: gpg --list-keys | grep {{ BACKUP_GPG_PUBLIC_KEY }}  
+  register: find_gpg_public_key  
+  always_run: true  
+  failed_when: find_gpg_public_key.rc > 1
+#Now let's only run the following if the grep matched something (return code 1):
+- name: Create temp file for gpg public key  
+  command: mktemp /tmp/ansible.XXXXXXXXX  
+  register: gpg_public_key_tmp_file  
+  always_run: true  
+  when: find_gpg_public_key.rc == 1
+- name: Create gpg public key  
+  sudo: true  
+  copy: src=root/gnupg/backup@centerdevice.de.pub dest={{ gpg_public_key_tmp_file.stdout }} owner=root group=root mode=0600  
+  when: find_gpg_public_key.rc == 1
+
+###EXAMPLE: Only run a role if it matches a variable, using "when":
+- name: Create replication slave user on master  
+  sudo: true  
+  mysql_user: name=repl host='%' password={{ MYSQL_REPL_PASS }} priv=*.*:"REPLICATION SLAVE" state=present login_user=root login_password={{ MYSQL_ROOT_PASS }}  
+  when: mysql_repl_role == 'master'
+
+
+
+--------------------------------
+MISC
+
+Ensure is in ansible - ulimit management for kafka user:
+"In Kafka 0.8, we keep the file handles for all segment files open until they are garbage collected. Depending on the size of your cluster, this number can be pretty big. Few 10 K or so."
+
+If you wanna use the cobbler dynamic inventory script, you gotta set --management=True on the eth0 for the script to notice the box:
+#have the box show up under "status" tag (likely 'production') and show up again under its profile name as a tag:
+cobbler system edit --name=srd123 --interface=eth0 --management=True
+#Have the box show up under role name:
+cobbler system edit --name=srd123 --mgmt-classes=kafka
+#Set per-host variables:
+cobbler system edit --name=srd123 --ksmeta="variable1=omg"
+

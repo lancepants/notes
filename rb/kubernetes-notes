@@ -1,0 +1,17 @@
+INSTALL (C7)
+https://github.com/kubernetes/kubernetes/blob/release-1.0/docs/getting-started-guides/centos/centos_manual_config.md
+Master: 
+- yum install kubernetes etcd 
+- vi /etc/kubernetes/apiserver; /etc/kubernetes/config
+- mkdir /var/run/kubernetes; chown kube:kube $_ #bug. rpm spec/init script misses this.
+- for s in start kube-apiserver kube-controller-manager kube-scheduler; do systemctl enable $s ; systemctl restart $s ; done
+Slaves: 
+- yum install kubernetes
+- vi /etc/kubernetes/kubelet; /etc/kubernetes/config
+- for s in kube-proxy kubelet docker ; do systemctl enable $s ; systemctl restart $s
+# Complete. No networking layer though. Use flannel (puke) or get ipv6 working.
+
+INTRO (Kubernetes 101)
+https://github.com/kubernetes/kubernetes/blob/release-1.0/docs/user-guide/walkthrough/README.md
+
+

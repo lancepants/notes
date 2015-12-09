@@ -1,0 +1,11 @@
+LOCATIONS
+
+YARN ResourceManager: http://srd1003:8088/cluster/apps    		#Check your yarn-managed jobs
+HDFS Web Frontend (hdfs namenode):  http://srd1002.trp-srd.com:50070/	#Check out what's on your hdfs filesystem
+HDFS IPC: hdfs://srd1002.trp-srd.com:8020				#Other apps that want to write to hdfs should use this
+
+HDFS INTERACTIONS
+hdfs dfs -ls /
+sudo -u hdfs hdfs dfs -mkdir -p /samza/target		# / is owned by hdfs...perms seem to work similar to nfs.
+sudo -u hdfs hdfs dfs -put hello-samza-0.9.0-dist.tar.gz /samza/target/
+

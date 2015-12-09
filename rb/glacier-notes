@@ -1,0 +1,90 @@
+-Glacier passes back an archiveID per file. If you're doing multiprocessing/threading and writing to a common stdout, these processes are going to stomp all over each other. You need to re-write your multiprocessing to use a queue of some sort / some sort of locking mechanism.
+-A job ID will not expire for at least 24 hours after Amazon Glacier completes the job.
+-handle archids with -'s at the start by using --archive-id file://archid.txt
+
+UPLOAD
+from boto.glacier.layer1 import Layer1
+from boto.glacier.concurrent import ConcurrentUploader
+glacier_layer1 = Layer1(region_name='us-west-2')
+uploader = ConcurrentUploader(glacier_layer1, "rubi_cold_storage", 128*1024*1024) #128MB chunks
+archive_id = uploader.upload(f, f)
+print '%s %s' % (f, archive_id)
+sys.stdout.flush() #this flush won't prevent multiprocessing corruption. It only helps flush to stdout every line rather than having to wait, or ctrl+c and end up with partial output on a successful upload.
+
+
+------------------------
+~~INITIATING JOBS~~
+
+REQUEST AN ARCHIVE
+#http://docs.aws.amazon.com/cli/latest/reference/glacier/initiate-job.html
+aws glacier initiate-job --account-id - --vault-name rubi_cold_storage --region us-west-2 --cli-input-json '
+{
+    "jobParameters": {
+        "Type": "archive-retrieval", 
+        "ArchiveId": "ufLbiL3wZGTeX-HhdUDVRPMifkOOeyHcmb7x1ifRrPUTJ7izFfxh9kN_U48obULOhoWpeTZfrlIjVvZrO36SYQqN2W_FSbyNLfBVQpqahYPQTEsTDB7aBZ3TIBl_avWSsRLFqaJ1OA", 
+        "Description": "some/file_name",
+    }
+}
+'
+
+Example output:
+{
+    "location": "/747429369124/vaults/rubi_cold_storage/jobs/ETi8NyT_SXvcZgPE-c6CfxDidsV22VUxQjbf5e6a-3A8M8YXTR_b6NiYxHapX_Gd93TDVOm77GBSAIELmvcstsR6ysB7", 
+    "jobId": "ETi8NyT_SXvcZgPE-c6CfxDidsV22VUxQjbf5e6a-3A8M8YXTR_b6NiYxHapX_Gd93TDVOm77GBSAIELmvcstsR6ysB7"
+}
+
+
+REQUEST INVENTORY
+#http://docs.aws.amazon.com/cli/latest/reference/glacier/initiate-job.html
+aws glacier initiate-job --account-id - --vault-name rubi_cold_storage --region us-west-2 --cli-input-json '
+{
+    "vaultName": "rubi_cold_storage", 
+    "jobParameters": {
+        "Type": "inventory-retrieval", 
+        "Description": "Initial Inventory Retrieval"
+    }
+}
+'
+
+WHAT OPTIONS YOU HAVE UPON INITIATING A JOB
+aws glacier initiate-job --account-id - --vault-name rubi_cold_storage --region us-west-2 --generate-cli-skeleton
+{
+    "accountId": "", 
+    "vaultName": "", 
+    "jobParameters": {
+        "Format": "", 
+        "Type": "", 
+        "ArchiveId": "", 
+        "Description": "", 
+        "SNSTopic": "", 
+        "RetrievalByteRange": "", 
+        "InventoryRetrievalParameters": {
+            "StartDate": "", 
+            "EndDate": "", 
+            "Limit": "", 
+            "Marker": ""
+        }
+    }
+}
+#Use this for your --cli-input-json '{ ...'. CLI entries prior take precedence over --cli-input-json
+
+------------------------
+~~SHOW JOB STATUS~~
+#List ALL of specified vaults' jobs
+#http://docs.aws.amazon.com/cli/latest/reference/glacier/list-jobs.html
+aws glacier list-jobs --account-id - --region us-west-2 --vault-name rubi_cold_storage
+
+
+#Show status of a specific job
+#http://docs.aws.amazon.com/cli/latest/reference/glacier/describe-job.html
+aws glacier describe-job --account-id - --region us-west-2 --vault-name rubi_cold_storage --job-id ETi8NyT_SXvcZgPE-c6CfxDidsV22VUxQjbf5e6a-3A8M8YXTR_b6NiYxHapX_Gd93TDVOm77GBSAIELmvcstsR6ysB7
+
+
+------------------------
+~~DOWNLOAD YOUR FILE OR INVENTORY~~
+#http://docs.aws.amazon.com/cli/latest/reference/glacier/get-job-output.html
+
+#Once it's ready, grab it like so:
+aws glacier get-job-output --account-id - --region us-west-2 --vault-name rubi_cold_storage --job-id ETi8NyT_SXvcZgPE-c6CfxDidsV22VUxQjbf5e6a-3A8M8YXTR_b6NiYxHapX_Gd93TDVOm77GBSAIELmvcstsR6ysB7 my_output_file.txt
+
+

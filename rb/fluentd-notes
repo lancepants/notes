@@ -1,0 +1,70 @@
+~~FLUENTD General Notes~~
+-fluentd is the open source version, td-agent (TreasureData) is the commercial
+-Runs in CRuby. 
+-For larger installs, jemalloc is recommended in order to avoid memory fragmentation. Install manually if using open source fluentd
+-Internally, log messages are converted to JSON
+-fluentd shares many similarities with logstash, such as having an inputs/outputs plugin architecture and the JSON format, and both being ruby. The difference between them is more in their design focus. Logstash emphasizes flexibility and interoperability, while fluentd emphasizes simplicity and reliability.
+-fluentd has less inputs & outputs out of the box than logstash, but the ones it does have often have built-in support for buffering, load-balancing, timeouts, and retries (example: out_forward plugin used to transfer logs from one fluentd instance to another)
+-Plugins can be configured to do either in-memory or on-disk buffering. The buffering logic is "highly tunable" and can be customized for various throughput/latency requirements.
+-184MB rpm. Classic ruby. Runs in 30-40MB of ram (claimed)
+
+
+~~ARCHITECTURE~~
+-fluentd runs on each web server. It tails logs, and forwards them to another server running fluentd as well.
+This 'central' server then writes the logs out somewhere (S3, hadoop, ...).
+-use in_secure_forward and out_secure_forward plugins for encryption
+-These output plugins typically will do load balancing, buffering, retries, and can forward a copy to multiple endpoints (verify all this)
+-There is a project focus here on reliability
+
+~~PERFORMANCE~~
+-Fluentd is said to be able to handle ~18,000 events/sec on a single process (verify). "and you can get better throughput by running Fluentd on multiple cores," which I assume means binding each instance to a different port and then having your other fluentd forwarding boxes load balance between them.
+
+-1x receive process, 2x@9k/sec send process : ~18-25k 300byte msgs/sec being received and written out
+-1x receive process, 4x@4k/sec send process : ~14-18k 900byte msgs/sec being received and written out
+-7x receive procceses, 12x@4k/sec send process : ~9k 900byte msgs/sec when receiver was sent ~48k msgs at once, jumping to ~35k msgs/sec near the end as some sending processes finished
+
+-Receiver performance drops to 25% when "overloaded"
+-7x multiprocess gives 3-4x performance at best, 1-2x at worst
+-IO & CPU are fine when using multiprocessing. Not sure why it won't scale with more processes. At this point this is not worth investigating. Investigate further if we actually use this thing
+
+~~PLUGINS~~
+~http://www.fluentd.org/plugins  #Big list, tons of plugins here for working with various inputs/outputs
+~Fluentd has 6 types of plugins: Input, Parser, Filter, Output, Formatter and Buffer.
+~This section is meant to describe the ones we care about.
+~~~~~~~~~~~
+
+Noteable: in_multiprocess
+Noteable: add more <servers> clauses to your out_forward. include weight, and <secondary> for on-disk buffer if needed. Does load balancing for you, and appears to work fine from what I see.
+
+::Inputs::
+http://docs.fluentd.org/articles/input-plugin-overview
+
+
+~~CONFIG~~
+~Notable config/plugin options
+~~~~~~~~~~
+
+-Various output plugin types have the following:
+buffer_type file
+buffer_path /path/to/buffer.file
+
+-here's a file source.
+-http://docs.fluentd.org/articles/in_tail
+<source>
+  type tail
+  format apache
+  path /var/log/httpd-access.log
+  tag apache.access
+</source>
+--format is REQUIRED - it tells fluentd how to parse your log into json.
+--Various formats are available. Ultimately they are all just regexes.
+--Regexp:
+  format /^herpderp (?<mytagname>PaTTeRn*) somethingElse$/
+  --Notice the (?<NAME>PATTERN) here. You're basically matching and tagging a field to add to structured json
+--format apache2 is the same thing as this:
+  format /^(?<host>[^ ]*) [^ ]* (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^ ]*) +\S*)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)")?$/
+  time_format %d/%b/%Y:%H:%M:%S %z
+--also available are syslog, nginx, csv, json, none, etc..
+
+
+

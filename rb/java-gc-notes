@@ -1,0 +1,6 @@
+::jconsole::
+Enable JMX on your java app, then fire up jconsole on your desktop and connect to the remote jmx server:port.
+
+Click the Memory tab and wait a few seconds. The bars marked "Heap" in the bottom right are what you're wanting to pay attention to - CMS, Eden, and Survivor, and as well you should pay attention to the GC time: text to see how long garbage collection is taking. ConcurrentMarkSweep is a very expensive operation, so it's important that it runs fast.
+
+If survivor is consistenly high, it's a good indicator that you need to increase your heap size.

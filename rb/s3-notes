@@ -1,0 +1,64 @@
+Requirement tracking:
+  pip install boto
+  -boto requires aws authentication. It will look in /etc/boto.cfg and ~/.boto.cfg.
+  You can also explicitly define auth, but this script is assuming .boto.cfg exists.
+
+New Creds:
+ rbops
+ Access Key ID:
+ AKIAIT3ROWPWZW3624DQ
+ Secret Access Key:
+ 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
+
+Info:
+-Dev box with backup access: frpd-sql0000.lab1.fanops.net
+-Backups are on an oracle appliance right now. mysql boxes are ISAM, doing a lock+flush, then rsync to an nfs mount (10.83.17.21:/export/revvdb/backups)
+-Current backups run 8pm-12am, staggered. Longest backup: ~4hrs
+-There are 319846 files currently in mnt_backup. It's taking ~4mins to do an os.walk+mtime in pyth,
+ or 2m30s when 'warm'. 
+--~90k files are updated weekly, ~71k daily
+--total size of those 71k files is 2.9TB/day. No "delta's only" transfer to S3 possible, so no workaround to upping 3TB every time we run it. Running mysqld on ec2 then replicating up is the long term goal
+--~67k files are less than 100MB. 3.4k are greater than 100MB. This suggests threading on file will be fastest
+--2.9TB/80MB/sec = 36250 or 10h (likely unrealistic)
+-custom rolled script is 2x faster than awscli, and 3-4x faster than s3put or s3cmd. This is due to aggressive threading of multiple small files. Look into modifying awscli...?
+-Further bandwidth testing numbers are currently irrelevant until more bandwidth is found. We are maxing the 1gig link on frpd0000 (35ish in from the filer, then 35ish out back the same interface to the internet).
+--Unless we have a 10gig up, it doesn't look like we can do dailies to S3 unless we compress!
+-Filer is not using snapshotting. There is pushback against allocating resources for snapshotting. Determine rate of daily change to see whether this concern is justified
+-Backups are not being compressed prior to write. Is the filer doing dedup or compression? If not, snapshotting space is insignificant when you are wasting 60%+ of disk space by not compressing or deduping. Is CPU an issue on these filers?
+-15TB = $458/mo in Oregon. Glacier is 1c/gig. It's 9c/gig to pull data (to non-ec2), and free to input.
+
+
+-5.65TB of the *TOTAL* files are already tgz/gz. This leaves ~10.5TB probably uncompressed. It's gonna take like, a week to do the initial run.
+-Only ~24GB of compressed data change in ~24hrs
+-1.2TB of uncompressed data change in ~24hrs
+--I suspect different days have different volumes of data...
+-1.2TB @ 80% compression = 240GB. 240+24=264. 264000MB@35MB/sec == 2hrs
+-2842GB(uncomp)+58GB(comp) @ 80% = 568.4+58 = 626GB...@35MB/sec == 5hrs
+
+
+Open Questions:
+-Are we against setting up snapshots on the filer?
+-Does the filer currently compress or dedup the dumps dir?
+-How fast can we push uploads on a box with 10gig to the filer or internet, or separate interfaces from internal to internet?
+-What box is going to host the s3 uploader? If we end up chaining s3 uploader onto the end of the regular backup scripts, how will this change if at all?
+
+
+
+*Unknown time/day* Results:
+  s3put using multiprocessing on the multipart-upload: 4 files, 400MB, ~56s
+  s3thinger using multithread to upload 4 files at a time: 4 files, 400MB, ~45s
+  s3thinger using multiprocess to upload (2) files at a time: 4 files, 400MB, ~43s
+
+Weds 3:24PM PST:
+  s3thinger.multiproc 4x125MB ~1m23s
+  s3thinger.multithread 4x125MB ~1m15s
+  s3thinger.multicombo 4x125MB ~1m9s
+
+Thurs 1:40PM PST
+  s4cmd 8 threads (mpart) 2x125MB ~1m48s
+  s4cmd 16 threads (mpart) 2x125MB ~1m5s
+  s4cmd 32 threads (mpart) 2x125MB ~51s, ~1m37s
+  s3thinger.mprocfile(2).mthreadpart(16) 2x125MB ~38s
+
+  Note: I only have 2 cores on my linux box.
+
