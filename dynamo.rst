@@ -240,9 +240,7 @@ It is beneficial however to have some sort of global cluster state for when perm
 
 When a node starts for the first time, it chooses its set of tokens (virtual nodes) and maps nodes to their respective token sets. That mapping is then persisted on disk and initially only contains the local node and the token set. During the gossip-based random-node-every-second process, nodes will compare their mapping and token set information with each other and reconcile that information. So, a new node will very likely gossip an existing node that is already fully aware of the rest of the cluster, getting the new node up to speed right away. 
 
-.. note:: 
-   - The above method of cluster data discovery can be fouled up a bit if you're adding multiple nodes at once. If an administrator added node A, then added node B, these nodes would not be immediately known to each other
-   - A user can configure something called "seed" nodes, which are nodes that all other nodes can eventually reconcile with (outside of the random every second process). These nodes essentially have the best view of the current state of the cluster
+.. note:: The above method of cluster data discovery can be fouled up a bit if you're adding multiple nodes at once. If an administrator added node A, then added node B, these nodes would not be immediately known to each other. To mitigate this, a user can configure something called "seed" nodes, which are nodes that all other nodes can eventually reconcile with (outside of the random every second process). These nodes essentially have the best view of the current state of the cluster
 
 Addition/Removal of Storage Nodes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
