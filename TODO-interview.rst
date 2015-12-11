@@ -1,27 +1,57 @@
+.. _interview:
 
-Coding:
-
-
-Quickies
---------
-Make immutable, can't delete this file:
-chattr +i filename
-
-Special file being a douche to rm? eg: $!filename, -filename, 'filename-
-ls -i    #list by inode
-find . -inum 1234 -exec rm {} \;
-
+Interview Material
+==================
 
 Questions
 ---------
-- Files, inodes, filesystems...how do they work? What are file descriptors? what are semaphores and how are they used?
+- Files, inodes, filesystems...how do they work? What are file descriptors? 
+**Filesystems, inodes, file descriptors**: Described in :ref:`filesystems`
+
+- What are semaphores? What is a mutex? What's the difference between the two?
+A semaphore is best described as a signaling mechanism, but could also be described as a type of lock. A semaphore is an object that contains a (natural) number, on which two modifying operations are defined. One operation, V, adds 1 to the number. The other operation, P, removes 1. Because the natural number 0 cannot be decreased, calling P on a semaphore containing 0 will block the execution of the calling process/thread until some other thread comes along and calls a V on that semaphore. You may create a semaphore with more than one "slot" available (ie: s(6)). As such, semaphores can be used to restrict acess to a certain resource to a maximum (but variable) number of processes.
+
+A mutex is a locking mechanism which helps multiple tasks serialize their access to a shared resource. It's simply some function or object you call prior to performing a block of code on some shared resource. Your first call sets a locked flag, then you run your code, and then your second call to the mutex releases the lock.
+
+You might think of a semaphore or a mutex as a key to a bathroom. One key, one door works well for a mutex or a semaphore(1). But above we mentioned semaphores can count higher than one...so one key for six bathrooms. A mutex will not scale in this scenario as it would block each time 1/6 resources are used. A semaphore will allow 6 people to use the bathrooms at once, but it has no idea which bathroom is free at which time. What you end up needing is a separate mutex for each resource regardless. 
+
+Because of this, you should not be relying solely on semaphores for locking - in fact, you really should only be using semaphores for simple signaling. For example, have a semaphore for power button which your display subscribes to (semaPend(sem_pwr_button); //wait for signal), such that when the power button is hit, a post (V, increment, semaPost(sem_pwr_button); //send the signal)) is sent and your display thread then unblocks and performs some_code. Another use could be naive throttling: only allow 3 threads to access a database at once.
+
+
 - How are cookies passed in the HTTP protocol?
-- How does traceroute work? Uses ICMP and uses gradually increasing TTL numbers to elicit a response from routers at each hop. Each router decrements the counter and if zero, will return an answer. The client keeps incrementing the counter in successive packets 'till it reaches its intended destination. The TTL counter exists in the IP header.
+The server sends one of these in its response header (square brackets optional):
+    Set-Cookie: <em>value</em>[; expires=<em>date</em>][; domain=<em>domain</em>][; path=<em>path</em>][; secure]
+
+Note that "value" above is a string, and is almost always in a format like this: **key=value** , and is usually enforced as such.
+
+And if the client accepts the cookie write, it sends this in its next request header:
+    Cookie: name=value
+
+- How does traceroute work? 
+ICMP packets are sent, with the initial packet having a TTL of 0 and each consecutive packet having its TTL incremented by one. This elicits a response along each hop of a network path. The TTL count exists in the IP header.
 
 Google Glassdoor
 ^^^^^^^^^^^^^^^^
 - Rank the following in terms of speed: access a register, access main memory, perform a context switch, hd seek time
+1 Register. 1 or 2 cycles. Smallest and fastest memory on a system. A compiler will typically allocate registers to hold values retrieved from main memory.
+2 Perform a context switch (which type? assuming thread switch). 30-60 cycles best case.
+3 Access main memory. NUMA local: 100 cycles NUMA remote: 300 cycles for no/normal congestion
+4 HD seek time. A typical hdd needs anywhere from 2.5ms to 6.5ms to seek, depending on rotational speed (2ms=15k). Arm movement (stroke/track-to-track) takes anywhere from 0.2 to 1ms. SSD seek time is around 0.08-0.16ms
+
+**Context Switch:** The process of storing execution state of a process or thread so that execution can be resumed from the same point at a later time.
+
+    "Context Switch" can mean several different things, including: thread switch (switching 
+    between two threads within a given process), process switch (switching between two 
+    processes), mode switch (domain crossing: switching between user mode and kernel mode 
+    within a given thread), and more. 
+
+Which type of context switch you're talking about can mean a very different performance costs. For example, a context switch pausing one thread and the cpu scheduling another where each thread is not sharing memory (separate working sets) could dirty the cpu cache if there is not enough space to hold both thread's memory or the new thread fills the cache with new data. The same is true for processes. Additionally, if two processes share the same working set of memory and one is context switched out and another is scheduled in on a different core, it does not have access to the same cache/working set without a NUMA hop or a trip to main memory.
+
+http://blog.tsunanet.net/2010/11/how-long-does-it-take-to-make-context.html
+
+
 - What information is contained in a file inode?
+
 - Research possible problems with adding two integers of arbitrary size
 - Common q about TCP path and MTU discovery
 - Research null routing ("black hole connection")
@@ -98,7 +128,7 @@ SMTP
 
 Design
 ------
-(googs)how would you design Gmail.
+(googs)How would you design Gmail?
 (fb)Outline a generic performant, scalable system. From frontend (lb's? or cluster-aware metadata like kafka) to backend (db's, storage, nosql options, etc). Remember networking as well: what features does a high performance network card supply - what can it offload? What should you tweak network wise for high bandwidth connections
 (fb)How would you design a cache API?
 (fb)How would you design facebook?
@@ -107,31 +137,45 @@ Design the SQL database tables for a car rental database.
 
 Coding Questions
 ----------------
-- Write the "tail" program, in python, on the whiteboard.
--(googs)Implement a hash table
--(googs)Remove all characters from string1 that are contained in string2
--(googs)implement quicksort. Determine its running time.
--(googs)Given a numerym (first letter + length of omitted characters + last letter), how would you return all possible original words? E.G. i18n the numeronym of internationalization
--(googs)Find the shortest path between two words (like "cat" and "dog), changing only one letter at a time.
--(googs)Reverse a linked list
--(googs)Write a function that returns the most frequently occurring number in a list
-(fb)re-implement 'tail' in a scripting language
-(fb)Battleship game: write a function that finds a ship and return its coordinates.
-(fb)Write a script to ssh to 100 hosts, find a process, and email the result to someone
-   for i in {1..100} ; do ssh user@host${i} "ps -ef|grep blah|grep -v grep|mail -s "This is the subject" user@myemail.com" ; done
-(fb)Write a function to sort a list of integers like this [5,2,0,3,0,1,6,0] in the most efficient way (look up sorting algorithms)
-(fb)Given a sentence convert the sentence to the modified pig-latin language: Words beginning with a vowel, remove the vowel letter and append the letter to the end. All words append the letters 'ni' to the end. All words incrementally append the letter 'j'. i.e. 'j','jj','jjj', etc... (what's the last part mean? append j's incrementally, what?)
-(fb)take input text and identify the unique words in the text and how many times each word occurred. Edge cases as well as performance is important. How do you identify run time and memory usage?
-(fb)build a performance monitoring script, adding more features and improving efficiency as you go
-(fb)For a given set of software checkins, write a program that   will determine which part along the branch where the fault lies. 
+
+Google Glassdoor
+^^^^^^^^^^^^^^^^
+- Implement a hash table
+- Remove all characters from string1 that are contained in string2
+- implement quicksort. Determine its running time.
+- Given a numerym (first letter + length of omitted characters + last letter), how would you return all possible original words? E.G. i18n the numeronym of internationalization
+- Find the shortest path between two words (like "cat" and "dog), changing only one letter at a time.
+- Reverse a linked list
+- Write a function that returns the most frequently occurring number in a list
+
+Facebook Glassdoor
+^^^^^^^^^^^^^^^^^^
+- re-implement 'tail' in a scripting language
+- Battleship game: write a function that finds a ship and return its coordinates.
+- Write a script to ssh to 100 hosts, find a process, and email the result to someone
+- or i in {1..100} ; do ssh user@host${i} "ps -ef|grep blah|grep -v grep|mail -s "This is the subject" user@myemail.com" ; done
+- Write a function to sort a list of integers like this [5,2,0,3,0,1,6,0] in the most efficient way (look up sorting algorithms)
+- Given a sentence convert the sentence to the modified pig-latin language: Words beginning with a vowel, remove the vowel letter and append the letter to the end. All words append the letters 'ni' to the end. All words incrementally append the letter 'j'. i.e. 'j','jj','jjj', etc... (what's the last part mean? append j's incrementally, what?)
+- take input text and identify the unique words in the text and how many times each word occurred. Edge cases as well as performance is important. How do you identify run time and memory usage?
+- build a performance monitoring script, adding more features and improving efficiency as you go
+- For a given set of software checkins, write a program that   will determine which part along the branch where the fault lies. 
  -So we assume we already have a list of git revisions, and once a certain revision gets hit everything after it fails
  -Do a binary search in order to determine where the build starts breaking. Ie: pick the middle number, do a checkout, build, if fail then do another binary search in the middle of startrevision and failedrevision-1. If success, then do another binary search between successrevision+1 and finalrevision..etc etc. Do this until you find that failedrevision-1=a successful revision
-(fb)Given a list of integers, output all subsets of size three, which sum to zero. (wtf? http://www.glassdoor.com/Interview/Given-a-list-of-integers-output-all-subsets-of-size-three-which-sum-to-zero-QTN_580995.htm )
-(fb)Given a list of integers which are sorted, but rotated   ([4, 5, 6, 1, 2, 3]), search for a given integer in the list. 
- -Think of the array as two separate lists. If number we're searching for is less than or equal to the last number in the array (3 in this case), then cut array in half and do a binary search on just that half until number is found
-(fb)Write a frequency list generator! Do one attempt, then try to make it more efficient. Good problem to test performance with. Have it output the top 10 words or something.
+- Given a list of integers, output all subsets of size three, which sum to zero. (wtf? http://www.glassdoor.com/Interview/Given-a-list-of-integers-output-all-subsets-of-size-three-which-sum-to-zero-QTN_580995.htm )
+- Given a list of integers which are sorted, but rotated   ([4, 5, 6, 1, 2, 3]), search for a given integer in the list. 
+ --Think of the array as two separate lists. If number we're searching for is less than or equal to the last number in the array (3 in this case), then cut array in half and do a binary search on just that half until number is found
+- Write a frequency list generator! Do one attempt, then try to make it more efficient. Good problem to test performance with. Have it output the top 10 words or something.
 
     For above questions, elaborate on theoretical best performance. Talk about 
     memory vs CPU usage. Talk about whether certain system calls take more 
     resources than others. How long it takes to: access a register, access main 
     memory, perform a context switch, hd seek time
+
+Quickies
+--------
+Make immutable, can't delete this file:
+    chattr +i filename
+
+Special file being a douche to rm? eg: $!filename, -filename, 'filename-
+    ls -i    #list by inode
+    find . -inum 1234 -exec rm {} \;
