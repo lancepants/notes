@@ -72,6 +72,7 @@ Some routers may work around this issue by changing the *maximum segment size* (
 [TCP Packet[TCP Segment[IP datagram[Data link layer Frame]]]]
 [UDP Datagram[UDP Segment[IP datagram[Data link layer Frame]]]]
 
+Also reference: :ref:`networking-mtu`
 
 
 - Which system call returns inode information? (study all common system calls and know them)
@@ -87,8 +88,13 @@ Kill sends a SIGTERM by default. Note that processes can ignore, block, or catch
 
 
 - Describe a TCP connection setup
-- design a highly-available production service from bare metal all the way to algorithms and data structures. (eg: gmail, hangouts, google maps, etc.)
+Look here: :ref:`networking-tcp`
+
+
 - What happens when you type 'ps' (shell word splitting, searching PATH, loading dynamic libs, argument parsing, syscalls, /proc, etc. expand)
+
+
+
 - what is the worst case time for a quicksort?
 - What is the maximum length of a binary tree? ("n, because it could be unbalanced")
 
@@ -154,14 +160,14 @@ SMTP
 
 Design
 ------
-(googs)How would you design Gmail?
-(googs)How do you best deal with processing huge amounts of data? (if you say map reduce, learn a ton about it)
-(fb)Outline a generic performant, scalable system. From frontend (lb's? or cluster-aware metadata like kafka) to backend (db's, storage, nosql options, etc). Remember networking as well: what features does a high performance network card supply - what can it offload? What should you tweak network wise for high bandwidth connections
-(fb)How would you design a cache API?
-(fb)How would you design facebook?
-Design the SQL database tables for a car rental database.
-- How would you design a real-time sports data collection app?
-
+* (googs)How would you design Gmail?
+* (googs)How do you best deal with processing huge amounts of data? (if you say map reduce, learn a ton about it)
+* (fb)Outline a generic performant, scalable system. From frontend (lb's? or cluster-aware metadata like kafka) to backend (db's, storage, nosql options, etc). Remember networking as well: what features does a high performance network card supply - what can it offload? What should you tweak network wise for high bandwidth connections
+* (fb)How would you design a cache API?
+* (fb)How would you design facebook?
+* Design the SQL database tables for a car rental database.
+* How would you design a real-time sports data collection app?
+* design a highly-available production service from bare metal all the way to algorithms and data structures. (eg: gmail, hangouts, google maps, etc.)
 
 Coding Questions
 ----------------
