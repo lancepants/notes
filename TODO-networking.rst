@@ -1,6 +1,11 @@
 TODO: rst format me
 
+.. _networking:
+
 ~~IP Suite~~
+
+.. _networking-tcp:
+
 ::TCP::
 *IP* works by exchanging pieces of information called packets. A packet is a sequence of octets (bytes) and consists of a header followed by a body. The header describes the packet's source, destination and control information. The body contains the data IP is transmitting.
 

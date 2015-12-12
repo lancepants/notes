@@ -50,16 +50,42 @@ Which type of context switch you're talking about can mean a very different perf
 http://blog.tsunanet.net/2010/11/how-long-does-it-take-to-make-context.html
 
 
-- What information is contained in a file inode?
 
-- Research possible problems with adding two integers of arbitrary size
-- Common q about TCP path and MTU discovery
-- Research null routing ("black hole connection")
-- How would you design a real-time sports data collection app?
-- How do you best deal with processing huge amounts of data? (if you say map reduce, learn a ton about it)
-- Do a regex to get phone numbers out of a contacts.txt from google docs
+- What information is contained in a file inode?
+**Filesystems, inodes, file descriptors**: Described in :ref:`filesystems`
+
+
+
+- How is MTU size determined?
+MTU is referenced by packet (and frame) based protocols like TCP and UDP in order to determine the maximum size of packet it should construct for communication over a given interface. Something called **Path MTU Discovery** (PMTUD) is used in order to discover this value.
+
+In IPv4, this works by setting the *DF* (don't fragment) bit in the ip header of outgoing packets. Any device along the network path whose MTU is smaller than the packet will drop it and send back an ICMP *fragmentation needed* message containing its MTU. The source host reconfigures appropriately, and the process is repeated.
+
+IPv6 works differently as it does not support fragmentation (nor the don't fragment option). Instead, the initial packet MTU is set to the same as the source interface, and if it hits a device along the path where the packet size is too large for its MTU setting, that device drops the packet and sends back an ICMPv6 *Packet Too Big* message which contains its MTU. The source then reconfigures its MTU appropriately, and the process is repeated.
+
+If the path MTU changes lower along the path after the connection is set up, the process still does its thing. If the MTU changes to a higher value, PMTUD will eventually discover this (Linux performs another PMTD check every 10 minutes by default) and increase MTU accordingly.
+
+Some firewall operators will blanket deny all ICMP traffic. This means that after a TCP handshake happens and the first packet is sent out with a larger MTU than something along the link can handle, the firewall blocks the ICMP reply and you end up with a "black hole" connection where the source keeps retrying to send data and some device along the path keeps dropping it, with a blocked response. Some PMTUD attempt to infer this problem and lower MTU size accordingly, but the lack of response could also just be due to congestion.
+
+Some routers may work around this issue by changing the *maximum segment size* (MSS) of all TCP connections passing through links which have an MTU lower than the ethernet default of 1500. While an MTU is concerned with the total size of a packet, MSS only determines the TCP Segment (minus TCP header) size - typical default = 536 Bytes.
+
+[TCP Packet[TCP Segment[IP datagram[Data link layer Frame]]]]
+[UDP Datagram[UDP Segment[IP datagram[Data link layer Frame]]]]
+
+
+
 - Which system call returns inode information? (study all common system calls and know them)
+**Kernel - System Calls**: :ref:`kernel-systemcalls`
+
+
 - What signal does the "kill" command send by default
+Kill sends a SIGTERM by default. Note that processes can ignore, block, or catch all signals except SIGSTOP and SIGKILL. If a process catches a signal, it means that *it includes code that will take appropriate action when the signal is received*. If the signal is not caught, the kernel will take the appropriate action for the signal.
+
+* SIGHUP is useful, most applications use this as an indication to reload their configuration without terminating themselves.
+* SIGINT is sent when you ctrl-c something. It is intended to provide a mechanism for an orderly, graceful shutdown of the foreground process. Interactive shells (mysql, other) may take it to mean "terminate current query" rather than the whole process.
+* SIGQUIT signals a process to terminate and do a core dump
+
+
 - Describe a TCP connection setup
 - design a highly-available production service from bare metal all the way to algorithms and data structures. (eg: gmail, hangouts, google maps, etc.)
 - What happens when you type 'ps' (shell word splitting, searching PATH, loading dynamic libs, argument parsing, syscalls, /proc, etc. expand)
@@ -129,10 +155,12 @@ SMTP
 Design
 ------
 (googs)How would you design Gmail?
+(googs)How do you best deal with processing huge amounts of data? (if you say map reduce, learn a ton about it)
 (fb)Outline a generic performant, scalable system. From frontend (lb's? or cluster-aware metadata like kafka) to backend (db's, storage, nosql options, etc). Remember networking as well: what features does a high performance network card supply - what can it offload? What should you tweak network wise for high bandwidth connections
 (fb)How would you design a cache API?
 (fb)How would you design facebook?
 Design the SQL database tables for a car rental database.
+- How would you design a real-time sports data collection app?
 
 
 Coding Questions
@@ -147,6 +175,7 @@ Google Glassdoor
 - Find the shortest path between two words (like "cat" and "dog), changing only one letter at a time.
 - Reverse a linked list
 - Write a function that returns the most frequently occurring number in a list
+- Do a regex to get phone numbers out of a contacts.txt file
 
 Facebook Glassdoor
 ^^^^^^^^^^^^^^^^^^
