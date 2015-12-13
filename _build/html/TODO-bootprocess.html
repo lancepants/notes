@@ -1,0 +1,222 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>&lt;no title&gt; &mdash; PantsNotes 1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="PantsNotes 1 documentation" href="index.html"/>
+        <link rel="next" title="&lt;no title&gt;" href="TODO-compsci.html"/>
+        <link rel="prev" title="Welcome to PantsNotes’s documentation!" href="index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> PantsNotes
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="TODO-interview.html">Interview Material</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cassandra.html">Cassandra</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dynamo.html">DYNAMO</a></li>
+<li class="toctree-l1"><a class="reference internal" href="filesystems.html">Filesystems</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">PantsNotes</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>&lt;no title&gt;</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/TODO-bootprocess.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <p>~~Boot~~
+-Bootstrap loader on MB is loaded. It looks for MBR in first 512bytes.
+-Bootstrap loader starts stage1 bootloader, first sector of disc
+-/boot partition sector location is in mbr. stage1 uses the location to launch stage 1.5(if disk is 2TB+) or 2 bootloader
+-stage2 (eg:grub) loads the decompressed kernel image and initrd into memory and then invokes the kernel process
+-Kernel initializes some hardware and sets up initrd in memory
+-init script in initrd sets up /proc, /sys, /dev and other essentials, as well as provides some basic needed tools like insmod
+-some basic modules are loaded (such as scsi &amp; sata drivers, ext3 module) and more hardware is initialized and added to /sys
+-root is mounted read only
+-Kernel runs init
+-SYSVINIT....kernel runs rc.sysinit
+-rc.sysinit makes sure modprobe (an intelligent wrapper for insmod) and starts udev
+-udev and modprobe combine forces to read available modules, stuff in /sys, and use that info to create /dev nodes
+-rc.sysinit then goes on to set kernel params, other crap, and then remounts root to rw using info in /proc/mounts. Then mtab is generated, then swap is initialized.
+-after init is done with rc.sysinit, it calls inittab
+-inittab loads your various services based on your runlevel
+-inittab then makes some virtual tty&#8217;s by running mingetty for each runlevel and asks you for a username
+-mingetty passes your username to login. login verifies, then passes to (probably)bash
+-bash starts, bootup done.</p>
+<p>TODO: UEFI notes</p>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="TODO-compsci.html" class="btn btn-neutral float-right" title="&lt;no title&gt;" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="index.html" class="btn btn-neutral" title="Welcome to PantsNotes’s documentation!" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Pants.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

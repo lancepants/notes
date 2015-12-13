@@ -1,0 +1,436 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Interview Material &mdash; PantsNotes 1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="PantsNotes 1 documentation" href="index.html"/>
+        <link rel="next" title="&lt;no title&gt;" href="TODO-linux-kernel.html"/>
+        <link rel="prev" title="&lt;no title&gt;" href="TODO-encryption.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> PantsNotes
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="">Interview Material</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#questions">Questions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#google-glassdoor">Google Glassdoor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#facebook-glassdoor">Facebook Glassdoor</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#study-topics">Study Topics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#design">Design</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#coding-questions">Coding Questions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id1">Google Glassdoor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id2">Facebook Glassdoor</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#quickies">Quickies</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="cassandra.html">Cassandra</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dynamo.html">DYNAMO</a></li>
+<li class="toctree-l1"><a class="reference internal" href="filesystems.html">Filesystems</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">PantsNotes</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>Interview Material</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/TODO-interview.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="interview-material">
+<span id="interview"></span><h1>Interview Material<a class="headerlink" href="#interview-material" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="questions">
+<h2>Questions<a class="headerlink" href="#questions" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Files, inodes, filesystems...how do they work? What are file descriptors?</li>
+</ul>
+<p><strong>Filesystems, inodes, file descriptors</strong>: Described in <span class="xref std std-ref">filesystems</span></p>
+<ul class="simple">
+<li>What are semaphores? What is a mutex? What&#8217;s the difference between the two?</li>
+</ul>
+<p>A semaphore is best described as a signaling mechanism, but could also be described as a type of lock. A semaphore is an object that contains a (natural) number, on which two modifying operations are defined. One operation, V, adds 1 to the number. The other operation, P, removes 1. Because the natural number 0 cannot be decreased, calling P on a semaphore containing 0 will block the execution of the calling process/thread until some other thread comes along and calls a V on that semaphore. You may create a semaphore with more than one &#8220;slot&#8221; available (ie: s(6)). As such, semaphores can be used to restrict acess to a certain resource to a maximum (but variable) number of processes.</p>
+<p>A mutex is a locking mechanism which helps multiple tasks serialize their access to a shared resource. It&#8217;s simply some function or object you call prior to performing a block of code on some shared resource. Your first call sets a locked flag, then you run your code, and then your second call to the mutex releases the lock.</p>
+<p>You might think of a semaphore or a mutex as a key to a bathroom. One key, one door works well for a mutex or a semaphore(1). But above we mentioned semaphores can count higher than one...so one key for six bathrooms. A mutex will not scale in this scenario as it would block each time 1/6 resources are used. A semaphore will allow 6 people to use the bathrooms at once, but it has no idea which bathroom is free at which time. What you end up needing is a separate mutex for each resource regardless.</p>
+<p>Because of this, you should not be relying solely on semaphores for locking - in fact, you really should only be using semaphores for simple signaling. For example, have a semaphore for power button which your display subscribes to (semaPend(sem_pwr_button); //wait for signal), such that when the power button is hit, a post (V, increment, semaPost(sem_pwr_button); //send the signal)) is sent and your display thread then unblocks and performs some_code. Another use could be naive throttling: only allow 3 threads to access a database at once.</p>
+<ul class="simple">
+<li>How are cookies passed in the HTTP protocol?</li>
+</ul>
+<dl class="docutils">
+<dt>The server sends one of these in its response header (square brackets optional):</dt>
+<dd>Set-Cookie: &lt;em&gt;value&lt;/em&gt;[; expires=&lt;em&gt;date&lt;/em&gt;][; domain=&lt;em&gt;domain&lt;/em&gt;][; path=&lt;em&gt;path&lt;/em&gt;][; secure]</dd>
+</dl>
+<p>Note that &#8220;value&#8221; above is a string, and is almost always in a format like this: <strong>key=value</strong> , and is usually enforced as such.</p>
+<dl class="docutils">
+<dt>And if the client accepts the cookie write, it sends this in its next request header:</dt>
+<dd>Cookie: name=value</dd>
+</dl>
+<ul class="simple">
+<li>How does traceroute work?</li>
+</ul>
+<p>ICMP packets are sent, with the initial packet having a TTL of 0 and each consecutive packet having its TTL incremented by one. This elicits a response along each hop of a network path. The TTL count exists in the IP header.</p>
+<div class="section" id="google-glassdoor">
+<h3>Google Glassdoor<a class="headerlink" href="#google-glassdoor" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>Rank the following in terms of speed: access a register, access main memory, perform a context switch, hd seek time</li>
+</ul>
+<p>1 Register. 1 or 2 cycles. Smallest and fastest memory on a system. A compiler will typically allocate registers to hold values retrieved from main memory.
+2 Perform a context switch (which type? assuming thread switch). 30-60 cycles best case.
+3 Access main memory. NUMA local: 100 cycles NUMA remote: 300 cycles for no/normal congestion
+4 HD seek time. A typical hdd needs anywhere from 2.5ms to 6.5ms to seek, depending on rotational speed (2ms=15k). Arm movement (stroke/track-to-track) takes anywhere from 0.2 to 1ms. SSD seek time is around 0.08-0.16ms</p>
+<p><strong>Context Switch:</strong> The process of storing execution state of a process or thread so that execution can be resumed from the same point at a later time.</p>
+<blockquote>
+<div>&#8220;Context Switch&#8221; can mean several different things, including: thread switch (switching
+between two threads within a given process), process switch (switching between two
+processes), mode switch (domain crossing: switching between user mode and kernel mode
+within a given thread), and more.</div></blockquote>
+<p>Which type of context switch you&#8217;re talking about can mean a very different performance costs. For example, a context switch pausing one thread and the cpu scheduling another where each thread is not sharing memory (separate working sets) could dirty the cpu cache if there is not enough space to hold both thread&#8217;s memory or the new thread fills the cache with new data. The same is true for processes. Additionally, if two processes share the same working set of memory and one is context switched out and another is scheduled in on a different core, it does not have access to the same cache/working set without a NUMA hop or a trip to main memory.</p>
+<p><a class="reference external" href="http://blog.tsunanet.net/2010/11/how-long-does-it-take-to-make-context.html">http://blog.tsunanet.net/2010/11/how-long-does-it-take-to-make-context.html</a></p>
+<ul class="simple">
+<li>What information is contained in a file inode?</li>
+</ul>
+<p><strong>Filesystems, inodes, file descriptors</strong>: Described in <span class="xref std std-ref">filesystems</span></p>
+<ul class="simple">
+<li>How is MTU size determined?</li>
+</ul>
+<p>MTU is referenced by packet (and frame) based protocols like TCP and UDP in order to determine the maximum size of packet it should construct for communication over a given interface. Something called <strong>Path MTU Discovery</strong> (PMTUD) is used in order to discover this value.</p>
+<p>In IPv4, this works by setting the <em>DF</em> (don&#8217;t fragment) bit in the ip header of outgoing packets. Any device along the network path whose MTU is smaller than the packet will drop it and send back an ICMP <em>fragmentation needed</em> message containing its MTU. The source host reconfigures appropriately, and the process is repeated.</p>
+<p>IPv6 works differently as it does not support fragmentation (nor the don&#8217;t fragment option). Instead, the initial packet MTU is set to the same as the source interface, and if it hits a device along the path where the packet size is too large for its MTU setting, that device drops the packet and sends back an ICMPv6 <em>Packet Too Big</em> message which contains its MTU. The source then reconfigures its MTU appropriately, and the process is repeated.</p>
+<p>If the path MTU changes lower along the path after the connection is set up, the process still does its thing. If the MTU changes to a higher value, PMTUD will eventually discover this (Linux performs another PMTD check every 10 minutes by default) and increase MTU accordingly.</p>
+<p>Some firewall operators will blanket deny all ICMP traffic. This means that after a TCP handshake happens and the first packet is sent out with a larger MTU than something along the link can handle, the firewall blocks the ICMP reply and you end up with a &#8220;black hole&#8221; connection where the source keeps retrying to send data and some device along the path keeps dropping it, with a blocked response. Some PMTUD attempt to infer this problem and lower MTU size accordingly, but the lack of response could also just be due to congestion.</p>
+<p>Some routers may work around this issue by changing the <em>maximum segment size</em> (MSS) of all TCP connections passing through links which have an MTU lower than the ethernet default of 1500. While an MTU is concerned with the total size of a packet, MSS only determines the TCP Segment (minus TCP header) size - typical default = 536 Bytes.</p>
+<p>[TCP Packet[TCP Segment[IP datagram[Data link layer Frame]]]]
+[UDP Datagram[UDP Segment[IP datagram[Data link layer Frame]]]]</p>
+<p>Also reference: <span class="xref std std-ref">networking-mtu</span></p>
+<ul class="simple">
+<li>Which system call returns inode information? (study all common system calls and know them)</li>
+</ul>
+<p><strong>Kernel - System Calls</strong>: <span class="xref std std-ref">kernel-systemcalls</span></p>
+<ul class="simple">
+<li>What signal does the &#8220;kill&#8221; command send by default</li>
+</ul>
+<p>Kill sends a SIGTERM by default. Note that processes can ignore, block, or catch all signals except SIGSTOP and SIGKILL. If a process catches a signal, it means that <em>it includes code that will take appropriate action when the signal is received</em>. If the signal is not caught, the kernel will take the appropriate action for the signal.</p>
+<ul class="simple">
+<li>SIGHUP is useful, most applications use this as an indication to reload their configuration without terminating themselves.</li>
+<li>SIGINT is sent when you ctrl-c something. It is intended to provide a mechanism for an orderly, graceful shutdown of the foreground process. Interactive shells (mysql, other) may take it to mean &#8220;terminate current query&#8221; rather than the whole process.</li>
+<li>SIGQUIT signals a process to terminate and do a core dump</li>
+</ul>
+<ul class="simple">
+<li>Describe a TCP connection setup</li>
+</ul>
+<p>Look here: <span class="xref std std-ref">networking-tcp</span></p>
+<ul class="simple">
+<li>What happens when you type &#8216;ps&#8217; (shell word splitting, searching PATH, loading dynamic libs, argument parsing, syscalls, /proc, etc. expand)</li>
+<li>what is the worst case time for a quicksort?</li>
+<li>What is the maximum length of a binary tree? (&#8220;n, because it could be unbalanced&#8221;)</li>
+<li>What is the theoretical best trans-continental round-trip ping time?</li>
+</ul>
+<p>Light travels at just below 300,000KM/sec. Light travels through fiber around 30% slower, so 210,000KM/sec. London to NYC is about 5500KM. So, 5500/210000 = 0.026, or 26ms. Routers/switches only add microseconds of delay, so being generous, add 1ms total for both sides. So RTT = around 53ms. Verizon consistently sees 72ms between london and nyc in the real world.</p>
+<ul class="simple">
+<li>How do you solve a deadlock?</li>
+<li>Difference between processes and threads</li>
+<li>What is a socket</li>
+<li>What is a transaction (db) - expand</li>
+<li>What algorithm does python&#8217;s .sort() use</li>
+</ul>
+</div>
+<div class="section" id="facebook-glassdoor">
+<h3>Facebook Glassdoor<a class="headerlink" href="#facebook-glassdoor" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>What is a filesystem, how does it work?</li>
+<li>What is a socket file? What is a named pipe?</li>
+<li>(RobertL: Data written to a pipe is buffered by the kernel until it is read from the pipe. That buffer has a fixed size. Portable applications should not assume any particular size and instead be designed so as to read from the pipe as soon as data becomes available. The size on many Unix systems is a page, or as little as 4K. On recent versions of Linux, the size is 64K. What happens when the limit is reached depends on the O_NONBLOCK flag. By default (no flag), a write to a full pipe will block until sufficient space becomes available to satisfy the write. In non-blocking mode (flag provided), a write to a full pipe will fail and return EAGAIN.)</li>
+<li>What is a signal and how is it handled by the kernel?</li>
+<li>What is a zombie process? How and when can they happen?</li>
+<li>What does user vs system cpu load mean?</li>
+<li>Difference between cache&#8217;s and buffers?</li>
+<li>How can disk performance be improved?</li>
+<li>How would you design a system that manipulates content sent from a client (eg: clean bad words in a comment post)?</li>
+<li>Explain in every single step about what will happen after you type &#8220;ls (asterisk-symbol-redacted)&#8221; or &#8220;ps&#8221; in your terminal, down to machine language</li>
+<li>Suppose there is a server with high CPU load but there is no process with high CPU time. What could be the reason for that? How do you debug this problem?
+-Typically this is due to very short lived processes. (look up how to detect this). Also, does a process in high IOWait have an associated high cpu usage?</li>
+<li>What happens when a float is cast to/from a boolean in python?</li>
+<li>Given a database with slow I/O, how can we improve it?
+-Profile the thing to see where it&#8217;s slow (expand)
+-indexing (expand)
+-disk optimisations (expand)</li>
+<li>What options do you have, nefarious or otherwise, to stop   people on a wireless network you are also on (but have no admin rights to) from hogging bandwidth by streaming videos?
+-discover their mac address (wifi raw mode? expand), create another interface and assign their mac address as your own, make script to forever perform gratuitous ARP until offender gets annoyed at poor performance and stops using internet. (might also just be able to do arping -U ip.addre.s.s &amp; echo 1 &gt; /proc/sys/net/ipv4/ip_nonlocal_bind <a class="reference external" href="http://serverfault.com/questions/175803/how-to-broadcast-arp-update-to-all-neighbors-in-linux">http://serverfault.com/questions/175803/how-to-broadcast-arp-update-to-all-neighbors-in-linux</a>)
+-If you can gain access to wifi router, ban their mac or set QoS if available
+-(expand)</li>
+<li>How exactly does the OS transfer information across a pipe?</li>
+<li>What problems are you going to run into when doing IPC (pipes, shared memory structures)?</li>
+<li>what is &#8220;file descriptor 2&#8221;
+-STDERR apparently?</li>
+<li>What&#8217;s the difference between modprobe and insmod?</li>
+</ul>
+</div>
+</div>
+<div class="section" id="study-topics">
+<h2>Study Topics<a class="headerlink" href="#study-topics" title="Permalink to this headline">¶</a></h2>
+<p>Brush up on RAID
+quick brush up on more complicated regex
+learn the particulars of ssh
+core system functionality such as I/O buffering
+SMTP
+(googs)Prepare for Hashmap/hashtable questions
+(googs)Understand how job scheduling is handled in the most recent iterations of the kernel
+(googs)Know your signals
+(googs)Study up on algorithms and data structs
+(googs)Study the book &#8220;Cracking the Coding Interview&#8221; for several weeks prior to interviewing. practice &#8220;whiteboarding&#8221; your code
+(fb)Review DNS, TCP, HTTP, system calls, signals, semaphores, complete paths (ie: telnet blah.com 80), boot process (incl UEFI)
+(fb)Refresh CCNA related knowledge, TCPDump commands (memorize syntax, memorize basic &#8220;listen&#8221;), ipv6 notes, load balancing types, load balancer failover modes &amp; how VIP mac addr changes (gratuitous/unsolicited ARP), direct routing vs NAT, jumbo frames, MTU size, fragmentation and when it can occur, what a packet looks like
+(fb)Review systemtap, perftools, sar(sysstat), and other options
+(fb)Write about shared file systems which are read/written to from many servers.
+(fb)Write about distributed systems and different types of consistency models and where they are used</p>
+</div>
+<div class="section" id="design">
+<h2>Design<a class="headerlink" href="#design" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>(googs)How would you design Gmail?</li>
+<li>(googs)How do you best deal with processing huge amounts of data? (if you say map reduce, learn a ton about it)</li>
+<li>(fb)Outline a generic performant, scalable system. From frontend (lb&#8217;s? or cluster-aware metadata like kafka) to backend (db&#8217;s, storage, nosql options, etc). Remember networking as well: what features does a high performance network card supply - what can it offload? What should you tweak network wise for high bandwidth connections</li>
+<li>(fb)How would you design a cache API?</li>
+<li>(fb)How would you design facebook?</li>
+<li>Design the SQL database tables for a car rental database.</li>
+<li>How would you design a real-time sports data collection app?</li>
+<li>design a highly-available production service from bare metal all the way to algorithms and data structures. (eg: gmail, hangouts, google maps, etc.)</li>
+</ul>
+</div>
+<div class="section" id="coding-questions">
+<h2>Coding Questions<a class="headerlink" href="#coding-questions" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id1">
+<h3>Google Glassdoor<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>Implement a hash table</li>
+<li>Remove all characters from string1 that are contained in string2</li>
+<li>implement quicksort. Determine its running time.</li>
+<li>Given a numerym (first letter + length of omitted characters + last letter), how would you return all possible original words? E.G. i18n the numeronym of internationalization</li>
+<li>Find the shortest path between two words (like &#8220;cat&#8221; and &#8220;dog), changing only one letter at a time.</li>
+<li>Reverse a linked list</li>
+<li>Write a function that returns the most frequently occurring number in a list</li>
+<li>Do a regex to get phone numbers out of a contacts.txt file</li>
+</ul>
+</div>
+<div class="section" id="id2">
+<h3>Facebook Glassdoor<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>re-implement &#8216;tail&#8217; in a scripting language</li>
+<li>Battleship game: write a function that finds a ship and return its coordinates.</li>
+<li>Write a script to ssh to 100 hosts, find a process, and email the result to someone</li>
+<li>or i in {1..100} ; do ssh <a class="reference external" href="mailto:user&#37;&#52;&#48;host${i">user<span>&#64;</span>host${i</a>} &#8220;ps -ef|grep blah|grep -v grep|mail -s &#8220;This is the subject&#8221; <a class="reference external" href="mailto:user&#37;&#52;&#48;myemail&#46;com">user<span>&#64;</span>myemail<span>&#46;</span>com</a>&#8221; ; done</li>
+<li>Write a function to sort a list of integers like this [5,2,0,3,0,1,6,0] in the most efficient way (look up sorting algorithms)</li>
+<li>Given a sentence convert the sentence to the modified pig-latin language: Words beginning with a vowel, remove the vowel letter and append the letter to the end. All words append the letters &#8216;ni&#8217; to the end. All words incrementally append the letter &#8216;j&#8217;. i.e. &#8216;j&#8217;,&#8217;jj&#8217;,&#8217;jjj&#8217;, etc... (what&#8217;s the last part mean? append j&#8217;s incrementally, what?)</li>
+<li>take input text and identify the unique words in the text and how many times each word occurred. Edge cases as well as performance is important. How do you identify run time and memory usage?</li>
+<li>build a performance monitoring script, adding more features and improving efficiency as you go</li>
+<li>For a given set of software checkins, write a program that   will determine which part along the branch where the fault lies.</li>
+</ul>
+<blockquote>
+<div>-So we assume we already have a list of git revisions, and once a certain revision gets hit everything after it fails
+-Do a binary search in order to determine where the build starts breaking. Ie: pick the middle number, do a checkout, build, if fail then do another binary search in the middle of startrevision and failedrevision-1. If success, then do another binary search between successrevision+1 and finalrevision..etc etc. Do this until you find that failedrevision-1=a successful revision</div></blockquote>
+<ul class="simple">
+<li>Given a list of integers, output all subsets of size three, which sum to zero. (wtf? <a class="reference external" href="http://www.glassdoor.com/Interview/Given-a-list-of-integers-output-all-subsets-of-size-three-which-sum-to-zero-QTN_580995.htm">http://www.glassdoor.com/Interview/Given-a-list-of-integers-output-all-subsets-of-size-three-which-sum-to-zero-QTN_580995.htm</a> )</li>
+<li>Given a list of integers which are sorted, but rotated   ([4, 5, 6, 1, 2, 3]), search for a given integer in the list.</li>
+</ul>
+<blockquote>
+<div>&#8211;Think of the array as two separate lists. If number we&#8217;re searching for is less than or equal to the last number in the array (3 in this case), then cut array in half and do a binary search on just that half until number is found</div></blockquote>
+<ul>
+<li><p class="first">Write a frequency list generator! Do one attempt, then try to make it more efficient. Good problem to test performance with. Have it output the top 10 words or something.</p>
+<blockquote>
+<div><p>For above questions, elaborate on theoretical best performance. Talk about
+memory vs CPU usage. Talk about whether certain system calls take more
+resources than others. How long it takes to: access a register, access main
+memory, perform a context switch, hd seek time</p>
+</div></blockquote>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="quickies">
+<h2>Quickies<a class="headerlink" href="#quickies" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt>Make immutable, can&#8217;t delete this file:</dt>
+<dd>chattr +i filename</dd>
+<dt>Special file being a douche to rm? eg: $!filename, -filename, &#8216;filename-</dt>
+<dd>ls -i    #list by inode
+find . -inum 1234 -exec rm {} ;</dd>
+</dl>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="TODO-linux-kernel.html" class="btn btn-neutral float-right" title="&lt;no title&gt;" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="TODO-encryption.html" class="btn btn-neutral" title="&lt;no title&gt;" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Pants.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

@@ -1,0 +1,223 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>&lt;no title&gt; &mdash; PantsNotes 1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="PantsNotes 1 documentation" href="index.html"/>
+        <link rel="next" title="&lt;no title&gt;" href="TODO-encryption.html"/>
+        <link rel="prev" title="&lt;no title&gt;" href="TODO-compsci.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> PantsNotes
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="TODO-interview.html">Interview Material</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cassandra.html">Cassandra</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dynamo.html">DYNAMO</a></li>
+<li class="toctree-l1"><a class="reference internal" href="filesystems.html">Filesystems</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">PantsNotes</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>&lt;no title&gt;</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/TODO-datastore.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <p>~~Database Shit~~
+-Research shows that the four common sources of overhead in database management systems are: logging (19%), latching (19%), locking (17%), B-tree and buffer management operations (35%)
+((Locks protect data during transactions. Another process, latching, controls access to physical pages. Latches are very lightweight, short-term synchronization objects protecting actions that do not need to be locked for the life of a transaction.))</p>
+<p>::MapReduce::
+So, MapReduce does what it says in its name. First, it Maps data. What this means is that the master node takes input, divides it into smaller sub problems, and then distributes them to worker nodes. The node may reduce the information in those files to key/value pairs, or just into common queues (such as sorting students by first name into queues, one queue for each name) (filtering and sorting). It may also remove duplicates or only keep the highest value for keys that are the same, or divide the problem into smaller sub problems, or whatever else. Many Map jobs are run at the same time on different files. After the Map jobs are done, the results are all passed to a Reduce job. This reduce job combines all the results together and performs some sort of user-inputted operation/summary on the information (such as counting the number of students in each queue, yielding name frequencies, or combining all unique keys and displaying the highest value)</p>
+<p>This is faster than just having a single task go through all the data serially, and also requires a ton less memory and compute resources assigned to just a single process. In essence, it is a method to allow huge data sets to be processed in a distributed fashion.</p>
+<p>::NoSQL::
+-Good for bigness</p>
+<p>-Good for people who require a distributed system that can span datacenters while handling failure scenarios without a hiccup. NoSQL systems, because they have focussed on scale, tend to exploit partitions, tend not use heavy strict consistency protocols, and so are well positioned to operate in distributed scenarios.</p>
+<p>-Massive write performance :: At 80 MB/s it takes a day to store 7TB so writes need to be distributed over a cluster, which implies key-value access, MapReduce, replication, fault tolerance, consistency issues, and all the rest. For faster writes in-memory systems can be used</p>
+<p>-Fast key/value store access :: Why is key/value store fast? Pass a key to a hashing algorithm, and you get the same &#8220;location&#8221; output every time of where the value is stored. You end up not having to search for the value.</p>
+<p>-flexible schema/datatypes(eg: JSON), no SPOF</p>
+<p>-Programmer ease of use :: While the relational model is intuitive for end users, like accountants, it&#8217;s not very intuitive for developers. Programmers grok keys, values, JSON, Javascript stored procedures, HTTP, and so on. NoSQL is for programmers. This is a developer led coup. The response to a database problem can&#8217;t always be to hire a really knowledgeable DBA, get your schema right, denormalize a little, etc., programmers would prefer a system that they can make work for themselves. It shouldn&#8217;t be so hard to make a product perform. Money is part of the issue. If it costs a lot to scale a product then won&#8217;t you go with the cheaper product, that you control, that&#8217;s easier to use, and that&#8217;s easier to scale?</p>
+<p>-Use the right data model for the right problem :: Different data models are used to solve different problems. Much effort has been put into, for example, wedging graph operations into a relational model, but it doesn&#8217;t work. Isn&#8217;t it better to solve a graph problem in a graph database? We are now seeing a general strategy of trying find the best fit between a problem and solution.</p>
+<p>-Availability vs Consistency vs Failure Handling :: Relational databases pick strong consistency which means they can&#8217;t tolerate a partition failure. In the end this is a business decision and should be decided on a case by case basis. Does your app even care about consistency? Are a few drops OK? Does your app need strong or weak consistency? Is availability more important or is consistency? Will being down be more costly than being wrong?</p>
+<p>::ACID::
+ACID (Atomicity, Consistency, Isolation, Durability) is a set of properties that guarantee that database transactions are processed reliably.
+-Atomicity requires that each transaction is &#8220;all or nothing&#8221;: if one part of the transaction fails, the entire transaction fails, and the database state is left unchanged
+-The consistency property ensures that any transaction will bring the database from one valid state to another.
+-The isolation property ensures that the concurrent execution of transactions results in a system state that would be obtained if transactions were executed serially, i.e. one after the other. Providing isolation is the main goal of concurrency control. Depending on concurrency control method, the effects of an incomplete transaction might not even be visible to another transaction
+-Durability means that once a transaction has been committed, it will remain so, even in the event of power loss, crashes, or errors. Transactions/other shit are usually kept in some sort of non volatile memory (eg: mysql-log on disk)</p>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="TODO-encryption.html" class="btn btn-neutral float-right" title="&lt;no title&gt;" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="TODO-compsci.html" class="btn btn-neutral" title="&lt;no title&gt;" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Pants.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

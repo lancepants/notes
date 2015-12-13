@@ -1,6 +1,6 @@
 .. _dynamo:
 
-Dynamo
+DYNAMO
 ======
 
 A highly available key/value store. Provides a place for various services (shopping cart, best seller lists, customer preferences, session management, product catalog, etc) to store their data in a "primary key only," non-relational way.

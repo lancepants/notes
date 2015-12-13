@@ -1,0 +1,461 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>DYNAMO &mdash; PantsNotes 1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="PantsNotes 1 documentation" href="index.html"/>
+        <link rel="next" title="Filesystems" href="filesystems.html"/>
+        <link rel="prev" title="Cassandra" href="cassandra.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> PantsNotes
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="TODO-interview.html">Interview Material</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cassandra.html">Cassandra</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">DYNAMO</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#general">General</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#query-model">Query Model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#acid-properties">ACID Properties</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#efficiency">Efficiency</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#other">Other</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#sla">SLA</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#design-choices">Design Choices</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#replication">Replication</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#other-considerations">Other Considerations</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#architecture">Architecture</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#partitioning">Partitioning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id2">Replication</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#data-versioning">Data Versioning</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#vector-clocks">Vector Clocks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#example-flow">Example Flow</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#failure-and-membership">Failure and Membership</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#hinted-handoff">Hinted Handoff</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#merkle-trees">Merkle Trees</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#membership-and-failure-detection">Membership and Failure Detection</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#addition-removal-of-storage-nodes">Addition/Removal of Storage Nodes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#implementation">Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nrw-performance-vs-durability">NRW: Performance vs Durability</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id3">Partitioning</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="filesystems.html">Filesystems</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">PantsNotes</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>DYNAMO</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/dynamo.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="dynamo">
+<span id="id1"></span><h1>DYNAMO<a class="headerlink" href="#dynamo" title="Permalink to this headline">¶</a></h1>
+<p>A highly available key/value store. Provides a place for various services (shopping cart, best seller lists, customer preferences, session management, product catalog, etc) to store their data in a &#8220;primary key only,&#8221; non-relational way.</p>
+<p>To achieve &#8220;always on&#8221;, dynamo will sacrifice consistency under certain failure scenarios (eventually consistent). It makes extensive use of object versioning and application-assisted conflict resolution in order to provide the most accurate state of the database as possible. That said, dynamo does try to give some control to services over durability and consistency, and allow them to make trade-offs between functionality, performance, and cost effectiveness.</p>
+<p>Dynamo (at the time of the dynamo paper release) was able to support hundreds of thousands of concurrently active sessions (shopping cart service, holiday season). Keep in mind all the condensed notes in this file are from a paper written in 2007.</p>
+<ul class="simple">
+<li>Data is partitioned and replicated using consistent hashing</li>
+<li>Consistency is facilitated by object versioning</li>
+<li>Consistency among replicas during updates is maintained by a quorum-like technique and a decentralized replica synchronization protocol.</li>
+<li>Employs a gossip based distributed failure detection and membership protocol</li>
+<li>Completely decentralized: storage nodes can be added/removed without needing any manual partitioning or redistribution</li>
+</ul>
+<div class="section" id="general">
+<span id="dynamo-general"></span><h2>General<a class="headerlink" href="#general" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="query-model">
+<h3>Query Model<a class="headerlink" href="#query-model" title="Permalink to this headline">¶</a></h3>
+<p>Simple read and write operations to a data item that is uniquely identified by a key. State is stored as binary objects (blobs) identified by unique keys. No operations span multiple data items and there is no need for relational schemas. Dynamo targets applications that need to store relatively small objects (sub 1MB).</p>
+</div>
+<div class="section" id="acid-properties">
+<h3>ACID Properties<a class="headerlink" href="#acid-properties" title="Permalink to this headline">¶</a></h3>
+<p>Atomicity, Consistency, Isolation, Durability. A set of properties that guarantee a database transaction is processed reliably. Typically, ACID model software will sacrifice availability over consistency. Dynamo targets services which operate with weaker consistency needs in any case where it is advantageous for higher availability. It does not provide any isolation guarantees, and only permits single-key updates.</p>
+</div>
+<div class="section" id="efficiency">
+<h3>Efficiency<a class="headerlink" href="#efficiency" title="Permalink to this headline">¶</a></h3>
+<p>Latency is of utmost importance in Dynamo. Throughput is next. Applications must be able to configure Dynamo such that they can consistently (99.9% percentile distribution) achieve their latency and throughput requirements. Cost efficiency, availability, and durability guarantees can all be traded off in order to prioritize latency and throughput.</p>
+</div>
+<div class="section" id="other">
+<h3>Other<a class="headerlink" href="#other" title="Permalink to this headline">¶</a></h3>
+<p>Dynamo was designed to be an internal, &#8220;in a safe network&#8221; service. There are no security related requirements such as authorization/authentication. Additionally, each service is expected to have its own Dynamo cluster. As such, Dynamo is only expected to scale to hundreds of storage hosts. More on scalability limitations later.</p>
+<img alt="Amazon's Service Oriented Architecture" class="align-center" src="_images/dynamo-amazonarch.jpg" />
+</div>
+</div>
+<div class="section" id="sla">
+<span id="dynamo-sla"></span><h2>SLA<a class="headerlink" href="#sla" title="Permalink to this headline">¶</a></h2>
+<p>Amazon typical(2007): Provide a response within 300ms for 99.9% of its requests for a peak client load of 500 req/sec.</p>
+<p>A typical page request may cause the page rendering engine to request data from over 150 services. These services often have multiple dependencies themselves. As such, a call graph will fan out in a tree structure. Each service in the call graph must comply with its SLA in order to get a response back to the user&#8217;s browser fast enough.</p>
+<p>Describing an average, median, and expected variance is not good enough if you want to provide a good experience to all users. For example, a heavy user may have a longer buy history, and therefore could have their page loads perform worse that a less preferred customer. To avoid this, you must calculate the costs associated with providing a higher percentile of distribution in relation to response time. Amazon found anything beyond 99.9% (and whatever their latency target is) to be cost prohibitive.</p>
+<blockquote>
+<div>Note: a load balancer&#8217;s selection of which write coordinator to pass
+a request to is very important when targeting performance at a 99.9%
+percentile distribution. Pay some attention to it.</div></blockquote>
+</div>
+<div class="section" id="design-choices">
+<span id="dynamo-design-choices"></span><h2>Design Choices<a class="headerlink" href="#design-choices" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="replication">
+<h3>Replication<a class="headerlink" href="#replication" title="Permalink to this headline">¶</a></h3>
+<p>A typical replication model performs a synchronous replication across some interface, providing a highly consistent operation which is very concerned with the correctness of an operation. Due to failing networks and servers, strong consistency and high data availability cannot be achieved at the same time. Some optimistic protocols allow writes/changes to occur on replication hosts in the background while waiting to see whether the &#8220;master&#8221; will recover. This introduces the possibility of conflicting changes, and the need arises to resolve these conflicts (sometimes manually, as in the case of skipping transactions forward in a mysql replication log). When do we resolve them, and who resolves them?
+- Per the When, a conflict arises upon a read or a write action. In most applications, the conflict resolution happens on write operations, at the expense of availability. Dynamo instead keeps writes available no matter what, relies on eventual consistency, and focuses on resolving conflicts when data is <em>read</em>.
+- Per the Who, a conflict can be resolved by either the datastore or the application. The datastore is somewhat limited as it can really only say &#8220;the last write wins.&#8221; The application on the other hand is aware of the data schema, and as such can pull in all the changes and merge them, hopefully returning a single unified view(/shopping cart). This requires more developer work.</p>
+</div>
+<div class="section" id="other-considerations">
+<h3>Other Considerations<a class="headerlink" href="#other-considerations" title="Permalink to this headline">¶</a></h3>
+<p><em>Incremental Scalability:</em> Scale out one storage node at a time, with minimal ineraction and minimal to no performance impact.</p>
+<p><em>Symmetry:</em> Every node should have the same responsibilities as its peers. No unicorns. Much easier operationally</p>
+<p><em>Decentralization:</em> The design should favour decentralized, peer-to-peer techniques over centralized control.</p>
+<p><em>Heterogenity:</em> The design should be able to accommodate some nodes hardware being faster/slower than others. You should not have to upgrade all nodes to the same newer hardware spec each time you get new stuff.</p>
+<p>As mentioned prior, Dynamo is targeted mainly at applications that need an “always writeable” data store where no updates are rejected due to failures or concurrent writes.</p>
+<p>Second, as noted earlier, Dynamo is built for an infrastructure within a single administrative domain where all nodes are assumed to be trusted.</p>
+<p>Third, applications that use Dynamo do not require support for hierarchical namespaces (a norm in many file systems) or complex relational schema (supported by traditional databases).</p>
+<p>Fourth, Dynamo is built for latency sensitive applications that require at least 99.9% of read and write operations to be performed within a few hundred milliseconds. To meet these stringent latency requirements, it was imperative for us to avoid routing requests through multiple nodes (which is the typical design adopted by several distributed hash table systems such as Chord and Pastry). This is because multi-hop routing increases variability in response times, thereby increasing the latency at higher percentiles. Dynamo can be characterized as a zero-hop DHT, where each node maintains enough routing information locally to route a request to the appropriate node directly.</p>
+</div>
+</div>
+<div class="section" id="architecture">
+<span id="dynamo-architecture"></span><h2>Architecture<a class="headerlink" href="#architecture" title="Permalink to this headline">¶</a></h2>
+<table border="1" class="docutils" id="id4">
+<caption><span class="caption-text">Summary of techniques and their advantages</span><a class="headerlink" href="#id4" title="Permalink to this table">¶</a></caption>
+<colgroup>
+<col width="29%" />
+<col width="29%" />
+<col width="43%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Problem</th>
+<th class="head">Technique</th>
+<th class="head">Advantage</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>Partitioning</td>
+<td>Consistent Hashing</td>
+<td>Incremental Scalability</td>
+</tr>
+<tr class="row-odd"><td>High Availability for writes</td>
+<td>Vector clocks with reconciliation during reads</td>
+<td>Version size is decoupled from update rates</td>
+</tr>
+<tr class="row-even"><td>Handling temporary failures</td>
+<td>Sloppy quorum and hinted handoff</td>
+<td>Provides high availability and durability guarantee when some of the replicas are not available</td>
+</tr>
+<tr class="row-odd"><td>Recovering from permanent failures</td>
+<td>Anti-entropy using Merkle trees</td>
+<td>Synchronizes divergent replicas in the background</td>
+</tr>
+<tr class="row-even"><td>Membership and failure detection</td>
+<td>Gossip-based membership protocol and failure detection</td>
+<td>Preserves symmetry and avoids having a centeralized registry for storing membership and node liveness information (ie:zookeeper)</td>
+</tr>
+</tbody>
+</table>
+<p>TODO Consistent hashing: <span class="xref std std-ref">distributedsystems-hashing</span></p>
+<p>Vector clocks: <a class="reference internal" href="#dynamo-vectorclocks"><span>Vector Clocks</span></a></p>
+<p>TODO Sloppy quorum <span class="xref std std-ref">distributedsystems-quorum</span>  Useful: <a class="reference external" href="http://jimdowney.net/2012/03/05/be-careful-with-sloppy-quorums/">http://jimdowney.net/2012/03/05/be-careful-with-sloppy-quorums/</a></p>
+<p>TODO Gossip protocols: <span class="xref std std-ref">distributedsystems-gossip</span></p>
+<p>Merkle tree: <a class="reference internal" href="#dynamo-merkle"><span>Merkle Trees</span></a></p>
+<p>Dynamo shares the same needs that any distributed architecture needs to address. Mainly, scalable and robust solitions for:
+- Load balancing
+- Membership and failure detection
+- Failure recovery
+- Replica synchronization
+- Overload handling
+- State transfer
+- Concurrency and job scheduling
+- Request marshalling and routing
+- System monitoring and alarming
+- Configuration management</p>
+<div class="section" id="partitioning">
+<h3>Partitioning<a class="headerlink" href="#partitioning" title="Permalink to this headline">¶</a></h3>
+<p>Since Dynamo must scale incrementally, it requires a mechanism to dynamically partition data over a set of nodes. Dynamo uses consistent hashing to spread data across multiple storage hosts.</p>
+<p>Let&#8217;s reference this image again:</p>
+<p><strong>Consistent hashing</strong> works by treating the output range of a hash function as a fixed circular space or &#8220;ring&#8221; (ie: the largest hash value wraps around to the smallest hash value). Each node in the system is assigned a random value within this space, which represents is &#8220;position&#8221; in the ring. When a data item represented by a key comes in, the key is hashed in order to get a value, and then the ring is walked <strong>clockwise</strong> until a node is found with a position larger than the data item&#8217;s position. That node, the first node found with a position larger than the data item, is assigned to be the coordinator for that key+data. As such, each node becomes responsible for the region in the ring between itself and its <strong>predecessor</strong> node. Because of this, we can see in Figure 2 that Key K would be owned by Node B. Node B owns the whole range between itself and Node A.</p>
+<p>The main advantage of consistent hashing is that departure or arrival of a node only affects its immediate neighbours, and other nodes remain unaffected. The output range of the hash stays the same - the new node is just plopped down between two other nodes. This seems bad because if a new node got placed <strong>directly</strong> counterclockwise of, say, node D, wouldn&#8217;t that mean that node D would be responsible for a very tiny portion of ranges and therefore get less load and datat? Correct. The picture above shows nodes in nice and symmetrical placements, but in reality that node placement in the ring is random. This leads to non-uniform data distribution and load. And what if one of your nodes is a lot more powerful than the others, so you want it to be responsible for a larger portion of the hash?</p>
+<p>To get around these issues, Dynamo uses a variant of consistent hashing: instead of mapping a node to a single point, a physical node gets mapped to multiple <strong>virtual nodes</strong>, each of which have a &#8220;token&#8221; (ie: position) along the ring. To summarize, each physical node is now responsible for an arbitrary/configurable number of tokens along the ring. Using virtual nodes has the following advantages:</p>
+<ul class="simple">
+<li>If a node becomes unavailable, the load handled by this node is evenly dispersed across the remaining available nodes (ie: other physical nodes can take control of the dead nodes&#8217; virtual nodes)</li>
+<li>When a node becomes available again, or if a new node is added, the new node can accept a roughly equivalent amount of load from each of the other available nodes (Note: this means that node additions/removals can now have an impact on more than just their clockwise neighbour)</li>
+<li>The number of virtual nodes that a node is responsible for can be decided based on its hardware specs</li>
+</ul>
+</div>
+<div class="section" id="id2">
+<h3>Replication<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
+<p>Above we described how each node is responsible for a set of keys. Replication in dynamo is configured &#8220;per-instance,&#8221; thus, each node is responsible for replicating its content to N other nodes based on a configuration parameter. Phrased another way, each key, k, is assigned to a coordinator node (ie: the node responsible for that range of keys), and the coordinator is in charge of replicating the key+data items to N-1 clockwise successor nodes in the ring. So with N=3, referencing figure 2 above, node B replicates the key <em>k</em> to nodes C and D in addition to storing it locally.</p>
+<p>The list of nodes that are responsible for storing a particular key is called the <em>preference list</em>. More details about how this list is maintained are in the Membership and Failure Detection section below. Each node in the cluster is designed to be aware of which nodes should be in this list for any particular key. To account for node failures, preference list contains more than just N nodes! Note how above we talked about virtual nodes - it is possible that the first N virtual successor node positions for a particular key may be owned by less than N physical nodes. To address this, the preference list for a key is constructed by skipping positions in the ring such that the list only contains distinct physical nodes. (...unclear on how it does this...)</p>
+</div>
+</div>
+<div class="section" id="data-versioning">
+<span id="dynamo-versioning"></span><h2>Data Versioning<a class="headerlink" href="#data-versioning" title="Permalink to this headline">¶</a></h2>
+<p>Dyano is eventually consistent, and as such it allows for updated to be propogated to all replicas asynchronously. A put() call may return success to its caller prior to the update actually making its way to all the replicas. As such, a subsequent get() may return &#8220;stale&#8221; data.</p>
+<p>In Dynamo, when a client wishes to update an object, <em>it must specify which version it is updating.</em> This is done by doing a prior read operation which contains the vector clock information. More on that later.</p>
+<p>Certain amazon applications, such as shopping cart, should never deny an &#8220;add to cart&#8221; or a &#8220;remove from cart.&#8221; When an update like this ends up happening on an older version of the object while a newer version of the object has not yet propogated, both versions are kept as immutable objects of different versions. These divergent versions are reconciled later, either by the client or by dynamo.</p>
+<p>Most of the time, new versions subsume the previous version(s), and the system itself can determine the authoritative version (syntactic reconciliation, ie: a diff or a simple rule like if obj.v2 &gt; obj.v1: obj=v2). However, in the presense of failures and concurrent updates, version branching may happen which result in conflicting versions of an object. In this case (dynamo) the client must perform the reconcilliation in order to collapse divergent branches back into one (semantic reconciliation). A typical example of this operation is &#8220;merging&#8221; different versions of a customer&#8217;s shopping cart. Using this method, updates will never be lost, but deleted items may resurface.</p>
+<p>It is important to emphasize that if you don&#8217;t want to &#8220;lose&#8221; data, the client code you&#8217;re writing needs to explicitly acknowledge the possibility of multiple versions of the same data.</p>
+<div class="section" id="vector-clocks">
+<span id="dynamo-vectorclocks"></span><h3>Vector Clocks<a class="headerlink" href="#vector-clocks" title="Permalink to this headline">¶</a></h3>
+<p>Dynamo uses vector clocks in order to &#8220;capture causality between different versions of the same object.&#8221; A vector clock is just a list of (node, counter) pairs. <em>Each version</em> of an object you shove into dynamo has a vector clock associated with it. If the counters on the first object&#8217;s clock are less than or equal to the counters on the second object&#8217;s clock, then we can assume that the second object is newer than the first, and the first can be forgotten. If this is not the case, then the two objects are considered in conflict and will require reconciliation.</p>
+<p>As mentioned prior, a dynamo client must specify which version of the object that it is updating by using vector clock information obtained from a read operation. Upon processing a read request, if Dynamo has access to multiple branches that cannot be syntactically reconciled, it will return <em>all</em> the objects at the leaves, with corresponding version information in the context. An update usin gthis context is considered to have reconciled the divergent versions, and the branches are collapsed into a single new version.</p>
+<p><strong>Any storage node in dynamo is eligible to receive client get and put operations for any key.</strong> In a non-failure scenario though, where the client is aware of dynamo partitioning (ie: you&#8217;re not running requests through a load balancer), the operation will go to the top node in the preference list for that key region. Whichever node ends up handling the read/write is called the <em>coordinator</em>.</p>
+<p>Remember that each node is capable of building a preference list for any particular key, so each node knows whether it is in the &#8220;top N nodes&#8221; for a particular key. If a load balancer routes a request to a node for a key in which it is not part of the top N of the key&#8217;s preference list, it will route the request onwards to the first of the top N nodes in the preference list. If a node receives a request in which it is part of the top N, but is not first in the top N, it will still perform the operation. This means that in a loadbalanced setup there is a lot more reconciliation.</p>
+</div>
+<div class="section" id="example-flow">
+<h3>Example Flow<a class="headerlink" href="#example-flow" title="Permalink to this headline">¶</a></h3>
+<p>With the above in mind, let&#8217;s go through an example:</p>
+<p>Let&#8217;s assume that we&#8217;re using a load balancer to distribute requests. A client is doing a fresh write, a new object, and the request gets routed to Node X. Node X hashes the key and sees that it belongs in the top N nodes of that key&#8217;s preference list, and as such is able to perform this operation. It writes out that new object D1 and assigns a vector clock (X, 1). Another write comes in for the same object, and it gets loadbalanced to X again, who then <em>creates a new object</em> D2 and assigns a vector clock to it of (X, 2). At this point D1 will be cleaned up on node X because D2 descends from D1, but other nodes might not have D2 yet due to replication lag or failure, so D1 might still be lingering out there.</p>
+<p>Now let&#8217;s say the same client updates D2, but the request this time is routed to Node Y. Node Y creates a new object, D3, and assigns a vector clock [(X, 2), (Y, 1)]. All good so far, as both X and Y are part of the top N preference list.</p>
+<p>Now a new client comes along and does a read for a key associated to D. It ends up getting the old version D2(X,2) from a stale node. It does its change and then does a put(), and the request ends up hitting Node Z. Z says, ok, I am in the top of the preference list (or the top N in the preference list are down/unavailable, or Z is temporarily in a network segmentation), so it performs the operation, creating a new object D4[(X, 2),(Z, 1)].</p>
+<p>Once everything is back to normal, nodes with D3 and/or D4 will find that they can get rid of D1 and D2, but upon receiving D3 or D4 they will find that there are changes between the two that are not reflected in each other. Both versions of the data must be kept and presented to a client (upon a read) for <em>semantic</em> reconciliation. These two versions are kept forever, until a client comes along and reconciles the data!</p>
+<p>So, a client comes along and wants to update this key associated with D3/D4. The node it&#8217;s reading from, let&#8217;s say Y, knows of the two versions and as such passes back that information in the read&#8217;s &#8220;context&#8221;. In this context is a summary of the clocks of D3 and D4, namely [(X, 2), (Y, 1), (Z, 1)]. If the client can reconciliate the data received, it will then perform a put(). Let&#8217;s say that hits Node X. X will then create a new object with its sequence number iterated, ie D5[(X, 3), (Y, 1), (Z, 1)]. D3 and D4 can then be safely garbage collected by Dynamo.</p>
+<p>TODO: open Q: does a dynamo client download the entire object on read every time, or just context?</p>
+</div>
+</div>
+<div class="section" id="failure-and-membership">
+<span id="dynamo-failure"></span><h2>Failure and Membership<a class="headerlink" href="#failure-and-membership" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="hinted-handoff">
+<h3>Hinted Handoff<a class="headerlink" href="#hinted-handoff" title="Permalink to this headline">¶</a></h3>
+<p>If Dynamo used a traditional quorum approach, it would be unavailable during server failures and network partitions, and would have reduced durability even under the simplest of failure conditions. To remedy this, it does not enforce strict membership and instead uses a &#8220;sloppy quorum,&#8221; where all read and write operations are performed on the first N <em>healthy</em> nodes, not necessarily the first N nodes encountered when walking the consistent hashing ring. Let&#8217;s use Figure 2 again where N=3 as an example:</p>
+<p>If node A is temporarily down or unreachable during a write operation, then a replica that would normally have lived on A will now be send to node D. The replica sent to D will have a hint in its metadata that suggests which node was the intended recipient of the replica (in this case, A). Nodes that receive hinted replicas will keep them in a separate local database that is scanned periodically. Once A is detected as having recovered, D will attempt to deliver the replica to A. Once the transfer succeeds, D will then delete the object from its local store (but it will still have the replicated copy in its regular datastore). During this whole process, the same amount of object replicas are kept.</p>
+<p>If node A is temporarily down or unreachable during a write operation, then a replica that would normally have lived on A will now be send to node D. The replica sent to D will have a hint in its metadata that suggests which node was the intended recipient of the replica (in this case, A). Nodes that receive hinted replicas will keep them in a separate local database that is scanned periodically. Once A is detected as having recovered, D will attempt to deliver the replica to A. Once the transfer succeeds, D will then delete the object from its local store (but it will still have the replicated copy in its regular datastore). During this whole process, the same amount of object replicas are kept.</p>
+<p>This ensures availability even in the event of network segmentation or server failures, at the expense of resiliency. For applications requiring the highest level of availability, you can set W (minimum number of confirmed writes) to 1, which ensures that a write is accepted so long as a single node has durably written the key to its local store. In practice, most applications set W to 2 or more. More details about N, R, and W later.</p>
+</div>
+<div class="section" id="merkle-trees">
+<span id="dynamo-merkle"></span><h3>Merkle Trees<a class="headerlink" href="#merkle-trees" title="Permalink to this headline">¶</a></h3>
+<p>Hinted handoff works best if system membership churn is low and server/network problems are transient. Should that not be the case and some scenario occurs where a node fails forever before it can pass back its hinted replica to the proper node, dynamo uses a replica synchronization method involving Merkle Trees.</p>
+<p>A Merkle tree is a hash tree where each leaf is the hash of an individual key. Parent nodes higher in the tree are hashes of their respective children. So let&#8217;s think of a merkle tree with 20 leaves, a parent responsible for 4 leaves each, and a grandparent (root) responsible for those 5 parents. If a node wants to know whether another node has the same keys as them, they just need to compare each others root (grandparent) hashes. If they differ, then they can check the next level down for differing hashes. They may only find 1 out of 5 different, and can then compare the hashes of each leaf in only that 1 branch to see what is different or missing. This allows an efficient comparison of data without having to scan through every value.</p>
+<p>In Dynamo, each node maintains a separate Merkle tree for each key range that it hosts (ie: a Merkle tree for every virtual node). This allows nodes to exchange the root node of the Merkle tree with all other nodes which have the same key ranges (virtual nodes) in common. The disadvantage with this approach is that when a node joins or leaves the system/virtual nodes are redistributed, key ranges change and require the tree to be recalculated. Mitigation of this effect is discussed later on.</p>
+</div>
+<div class="section" id="membership-and-failure-detection">
+<h3>Membership and Failure Detection<a class="headerlink" href="#membership-and-failure-detection" title="Permalink to this headline">¶</a></h3>
+<p>Node A may consider Node B failed if node B does not respond to node A&#8217;s messages (even if B is responsive to node C). Node A will then route requests to alternate nodes which map to B&#8217;s partitions. Node A will then periodically check whether connectivity to B has recovered. Node A will not &#8220;report&#8221; to anyone that B is down, it will simply mark it as down locally. Additionally, if node A does not need to ever talk to node N, then it does not care about node N&#8217;s state. As such, temporary node failure is &#8220;detected&#8221; on a per-node basis - there is no global view for node failure.</p>
+<p>It is beneficial however to have some sort of global cluster state for when permanent node additions/removals happen. A node outage rarely signifies a permanent departure, and therefore it should not trigger a rebalancing of virtual nodes or a repair of unreachable replicas. As such, manual node addition/removal was deemed most appropriate. This is done via a command line tool or web browser interface with dynamo. The node that serves the add/remove request writes the membership change and its time of issue to persistent store, keeping a history. A gossip-based protocol propagates membership changes and maintains an eventually consistent view of membership. Each node contacts a peer chosen at random every second, and the two nodes reconcile their persisted membership change histories.</p>
+<p>When a node starts for the first time, it chooses its set of tokens (virtual nodes) and maps nodes to their respective token sets. That mapping is then persisted on disk and initially only contains the local node and the token set. During the gossip-based random-node-every-second process, nodes will compare their mapping and token set information with each other and reconcile that information. So, a new node will very likely gossip an existing node that is already fully aware of the rest of the cluster, getting the new node up to speed right away.</p>
+<blockquote>
+<div>Note:: The above method of cluster data discovery can be fouled up a bit if you&#8217;re adding multiple nodes at once.
+If an administrator added node A, then added node B, these nodes would not be immediately known to each other.
+To mitigate this, a user can configure something called &#8220;seed&#8221; nodes, which are nodes that all other nodes can
+eventually reconcile with (outside of the random every second process). These nodes essentially have the best
+view of the current state of the cluster</div></blockquote>
+</div>
+<div class="section" id="addition-removal-of-storage-nodes">
+<h3>Addition/Removal of Storage Nodes<a class="headerlink" href="#addition-removal-of-storage-nodes" title="Permalink to this headline">¶</a></h3>
+<p>When a new node (say, X) is added into the system, it is assigned a random scattering of virtual nodes (tokens) around the ring. Using Figure 2, let&#8217;s just use one virtual node as an example. Let&#8217;s say that virtNodeX is added to the ring between virtNodeA and virtNodeB. As such, with N=3, X is now responsible for the ranges between F-G, G-A, and A-X. As a consequence, nodes B, C, and D no longer have to store the keys in their respective tail ranges. So, upon confirmation from X, they will then transfer the appropriate set of keys to X. When a node is removed from the system, this proces happens in reverse.</p>
+</div>
+</div>
+<div class="section" id="implementation">
+<span id="dynamo-implementation"></span><h2>Implementation<a class="headerlink" href="#implementation" title="Permalink to this headline">¶</a></h2>
+<p>Dynamo allows a choice of persistent data store (&#8220;local persistence engine&#8221;). This is typically Berkeley Database (sub 100kB objects), MySQL (larger objects), and an in-memory buffer with persistent backing store.</p>
+<p>As for the request coordination, each client request results in the creation of a state machine on the node that received the client request. The state machine contains all the logic for identifying the nodes responsible for a key, sending the requests, waiting for responses, protentially doing retries, processing the replies and packaging the response to the client. Each state machine instance handles exactly one client request.</p>
+<p>An example read operation (minus failure states and retry operations):</p>
+<p># send read requests to the (virtual) nodes
+# wait for minimum number of required responses
+# if too few replies were received within a given time bound, fail the request
+# otherwise, gather allt he data versions and determine the ones to be returned
+# if versioning is enabled, perform syntactic reconciliation and generate an opaque write context that contains the vector clock that subsumes all the remaining versions</p>
+<p>After a read request is returned to a client, the state machine sticks around for a short while in order to receive any outstanding responses. If stale versions were returned by any of the virtual nodes, the coordinator updates those nodes with the latest version. This is called <em>read repair</em> and it saves the Merkle Tree based anti-entropy process described above from having to do it later.</p>
+<p>Since each write usually follows a read operation, the coordinator for a write is chosen to be the node that replied first to that read operation. The fastest replying node is stored in the context information of the request. This optimization is useful in edge case 99.9% situations because the node that gave out the read information is going to be the one doing the write.</p>
+</div>
+<div class="section" id="nrw-performance-vs-durability">
+<span id="dynamo-durability"></span><h2>NRW: Performance vs Durability<a class="headerlink" href="#nrw-performance-vs-durability" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>N=Node replicas. How many nodes you want a copy of your object stored on.</li>
+<li>R=Read responses. How many nodes you want an answer from in order to consider your read successful (and consistent)</li>
+<li>W=Write responses. How many nodes you want an answer from who have successfully written your object</li>
+</ul>
+<p>The common (N,R,W) configuration used by most Dynamo instances within amazon is (3,2,2). They will run this on clusters with a couple hundred nodes, spanning multiple datacenters (over high bandwidth, low latency interconnects). Since the R or W response is exchanged between the coordinator and the nodes, intelligent selection of nodes is required such that client facing requests do not have to span across datacenters.</p>
+<p>Above was mentioned an in-memory buffer with persistent backing store. Certain services that use dynamo require higher performance at the expense of durability. To acheive this, dynamo provides the ability for each node to maintain an object buffer in its main memory. Each write operation is stored in the buffer and gets periodically written to storage by a writer thread. In this scheme, read operations first check if the requested key is present in the buffer, and if it is, it&#8217;s returned without hitting storage. They saw factor of 5 decreases in latency at the 99.9% percentile during peak traffic even for a very small object buffer. The danger here is that if a node goes down, all the contents of its buffer (ie: a bunch of writes) are lost. To mitigate this, the write operation in this scenario is refined to direct at least one N node to perform a &#8220;durable write.&#8221; The coordinator still only waits for W responses, so the client latency is not affected.</p>
+<div class="section" id="id3">
+<h3>Partitioning<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
+<p><em>Strategy 1: T random tokens per node and partition by token value:</em> In this model, when a physical node joins the ring, a random set of tokens are <strong>created</strong> at &#8220;random but uniform&#8221; locations around the ring and then these tokens are assigned to the new node. The token ranges are not perfectly uniform, and get worse when plopped down between existing tokens at various distances. All other existing nodes which have a new token plopped down between a token range they control then need to redefine their own token ranges. This also necessitates that they update their Merkle trees, and they also need to start up a background thread to scan their local storage and transfer the keys that they own over to the new node. This kinda sucks and takes a long time under high load.</p>
+<p><em>Strategy 2: T random tokens per node and equal sized partitions:</em> in this model, the hash space is divided up evenly while the token placement remains &#8220;random but uniform.&#8221; Not sure about this one, seems dumb</p>
+<p><em>Strategy 3: Equal distribution of tokens and partitions:</em> Hash space is divided evenly, and a token is placed at each segment. This doesn&#8217;t change. A node is added, and it steals tokens from other nodes in order to take on some load. Same happens if a node leaves. This strategy still has the problem of needing to transfer replicas in a background thread, but avoids merkle tree rebuilds and uneven hash sizes.</p>
+</div>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="filesystems.html" class="btn btn-neutral float-right" title="Filesystems" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="cassandra.html" class="btn btn-neutral" title="Cassandra" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Pants.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

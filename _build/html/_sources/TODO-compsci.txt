@@ -1,0 +1,113 @@
+~~Comp Sci~~
+::What's a lambda?::
+lambda is just an in-place, anonymous function. Eg:
+>>>addTwo = lambda x: x+2
+>>>addTwo(2)
+...4
+It's the same thing as defining this:
+def addTwo(x):
+  return x+2
+
+You can even throw them into dictionaries (aka hash trees):
+>>> mapTree = {
+...     'number': lambda x: x**x,
+...     'string': lambda x: x[1:]
+... }
+>>> otype = 'number'
+>>> mapTree[otype](3)
+27
+>>> otype = 'string'
+>>> mapTree[otype]('foo')
+'oo'
+
+It's really just a syntactical thing. It's good if you know that your "function" is only going to be used once, by one thing. Otherwise just create a def(). Note above that ** means to the power of.
+
+One good use for it is with the key= value in your sort() and sorted(). eg:
+>>> pairs = [(1, 'one'), (2, 'two'), (3, 'three'), (4, 'four')]
+>>> pairs.sort(key=lambda english: english[1])
+This will sort by the string:
+[(4, 'four'), (1, 'one'), (3, 'three'), (2, 'two')]
+
+::Why __main__?::
+Why do some python files have this? Why should you use it in your python scripts?
+if __name__ == '__main__':
+  main()
+
+The python interpreter, when it reads a source (.py) file, will execute everything in it. If, for example, "python myfirstscript.py" is ran, then the interpreter prior to running the source will set the special variable "__name__" to equal "__main__". If, inside of myfirstscript.py, you have "import random_module", then the interpreter will set the __name__ variable for that module to its name, in this case "random_module".
+
+So what's the point? Well, let's say random_module.py could, if you wanted, be ran by itself. myfirstscript.py is just importing it because it has some functions in there that are useful. Well, the interpreter just runs whatever code it opens up. If inside the random_module script you don't have the if __name__ == '__main__': main_function() clause, then the interpreter is just going to run the file. You probably don't want this...you just want the functions out of it, you are running myfirstscript.py not random_module.py. So, if you make sure the if __name__ clause is the only thing that starts the actual work of the script, then you can avoid this.
+
+Doing it this way, you can still run random_module from inside myfirstscript.py if you want. Just do this:
+import random_module
+random_module.main()
+
+INTERPRETER WUT
+The interpreter will evaluate the def blocks, creating function objects and variables pointing to those function objects. For example, if you had "def myfunction(): print lalala" then the interpreter would create a function object and a variable called "myfunction" that points to the function object.
+
+::Stack::
+Stacks are useful (and one of the original) data structures which are well suited to expression evaluation and variable storage (in particular, holding variables outside of a subroutine). 
+
+FIFO  (first in first out) stacks are useful as they naturally work with the structure of code. The deeper you nest into if/for/whatever, each level has variables. As you nest back up to the top, these variables are popped off in order.
+
+Another reason stacks are useful is if a subroutine is called by multiple threads at the same time, or are recursively called. In this instance, a variable could be set to one value by one thread, and then changed to another value by another thread, thereby invalidating the result. To prevent this, a stack can be allocated in memory which essentially gives the subroutine a working memory it can use. Each call of the subroutine pushes and pulls more stuff onto and off the stack.
+
+::Register::
+A register is a small bit of information that lives in the register file, which resides in a small bit of memory on the CPU.
+
+Usually the EAX register holds a return value. EBP is the stack pointer, pointing to the beginning of your stack. Then you've got the program counter, which points to the current instruction, EIP. The other registers you just use however you want. 
+
+In assembly, these registers are referred to through names like %eax, %esp, %rdi, %edi, etc.
+
+
+::List Comprehensions (python)::
+
+A list comprehension is just a shorthand way of defining a function.
+
+[do stuff to x     for x in list      if x>0]       ##The if x>0 is optional
+
+Is the same as this:
+
+def omg(list):
+  for x in list:
+    if x>0:
+      do stuff to x
+
+
+
+::Classes::
+You can think of a class as a template, it's a struct basically. It holds variables with default values, functions(/methods, described below). 
+
+Let's say you've got a class defined like this:
+class Door:
+  scopeExample1 = 'inside the class'
+  def open(self, arrrg):
+    print 'hello stranger'
+    scopeExample2 = 'inside the method inside the class'
+    self.scopeExample3 = 'using self. inside the method inside the class'
+    if arrrg:
+      print arrrg
+
+You can instantiate a class (create a class object) like this (mfi means my_first_instantiation):
+mfi = Door()
+
+Now you have an object that contains all the properties inside the class. Test some stuff:
+>>> mfi.open() ## hello stranger
+>>> mfi.open('blahhh') ## hello stranger \n blahhh
+>>> scopeExample1  ##NameError. Not defined.
+>>> mfi.scopeExample1  ## 'inside the class'
+>>> mfi.scopeExample2  ##Door instance has no attribute scopeExample2
+>>> mfi.scopeExample3  ##Door instance has no attribute scopeExample3
+>>> mfi.self.scopeExample3
+
+
+
+
+class Door:
+  def open(self):
+    print 'hello stranger'
+
+def knock_door:
+  a_door = Door()
+  Door.open(a_door)
+
+knock_door()

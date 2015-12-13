@@ -1,0 +1,232 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Filesystems &mdash; PantsNotes 1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="PantsNotes 1 documentation" href="index.html"/>
+        <link rel="prev" title="Welcome to PantsNotes’s documentation!" href="index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> PantsNotes
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="">Filesystems</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#general">General</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#xfs">XFS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id1">NTFS</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">PantsNotes</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>Filesystems</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/filesystems.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="filesystems">
+<h1>Filesystems<a class="headerlink" href="#filesystems" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="general">
+<h2>General<a class="headerlink" href="#general" title="Permalink to this headline">¶</a></h2>
+<p>A filesystem is something which defines how data is stored and retrieved.</p>
+<p>A filesystem typically stores all the metadata associated with the file - including the file name, length, and location within the directory hierarchy - separate from the contents of the file.</p>
+<p>Most filesystems store the names of all the files which are in one directory in one place - the directory table for that directory - which is often stored like any other file. Many filesystems put only some of the metadata for a file in the directory table, and the rest of the metadata for that file in a completely separate structure, such as the inode.</p>
+<p>Most filesystems also store metadata not associated with any one particular file. Such metadata includes information about unused regions - free space bitmap, or a B-Tree structure - and information about bad sectors. Often such information about an allocation group is stored inside the allocation group itself. More on this information in the filesystem-specific sections.</p>
+</div>
+<div class="section" id="xfs">
+<h2>XFS<a class="headerlink" href="#xfs" title="Permalink to this headline">¶</a></h2>
+<p>XFS is a high performance <em>journaling</em> file system. It generally excels in the execution of parallel input/output operations, due to its <em>allocation group</em> based design. XFS is an <em>extent-based</em> filesystem.</p>
+<p>XFS is internally partitioned into <strong>allocation groups</strong>, which are virtual storage regions of fixed size. Any files and directories that you create can span multiple allocation groups. Each allocation group manages its own journal, its own inodes, and its free space independently of other allocation groups. This is where it gains its advantage in both scalability and parallelism. If the file system spans many physical devices, allocation groups can optimize throughput by taking advantage of the underlying separation of channels to the storage components.</p>
+<p>XFS implements <strong>journaling</strong> for metadata operations. XFS records file system updates asynchronously to a circular buffer before it can commit the actual data updates to disk. The journal can either be located internally in the data section of the file system, or externally on a separate device to reduce contention for disk access. If the system crashes or loses power, the journal is read when the filesystem is remounted, and replays any pending metadata operations. The speed of this recovery is not dependent on the size of the filesystem.</p>
+<p>To reduce fragmentation and file scattering, each file&#8217;s blocks in XFS can have variable length <strong>extents</strong></p>
+<p>Whilst many other filesystems manage space allocation with one or more block oriented bitmaps (see <span class="target" id="ntfs">NTFS</span>), in XFS these structures are replaced with an extent oriented structure consisting of a pair of B+ trees (see TODO for more information on B-trees) for each file system allocation group.</p>
+<p>Ref:
+<a class="reference external" href="http://linux-xfs.sgi.com/projects/xfs/papers/xfs_white/xfs_white_paper.html">http://linux-xfs.sgi.com/projects/xfs/papers/xfs_white/xfs_white_paper.html</a>
+<a class="reference external" href="https://en.wikipedia.org/wiki/XFS">https://en.wikipedia.org/wiki/XFS</a></p>
+</div>
+<div class="section" id="id1">
+<h2>NTFS<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>We generally don&#8217;t care about NTFS, but we did mention &#8220;free space bitmap&#8221; in the general section. You may also remember having to &#8220;defrag&#8221; your hard drive and were wondering why. While ext* also use free space bitmaps, NTFS&#8217;s implementation gives the clearest explanation of this phenomenon.</p>
+<p>NTFS uses a special $BitMap file to keep track of all the used and unused &#8220;clusters&#8221; (ntfs nomenclature for logical blocks: anywhere from 512b to 64KB) on an NTFS volume. It&#8217;s a single file (a type of Free Space Bitmap as mentioned above) which contains a mapping of the entire volume, where when a file takes up space on the NTFS volume, the corresponding location in the $BitMap file is marked as used (11111...).  When data is removed, the corresponding map location is marked 0 as unused. When an OS is looking to write out a file, it scans this map file to see where the next available logical block is in which it can place this data, writes out a block, then continues on looking for the next free space available such that it can finish writing the file (if said file is larger than a single block). Even if the OS manages to write out the whole file in contiguous blocks, another file will be written immediately after it. If the original file grows at all, it becomes fragmented. We can see with this approach how quickly fragmentation can occur, and how unruly a $BitMap file can get on a large filesystem (64MB on a 2TB drive).</p>
+<p>Here we can see the bitmap from an NTFS volume with a single 1MB file added:</p>
+<img alt="NTFS $BitMap with 1MB file added" class="align-center" src="_images/NTFS-BitMap.jpg" />
+<p>Note that ext3/4 also use bitmaps, but in regards to fragmentation they are a little bit smarter. Instead of placing multiple files near each other on the hard disk, ext3/4 will scatter different files all over the disk, leaving a large amount of free space between them. They will also choose free blocks around the (growing) file when writing out new data, rather than just the first free block they find. If a file does end up fragmenting, the file system will attempt to move the files around to reduce fragmentation (in ext4 at least). It does this automatically, without the need to run any utility. It can do this so long as the filesystem is not super full (80%+).</p>
+<p>Ref:
+<a class="reference external" href="https://whereismydata.wordpress.com/2009/06/01/forensics-what-is-the-bitmap/">https://whereismydata.wordpress.com/2009/06/01/forensics-what-is-the-bitmap/</a></p>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="index.html" class="btn btn-neutral" title="Welcome to PantsNotes’s documentation!" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Pants.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

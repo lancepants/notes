@@ -1,0 +1,303 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>&lt;no title&gt; &mdash; PantsNotes 1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="PantsNotes 1 documentation" href="index.html"/>
+        <link rel="next" title="&lt;no title&gt;" href="TODO-datastore.html"/>
+        <link rel="prev" title="&lt;no title&gt;" href="TODO-bootprocess.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> PantsNotes
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="TODO-interview.html">Interview Material</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cassandra.html">Cassandra</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dynamo.html">DYNAMO</a></li>
+<li class="toctree-l1"><a class="reference internal" href="filesystems.html">Filesystems</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">PantsNotes</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>&lt;no title&gt;</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/TODO-compsci.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <p>~~Comp Sci~~
+::What&#8217;s a lambda?::
+lambda is just an in-place, anonymous function. Eg:
+&gt;&gt;&gt;addTwo = lambda x: x+2
+&gt;&gt;&gt;addTwo(2)
+...4
+It&#8217;s the same thing as defining this:
+def addTwo(x):</p>
+<blockquote>
+<div>return x+2</div></blockquote>
+<p>You can even throw them into dictionaries (aka hash trees):
+&gt;&gt;&gt; mapTree = {
+...     &#8216;number&#8217;: lambda x: x**x,
+...     &#8216;string&#8217;: lambda x: x[1:]
+... }
+&gt;&gt;&gt; otype = &#8216;number&#8217;
+&gt;&gt;&gt; mapTree[otype](3)
+27
+&gt;&gt;&gt; otype = &#8216;string&#8217;
+&gt;&gt;&gt; mapTree[otype](&#8216;foo&#8217;)
+&#8216;oo&#8217;</p>
+<p>It&#8217;s really just a syntactical thing. It&#8217;s good if you know that your &#8220;function&#8221; is only going to be used once, by one thing. Otherwise just create a def(). Note above that ** means to the power of.</p>
+<p>One good use for it is with the key= value in your sort() and sorted(). eg:
+&gt;&gt;&gt; pairs = [(1, &#8216;one&#8217;), (2, &#8216;two&#8217;), (3, &#8216;three&#8217;), (4, &#8216;four&#8217;)]
+&gt;&gt;&gt; pairs.sort(key=lambda english: english[1])
+This will sort by the string:
+[(4, &#8216;four&#8217;), (1, &#8216;one&#8217;), (3, &#8216;three&#8217;), (2, &#8216;two&#8217;)]</p>
+<p>::Why __main__?::
+Why do some python files have this? Why should you use it in your python scripts?
+if __name__ == &#8216;__main__&#8217;:</p>
+<blockquote>
+<div>main()</div></blockquote>
+<p>The python interpreter, when it reads a source (.py) file, will execute everything in it. If, for example, &#8220;python myfirstscript.py&#8221; is ran, then the interpreter prior to running the source will set the special variable &#8220;__name__&#8221; to equal &#8220;__main__&#8221;. If, inside of myfirstscript.py, you have &#8220;import random_module&#8221;, then the interpreter will set the __name__ variable for that module to its name, in this case &#8220;random_module&#8221;.</p>
+<p>So what&#8217;s the point? Well, let&#8217;s say random_module.py could, if you wanted, be ran by itself. myfirstscript.py is just importing it because it has some functions in there that are useful. Well, the interpreter just runs whatever code it opens up. If inside the random_module script you don&#8217;t have the if __name__ == &#8216;__main__&#8217;: main_function() clause, then the interpreter is just going to run the file. You probably don&#8217;t want this...you just want the functions out of it, you are running myfirstscript.py not random_module.py. So, if you make sure the if __name__ clause is the only thing that starts the actual work of the script, then you can avoid this.</p>
+<p>Doing it this way, you can still run random_module from inside myfirstscript.py if you want. Just do this:
+import random_module
+random_module.main()</p>
+<p>INTERPRETER WUT
+The interpreter will evaluate the def blocks, creating function objects and variables pointing to those function objects. For example, if you had &#8220;def myfunction(): print lalala&#8221; then the interpreter would create a function object and a variable called &#8220;myfunction&#8221; that points to the function object.</p>
+<p>::Stack::
+Stacks are useful (and one of the original) data structures which are well suited to expression evaluation and variable storage (in particular, holding variables outside of a subroutine).</p>
+<p>FIFO  (first in first out) stacks are useful as they naturally work with the structure of code. The deeper you nest into if/for/whatever, each level has variables. As you nest back up to the top, these variables are popped off in order.</p>
+<p>Another reason stacks are useful is if a subroutine is called by multiple threads at the same time, or are recursively called. In this instance, a variable could be set to one value by one thread, and then changed to another value by another thread, thereby invalidating the result. To prevent this, a stack can be allocated in memory which essentially gives the subroutine a working memory it can use. Each call of the subroutine pushes and pulls more stuff onto and off the stack.</p>
+<p>::Register::
+A register is a small bit of information that lives in the register file, which resides in a small bit of memory on the CPU.</p>
+<p>Usually the EAX register holds a return value. EBP is the stack pointer, pointing to the beginning of your stack. Then you&#8217;ve got the program counter, which points to the current instruction, EIP. The other registers you just use however you want.</p>
+<p>In assembly, these registers are referred to through names like %eax, %esp, %rdi, %edi, etc.</p>
+<p>::List Comprehensions (python):</p>
+<p>A list comprehension is just a shorthand way of defining a function.</p>
+<p>[do stuff to x     for x in list      if x&gt;0]       ##The if x&gt;0 is optional</p>
+<p>Is the same as this:</p>
+<dl class="docutils">
+<dt>def omg(list):</dt>
+<dd><dl class="first last docutils">
+<dt>for x in list:</dt>
+<dd><dl class="first last docutils">
+<dt>if x&gt;0:</dt>
+<dd>do stuff to x</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+</dl>
+<p>::Classes::
+You can think of a class as a template, it&#8217;s a struct basically. It holds variables with default values, functions(/methods, described below).</p>
+<p>Let&#8217;s say you&#8217;ve got a class defined like this:
+class Door:</p>
+<blockquote>
+<div><p>scopeExample1 = &#8216;inside the class&#8217;
+def open(self, arrrg):</p>
+<blockquote>
+<div><p>print &#8216;hello stranger&#8217;
+scopeExample2 = &#8216;inside the method inside the class&#8217;
+self.scopeExample3 = &#8216;using self. inside the method inside the class&#8217;
+if arrrg:</p>
+<blockquote>
+<div>print arrrg</div></blockquote>
+</div></blockquote>
+</div></blockquote>
+<p>You can instantiate a class (create a class object) like this (mfi means my_first_instantiation):
+mfi = Door()</p>
+<p>Now you have an object that contains all the properties inside the class. Test some stuff:
+&gt;&gt;&gt; mfi.open() ## hello stranger
+&gt;&gt;&gt; mfi.open(&#8216;blahhh&#8217;) ## hello stranger n blahhh
+&gt;&gt;&gt; scopeExample1  ##NameError. Not defined.
+&gt;&gt;&gt; mfi.scopeExample1  ## &#8216;inside the class&#8217;
+&gt;&gt;&gt; mfi.scopeExample2  ##Door instance has no attribute scopeExample2
+&gt;&gt;&gt; mfi.scopeExample3  ##Door instance has no attribute scopeExample3
+&gt;&gt;&gt; mfi.self.scopeExample3</p>
+<dl class="docutils">
+<dt>class Door:</dt>
+<dd><dl class="first last docutils">
+<dt>def open(self):</dt>
+<dd>print &#8216;hello stranger&#8217;</dd>
+</dl>
+</dd>
+<dt>def knock_door:</dt>
+<dd>a_door = Door()
+Door.open(a_door)</dd>
+</dl>
+<p>knock_door()</p>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="TODO-datastore.html" class="btn btn-neutral float-right" title="&lt;no title&gt;" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="TODO-bootprocess.html" class="btn btn-neutral" title="&lt;no title&gt;" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Pants.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
