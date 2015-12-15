@@ -92,7 +92,7 @@ Look here: :ref:`networking-tcp`
 
 
 - What happens when you type 'ps' (shell word splitting, searching PATH, loading dynamic libs, argument parsing, syscalls, /proc, etc. expand)
-
+A variant of "the rabbit hole" question. :ref:`rabbithole`
 
 
 - what is the worst case time for a quicksort?
