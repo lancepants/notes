@@ -96,6 +96,8 @@ A variant of "the rabbit hole" question. :ref:`rabbithole`
 
 
 - what is the worst case time for a quicksort?
+Depends on your pivot. Look here: :ref:`algorithms`
+
 - What is the maximum length of a binary tree? ("n, because it could be unbalanced")
 
 - What is the theoretical best trans-continental round-trip ping time?
