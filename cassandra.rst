@@ -65,4 +65,15 @@ To get around this problem, you could assign the same node to multiple positions
 
 Replication
 ^^^^^^^^^^^
+As with Dynamo, each data item (ie: **row**) is replicated to N hosts where N is a given replication factor. Each key is assigned to a coordinator node and that coordinator node is responsible for replicating these keys to N-1 other nodes in the ring.
+
+Cassandra provides the client with various options for how data needs to be replicated, such as "Rack Unaware", "Rack Aware (within a datacenter)" and "Datacenter Aware." If a client chooses rack unaware, the data is simply replicated to the next N-1 successors of the coordinator on the ring.
+
+For *rack aware* and *datacenter aware* the system is a bit more complicated. Cassandra first elects a leader amongst its nodes and stores that info in zookeeper. All nodes upon joining a cluster read zookeeper and then contact the leader, who tells them for what ranges they are replicas for. The leader makes a best effort to ensure that no node is responsible for more than N-1 ranges in the ring. The metadata about the ranges a node is responsible for is cached locally at each node as well as in your zookeeper cluster. As such, a node can crash and lose its disk, and still come back up and know what it is responsible for. Cassandra borrows the *preference list* parlance from Dynamo by calling the nodes that are responsible for a given range the *preference list* for that range.
+
+Cassandra is configured to replicate each *row*. It can be configured such that each *row* is replicated across multiple data centers. In this configuration, the preference list for a given key is constructed such that the member storage nodes are spread across multiple datacenters.
+
+
+Cluster Membership
+^^^^^^^^^^^^^^^^^^
 
