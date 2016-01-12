@@ -50,7 +50,7 @@ Partitioning
 ^^^^^^^^^^^^
 Much like Dynamo, Cassandra partitions data across the cluster using consistent hashing - but uses an order preserving hash function to do so (TODO: how does this order preserving hash function affect key placement? what are they talking about here?).
 
-*Basic consistent  hashing:* In consistent hashing, the output *range* of a hash function is treated as a fixed circular space or "ring" (ie: the largest hash value wraps around to the smallest hash value). Each node in this system is assigned a random value within this sapcve which represents its position on the ring. Each data item identified by a key is assigned to a node by hashing the key of the data item, getting that value, and then walking the ring from that value clockwise until it hits the first node with a position larger than the item's position. That node then becomes coordinator for that piece of data. So, each node when walking clockwise on the ring is responsible for the range between itself and its predecessor node. The advantage of this system is that when a node is added or removed (and gets a new position on the ring or is removed from its position), it only affects two neighbouring nodes.
+*Basic consistent hashing:* In consistent hashing, the output *range* of a hash function is treated as a fixed circular space or "ring" (ie: the largest hash value wraps around to the smallest hash value). Each node in this system is assigned a random value within this sapcve which represents its position on the ring. Each data item identified by a key is assigned to a node by hashing the key of the data item, getting that value, and then walking the ring from that value clockwise until it hits the first node with a position larger than the item's position. That node then becomes coordinator for that piece of data. So, each node when walking clockwise on the ring is responsible for the range between itself and its predecessor node. The advantage of this system is that when a node is added or removed (and gets a new position on the ring or is removed from its position), it only affects two neighbouring nodes.
 
 Disadvantages of this method include the random-node-position-assignment and the system being oblivious to node hardware differences. The random node assignment around the ring leads to some nodes being responsible for larger keyspaces than others, leading to uneven load distribution. The lack of heterogenity awareness leads to some higher powered nodes not taking on larger key ranges and load than lower power nodes.
 
@@ -76,4 +76,74 @@ Cassandra is configured to replicate each *row*. It can be configured such that 
 
 Cluster Membership
 ^^^^^^^^^^^^^^^^^^
+Cluster membership in Cassandra is based off of Scuttlebutt, an efficient anti-entropy gossip based algorithm. This gossip based system is used for membership as well as other system related control state data.
 
+TODO: More about scuttlebutt
+
+
+Failure Detection
+^^^^^^^^^^^^^^^^^
+Φ aka PHI
+A modified version of ΦAccrual Failure Detector is used by each node to determine whether any other node in the system is up or down. The idea of an Accrual Failure Detector is that you are not working with a boolean stating whether a node is up or down. Instead, the value is more of a sliding scale or a "suspicion level." This value is defined as Φ, and its value can be dynamically adjusted to reflect network and load conditions at the monitored nodes.
+
+Φ has the following meaning: given some threshold Φ, and assuming that we decide to "suspect" that node A is down when Φ = 1, then the likelihood that we will make a mistake (ie: the decision will be contradicted in the future by the reception of a late heartbeat) is about 10%. When Φ = 2 that chance of error decreases to 1%, and when Φ = 3 the chance further decreases to 0.1%, and so on.
+
+Every node in the system maintains a sliding window of inter-arrival times of gossip messages from other nodes in the cluster. The distribution of these inter-arrival times is determined and Φ is calculated. In general, accrual failure detectors have been found to be very good in both their accuracy, speed, and in their ability to adjust well to network conditions and server load conditions.
+
+Facebook found that a slightly conservative PHI value of 5 was able to detect failures in a 100 node cluster on average in about 15 seconds.
+
+
+Bootstrapping
+^^^^^^^^^^^^^
+When a node starts for the first time, it chooses a random token for its position in the ring (this contradicts other stated info: "when a new node is added to the system, it gets assigned a token such that it can alleviate a heavily loaded node"). For fault tolerance, this position is saved both locally to disk and also to zookeeper. This info is then gossip'd around the cluster, which is how each node knows about all other nodes and their respective positions in the ring. When a node is bootstrapped for the first time, it reads its config (or zookeeper) for a listing of seed nodes - initial contact points to gain information of the cluster from.
+
+TODO: Does the initial gossip advertisement require knowing about one or more seed nodes (likely answered after reading more about scuttlebutt)?
+
+
+Scaling
+^^^^^^^
+When a new node is added to the system, it gets assigned a token such that it can alleviate a heavily loaded node (note: contradicts "randomly selected" info above...). This results in the new node splitting a range off the heavily loaded node for itself. The node giving up the data will stream data over to the new node using kernel-kernel copy techniques (TODO: expand). The Cassandra bootstrap algorithm can be initiated by any other node in the cluster, either via command line utility or Cassandra web dashboard.
+
+Operational experience at facebook has shown that data can be transferred at a rate of 40MB/sec from a single node. They are currently working on improving this transfer rate by having multiple replicas take part in the bootstrap transfer, thereby parallelizing the effort, using a method similar to bittorrent.
+
+
+Local Persistence
+^^^^^^^^^^^^^^^^^
+Cassandra saves data to disk using a format that lends itself well to efficient data retrieval. A typical write operation involes a write into a commit log, after which (if a successful write to commit log occurs) an update into an in-memory data structure occurs. Facebook uses a dedicated LUN/disk for their commit log. Writes to the commit log are sequential. 
+
+As for the in-memory data structure, once it crosses a certain threshold (calculated based on data size and number of objects) it dumps itself to disk. Along with each data structure, an index is generated which allows efficient lookups on the associated data structure based on row key. Over time, you end up with a lot of files. As such, a background merge process will occaisionally collate all these different files into a single file. This process is very similar to what happens in Bigtable.
+
+A typical read operation will first query the in-memory structure before looking into the files on disk. If a disk hit is needed, the files are looked at in order of newest to oldest. For some reads, a disk lookup could occur which looks up a key in multiple files on disk. In order to prevent looking into files tha tdo not contain the key, a bloom filter which summarizes the keys in the file is also stored in each data file and as well as kept in memory. This bloom filter is first consuletd to check if the key being looked up does indeed exist in a given file.
+
+A key in a column family could have many columns. In order to prevent scanning of every column on disk, we maintain column indexes which allow us to jump to the right chunk on disk for column retrieval. This is done by generating indeces at every 256K chunk boundary as the columns for a given key are being serialized and written out to disk. This boundary is configurable, but facebook has found that 256K works well in their production workloads.
+
+Implementation Details
+^^^^^^^^^^^^^^^^^^^^^^
+Cassandra is mainly made up of three abstractions: the partitioning module, cluster membership & failure detection module, and the storage engine module. Each of these modules follow something along the lines of *staged event-driven architecture (SEDA)*, which decomposes a complex, event driven application into a set of stages connected by queues. Message processing pipeline and task pipeline are used to refer to the queues and inter-module data flow in this system.
+
+The cluster membership & failure detection module is built on top of a network layer which uses non-blocking I/O. The system control messages rely on UDP, while the application related messages for replication and request routing rely on TCP.
+
+The request routing modules (ie: the other two?) are implemented using a certain state machine. When a read/write request arrives at any node in the cluster, the state machine morphs through the following states (excluding failure scenarios for now):
+
+1) identify the node(s) that own the data for the key
+2) route the requests to the nodes and wait ont he responses to arrive
+3) if the replies do not arrive within a configured timeout value, fail the request and return to the client
+4) figure out the latest response based on timestamp
+5) schedule a repair of the data at any replica if they do not have the latest piece of data.
+
+The system can be configured to perform either synchronous or asynchronous writes. While asynchronous writes allow a very high write throughput, synchronous writes require a quorum of responses before a response is passed back to the client.
+
+As for the commit log, it is rolled over to a new file every 128MB. The write operation into the commit log can either be in normal mode or in fast sync mode. In the fast sync mode, the writes to the commit log are buffered and we also dump the in-memory data structure to disk in a buffered fashion. As such, this mode has the potential for data loss upon a machine crash.
+
+Cassandra morphs all writes to disk into a sequential format, and the files written to disk are never mutated. This means no locks need to be taken when reading the files. TODO: how is old data removed? during compaction process?
+
+The Cassandra system indexes all data based on primary key. The data file on disk is broken down into a sequence of blocks. Each block contains at most 128 keys and is demarcated by a block index. The block index captures the relative offset of a key within the block and the size of its data. When an in-memery data structure is dumped to disk, a block index is generated and their offsets written out to disk as indices. This index is also maintained in memory for fast access.
+
+As stated prior, the number of data files on disk will increase over time. The compaction process, very much like the Bigtable system, will merge multiple files into one; essentially merge sort on a bunch of sorted data files. The system will always compact files that are close to each other with respect to their sizes (ie: a 100GB file will never be compacted together with a sub-50GB files). Periodically a major compaction process is run to compact all related data files into one big file. This compaction process is disk I/O intensive and can be optimized so as not to affect incoming read requests.
+
+
+Practical Noteable
+------------------
+* Setting a value of PHI to 5 on a 100 node cluster resulted in an average node failure detection time of 15 seconds
+* Cassandra is well integrated with Ganglia
+* Facebook's inbox was holding around 50+TB on a 150 node east/west cost cluster in 2009
