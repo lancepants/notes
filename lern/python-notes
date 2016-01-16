@@ -1,0 +1,61 @@
+Let's say you have a list:
+  mystuff = ["thing", "thing2", "thing3"]
+And you do this:
+  mystuff.append('hello')
+
+What python is doing in the background is looking for mystuff, reading the ., looking for variables that are part of mystuff, seeing that append is part of that list, and then it hits the ( and realizes that this is a function. It then calls the append() function, but it calls it with an extra argument....mystuff. This is weird, but it's how python works.
+So this:
+  mystuff.append('hello')
+Actually results in this:
+  append(mystuff, 'hello')
+
+Why is this significant? Ever gotten one of these errors?:
+  TypeError: blah() takes exactly 1 argument (2 given)
+
+The error can be seen by running this code:
+  class Thing(object):
+    def blah(hi):
+        print "hi"
+  a = Thing()
+  a.blah("hi")
+    Traceback (most recent call last):
+    File "<stdin>", line 1, in <module>
+    TypeError: test() takes exactly 1 argument (2 given)
+ 
+
+Classes
+-------
+A Class is like a module. Let's say you have a mystuff.py:
+  def apple():
+      print "I AM APPLES!"
+  tangerine = "Living reflection of a dream"
+
+You can use it like this:
+  import mystuff
+  mystuff.apple()
+  print mystuff.tangerine
+
+Easy enough so far. Now let's represent this module as a Class instead:
+  Class MyStuff(object):
+    def __init__(self):
+      self.tangerine = "Living reflection of a dream"
+
+    def apple(self):
+      print "I AM CLASSY APPLES!"
+
+That looks a lot more complicated. So why use it instead of a module? Well, you can take this MyStuff class and use it to craft many millions of them at a time if you want, and each one won't interfere with each other. When you import a module, there is only one mystuff object for the entire program unless you do some monster hacks.
+
+Let's create (instantiate) a class, in this case MyStuff:
+  thing = MyStuff()
+  thing.apple()
+  print thing.tangerine
+
+So what exactly is going on here?
+# Python looks for MyStuff() and sees that it is a class you've defined.
+# Python crafts an empty object with all the functions you've specified in the class using def.
+# Python then looks to see if you made a "magic" __init__ function, and if you have it calls that function to initialize your newly created empty object.
+# In the MyStuff function __init__ I then get this extra variable self, which is that empty object Python made for me, and I can set variables on it just like you would with a module, dictionary, or other object.
+# In this case, I set self.tangerine to a song lyric and then I've initialized this object.
+# Now Python can take this newly minted object and assign it to the thing variable for me to work with.
+
+
