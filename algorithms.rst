@@ -1,6 +1,8 @@
 Algorithms
 ==========
 
+.. _algorithms:
+
 Big O Notation
 --------------
 https://justin.abrah.ms/computer-science/big-o-notation-explained.html
@@ -73,10 +75,11 @@ Just follow your code!
 - Since big O only cares about approximation, 2n and n are not fundamentally different - they are simply greater or lesser grades on a linear graph. For example, (1,1),(2,2),(3,3) and (1,2),(2,4),(3,6) is still a linear increase in runtime. Because of this, we can say O(2n) is O(n)
 - To sum it up, the answer is that this function has an O(n) runtime (or a linear runtime). It runs slower the more things you give it, but should grow at a predictable rate.
 
+.. _algorithms-sorting:
 
 Sorting Algorithms
 ------------------
-
+Write about python's default, timsort. ref: http://corte.si//posts/code/timsort/index.html
 
 Searching Algorithms
 --------------------

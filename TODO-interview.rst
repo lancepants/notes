@@ -134,14 +134,15 @@ A socket is a way to speak to other programs using standard Unix file descriptor
 - What is a transaction (db)?
 A transaction is simply a completed operation. Read more about RDBMS+ACID or NoSQL+CAP/Other here: :ref:`rdbms`
 
-- What algorithm does python's .sort() use
+- What algorithm does python's .sort() use?
+Timsort! Read more here: :ref:`algotithms-sorting` 
 
 Facebook Glassdoor
 ^^^^^^^^^^^^^^^^^^
 - What is a filesystem, how does it work?
  
 - What is a socket file? What is a named pipe?  
--     (RobertL: Data written to a pipe is buffered by the kernel until it is read from the pipe. That buffer has a fixed size. Portable applications should not assume any particular size and instead be designed so as to read from the pipe as soon as data becomes available. The size on many Unix systems is a page, or as little as 4K. On recent versions of Linux, the size is 64K. What happens when the limit is reached depends on the O_NONBLOCK flag. By default (no flag), a write to a full pipe will block until sufficient space becomes available to satisfy the write. In non-blocking mode (flag provided), a write to a full pipe will fail and return EAGAIN.)
+(RobertL: Data written to a pipe is buffered by the kernel until it is read from the pipe. That buffer has a fixed size. Portable applications should not assume any particular size and instead be designed so as to read from the pipe as soon as data becomes available. The size on many Unix systems is a page, or as little as 4K. On recent versions of Linux, the size is 64K. What happens when the limit is reached depends on the O_NONBLOCK flag. By default (no flag), a write to a full pipe will block until sufficient space becomes available to satisfy the write. In non-blocking mode (flag provided), a write to a full pipe will fail and return EAGAIN.)
  
 - What is a signal and how is it handled by the kernel?
 - What is a zombie process? How and when can they happen?
