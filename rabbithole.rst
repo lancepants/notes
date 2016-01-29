@@ -3,7 +3,7 @@ Rabbit Hole
 
 **"Describe exactly what happens when you type 'telnet google.com 80' at a bash prompt in as much detail as possible"** 
 
-The above question (or a variant of it) is an extremely common interview question, with a nearly bottomless answer to it. This page attempts a resonable answer.
+The above question (or a variant of it) is an extremely common interview question, with a nearly bottomless answer to it. This page attempts a reasonable answer.
 
 Shell Interpretation
 --------------------
