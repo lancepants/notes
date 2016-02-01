@@ -135,7 +135,7 @@ A socket is a way to speak to other programs using standard Unix file descriptor
 A transaction is simply a completed operation. Read more about RDBMS+ACID or NoSQL+CAP/Other here: :ref:`rdbms`
 
 - What algorithm does python's .sort() use?
-Timsort! Read more here: :ref:`algotithms-sorting` 
+Timsort! Read more here: :ref:`algorithms-sorting` 
 
 Facebook Glassdoor
 ^^^^^^^^^^^^^^^^^^
