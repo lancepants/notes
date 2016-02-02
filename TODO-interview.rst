@@ -3,6 +3,8 @@
 Interview Material
 ==================
 
+TODO: Fix all ref links.
+
 Questions
 ---------
 - Files, inodes, filesystems...how do they work? What are file descriptors? 
@@ -79,12 +81,16 @@ Also reference: :ref:`networking-mtu`
 **Kernel - System Calls**: :ref:`kernel-systemcalls`
 
 
-- What signal does the "kill" command send by default
-Kill sends a SIGTERM by default. Note that processes can ignore, block, or catch all signals except SIGSTOP and SIGKILL. If a process catches a signal, it means that *it includes code that will take appropriate action when the signal is received*. If the signal is not caught, the kernel will take the appropriate action for the signal.
+- What are signals? What signal does the "kill" command send by default? What happens if the signal is not caught by the target process?
+Signals are software interrupts. Kill sends a SIGTERM by default. The kernel delivers signals to target processes or process groups on behalf of an originating process, or on behalf of itself. If the originating process has the permissions to send a signal to another, the kernel forwards it on.
+
+Note that processes can ignore, block, or catch all signals except SIGSTOP and SIGKILL. If a process catches a signal, it means that *it includes code that will take appropriate action when the signal is received*. If the signal is not caught, the kernel will take the appropriate action for the signal.
 
 * SIGHUP is useful, most applications use this as an indication to reload their configuration without terminating themselves.
 * SIGINT is sent when you ctrl-c something. It is intended to provide a mechanism for an orderly, graceful shutdown of the foreground process. Interactive shells (mysql, other) may take it to mean "terminate current query" rather than the whole process.
 * SIGQUIT signals a process to terminate and do a core dump
+* SIGSTOP suspends a processes execution. If you are experiencing some sort of intermittent socket/buffer full or backflow buildup related bug, SIGSTOP is a good way to reproduce the issue. File handles will be kept open.
+* SIGKILL is the ol' kill -9
 
 
 - Describe a TCP connection setup
@@ -142,31 +148,77 @@ Facebook Glassdoor
 - What is a filesystem, how does it work?
  
 - What is a socket file? What is a named pipe?  
+Read more about sockets here: :ref:`linux-kernel-sockets`. A named pipe is just a | that exists on a filesystem rather than only in your command line. Here are some cool things you can do with named pipes:
+
+Create a pipe that gzips things piped to it and then outputs to a file:
+
+  mkfifo my_pipe
+  gzip -9 -c < my_pipe > out.gz &
+  # Now you can send some stuff to it
+  cat file > my_pipe
+
+An example that is perhaps more useful is this:
+
+  mkfifo /tmp/my_pipe
+  gzip --stdout -d file.gz > /tmp/my_pipe # Decompress file.gz, send to my_pipe
+  # Now load the uncompressed data into a MySQL table:
+  LOAD DATA INFILE '/tmp/my_pipe' INTO TABLE tableName;
+
+So what we did here was use a named pipe in order to transfer data from one program (gzip decompressing stuff) to another (mySQL). This allowed us to write out the entire uncompressed version of file.gz before loading it into MySQL, rather than having to decompress the whole thing first.
+
 (RobertL: Data written to a pipe is buffered by the kernel until it is read from the pipe. That buffer has a fixed size. Portable applications should not assume any particular size and instead be designed so as to read from the pipe as soon as data becomes available. The size on many Unix systems is a page, or as little as 4K. On recent versions of Linux, the size is 64K. What happens when the limit is reached depends on the O_NONBLOCK flag. By default (no flag), a write to a full pipe will block until sufficient space becomes available to satisfy the write. In non-blocking mode (flag provided), a write to a full pipe will fail and return EAGAIN.)
  
-- What is a signal and how is it handled by the kernel?
 - What is a zombie process? How and when can they happen?
+When a process ends via exit, all of the memory and resources associated with it are deallocated; however, the process's entry in the process table remains. Its process status becomes EXIT_ZOMBIE and the process's parent is sent a SIGCHLD signal by the kernel letting it know that its child process has exited. At this point, the parent process is supposed to call a wait() in order to read the dead process's exit status and such. After the wait() is called, the process's entry in the process table is removed.
+
+If a parent process doesn't handle the SIGCHLD and call wait(), you end up with a zombie process. Let run wild under high load, you may run out of PIDs. To get rid of zombie processes, you may try using kill to send SIGCHLD to the parent, and if that doesn't work, kill the parent. The zombie will become an orphan which is then picked up by init (1), who calls wait() periodically.
+
 - What does user vs system cpu load mean?
-- Difference between cache's and buffers?
+Read more about the user and system separation in :ref:`linux-kernel`.
+
 - How can disk performance be improved?
-- How would you design a system that manipulates content sent from a client (eg: clean bad words in a comment post)?
+Caching, sequential reads/writes, block/stripe alignment.
+
 - Explain in every single step about what will happen after you type "ls (asterisk-symbol-redacted)" or "ps" in your terminal, down to machine language
+Variant of :ref:`rabbithole`
+
 - Suppose there is a server with high CPU load but there is no process with high CPU time. What could be the reason for that? How do you debug this problem?
-  -Typically this is due to very short lived processes. (look up how to detect this). Also, does a process in high IOWait have an associated high cpu usage?
+Might be due to something causing high IOWait and not having associated higher cpu usage. If everything else is basically idle, this is usually an indicator that the disk/controller you're writing to is about to die. If there's a process at something really low, like 7% or something, then it could just be pushing a lot of data to slow media and not requiring much cpu time to do it. iostat will tell you what disk is being written to, and iotop will tell youwhich process it is. If you don't have these tools installed, look for processes that are in uninterruptible sleep:
+
+  while true ; do ps -eo state,pid,cmd|grep "^D" ; sleep 1 ; done
+
+Anything marked with a "D" at the start are in uninterruptible sleep, or a wait state. If you see a suspicious process, cat /proc/<pid>/io a couple times to see its io activity. You can also check lsof to see what file handles it has open.
+
+  cat /proc/12345/io
+  lsof -p 12345
+
+If you're not seeing high IOWait, the high cpu is likely due to many very short lived processes stuck in a crash loop or doing some other thing it's not supposed to. atop shows you all processes which have lived and died over a polling period. Alternately, Brendan Gregg has a tool called execsnoop which he built for exactly this problem. If your kernel is new enough, you can use systemtap as well.
+
 - What happens when a float is cast to/from a boolean in python?
+If float == 0: bool = False ; else: bool = True  ? Not sure what more to say here
+  
 - Given a database with slow I/O, how can we improve it?
+If relational, check out :ref:`rdbms` notes.
   -Profile the thing to see where it's slow (expand)
   -indexing (expand)
   -disk optimisations (expand)
-- What options do you have, nefarious or otherwise, to stop   people on a wireless network you are also on (but have no admin rights to) from hogging bandwidth by streaming videos?
-  -discover their mac address (wifi raw mode? expand), create another interface and assign their mac address as your own, make script to forever perform gratuitous ARP until offender gets annoyed at poor performance and stops using internet. (might also just be able to do arping -U ip.addre.s.s & echo 1 > /proc/sys/net/ipv4/ip_nonlocal_bind http://serverfault.com/questions/175803/how-to-broadcast-arp-update-to-all-neighbors-in-linux) 
+
+- What options do you have, nefarious or otherwise, to stop people on a wireless network you are also on (but have no admin rights to) from hogging bandwidth by streaming videos?
+  -discover their mac address (iwconfig wlan0 mode monitor;tcpdump), create another interface and assign their mac address as your own, make script to forever perform gratuitous ARP until offender gets annoyed at poor performance and stops using internet. (might also just be able to do arping -U ip.addre.s.s & echo 1 > /proc/sys/net/ipv4/ip_nonlocal_bind http://serverfault.com/questions/175803/how-to-broadcast-arp-update-to-all-neighbors-in-linux) 
   -If you can gain access to wifi router, ban their mac or set QoS if available
   -(expand)
+
 - How exactly does the OS transfer information across a pipe?
+:ref:`linux-kernel-ipc`
+Linux has an in-memory VFS called pipefs that gets mounted in kernel space at boot. The entry point to pipefs is the pipe(2) syscall. This system call creates a pipe in pipefs and then returns two file descriptors (one for the read end, opened using O_RDONLY, and one for the write end, opened using O_WRONLY).
+
 - What problems are you going to run into when doing IPC (pipes, shared memory structures)?
+
 - what is "file descriptor 2"
   -STDERR apparently?
+
 - What's the difference between modprobe and insmod?
+
 
 
 Study Topics
@@ -195,6 +247,7 @@ Design
 * (fb)Outline a generic performant, scalable system. From frontend (lb's? or cluster-aware metadata like kafka) to backend (db's, storage, nosql options, etc). Remember networking as well: what features does a high performance network card supply - what can it offload? What should you tweak network wise for high bandwidth connections
 * (fb)How would you design a cache API?
 * (fb)How would you design facebook?
+* (fb)How would you design a system that manipulates content sent from a client (eg: clean bad words in a comment post)?
 * Design the SQL database tables for a car rental database.
 * How would you design a real-time sports data collection app?
 * design a highly-available production service from bare metal all the way to algorithms and data structures. (eg: gmail, hangouts, google maps, etc.)

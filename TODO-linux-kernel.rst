@@ -1,6 +1,8 @@
-~~Unix/Linux Internals~~
+Linux Internals
+===============
 
-::System Calls::
+System Calls
+------------
 The kernel is the only program running in a special CPU mode called kernel mode, allowing full access to devices and the execution of privileged instructions. 
 
 User processes run in user mode. These processes have a separate stack and registers (memory space) from kernel mode processes. These processes must request privileged operations from the kernel via system calls.
@@ -9,13 +11,27 @@ System calls are the primary mechanism by which user-space programs interact wit
 
 Popular system calls are open, read, write, close, wait, execve, fork, exit, and kill
 
-System call process. Example using READ. Read wants to access a storage device to read some info and then transfer that info to its memory space:
+An example with sys_read()
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+my_app wants to access a storage device to read some info and then transfer that info to its memory space:
+
 -main process passes its arguments to libc_read
 -libc_read loads the specific system call number (in this case __NR_read) into the cpu's EAX register, as well as loads whatever other arguments (ie:what to read, the file descriptor of the file to read, etc) into other processor registers.
 -libc_read then throws a special software interrupt which triggers an exception, which the kernel picks up and handles
 -kernel code function system_call() is called, which has a look at the eax register to find out what system call to load
 -sys_read() is called, which then uses the file descriptor it was passed to check for locks, and looks up a file struct which has a pointer to the function to call in order to handle that file type.
 -sys_read() then does a read request to the device node driver function, which passes back information, and the process back up to userland is reversed
+
+pipe(2)
+^^^^^^^
+https://brandonwamboldt.ca/how-linux-pipes-work-under-the-hood-1518/
+
+Linux has an in-memory VFS called pipefs that gets mounted in kernel space at boot. The entry point to pipefs is the pipe(2) syscall. This system call creates a file in pipefs and then returns two file descriptors (one for the read end, opened using O_RDONLY, and one for the write end, opened using O_WRONLY).
+
+Pipe size default is typically 64KB. When a pipe's buffer is full, a write(2) will block. If all file descriptors pointing to the read end of the pipe have been closed, writing to the pipe willr aise the SIGPIPE signal. If this signal is ignored, write(2) fails with error EPIPE.
+
+hen a pipe is empty, a read(2) will block. If there is nobody listening on the other end (all the file descriptors pointing to the write end of the pipe have been closed), then the pipe will return an EOF (ie: read(2) will return 0).
+
 
 ::VFS::
 VFS works as an abstraction layer sitting between filesystems and system calls. By having this layer, a system call doesn't need to know how to communicate with all these different filesystems (ext3, ufs, zfs, nfs, /proc, /dev), and instead only communicates to VFS. VFS then communicates to the file system.
