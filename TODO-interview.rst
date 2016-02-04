@@ -7,6 +7,11 @@ TODO: Fix all ref links.
 
 Questions
 ---------
+- What is an initrd and why is it needed?
+initrd stands for Initial RAM Disk. PXE/some_bootloader extracts and executes the kernel, and then the kernel can extract and mount its associated initrd. initrd provides a virtual root filesystem which contains several executables and modules that permit the real root filesystem to be mounted, or to do whatever else you'd like at that point in the boot process.
+
+Nearly all of initrd's use cases involve needing to load some needed module into the kernel in order to support a non-standard root filesystem, LVM, network drive, or RAID controller prior to full boot. You may also choose to rebuild your kernel to include necessary modules and get rid of the initrd; however, in the instances of needing to mount a network drive, run some sort of process that doesn't need to boot fully into linux, or do some other "staging" type thing, an initrd environment is useful.
+
 - Files, inodes, filesystems...how do they work? What are file descriptors? 
 **Filesystems, inodes, file descriptors**: Described in :ref:`filesystems`
 
@@ -288,6 +293,11 @@ Facebook Glassdoor
     memory vs CPU usage. Talk about whether certain system calls take more 
     resources than others. How long it takes to: access a register, access main 
     memory, perform a context switch, hd seek time
+
+General
+^^^^^^^
+- re-implement nc in python
+- re-implement grep in python
 
 Quickies
 --------
