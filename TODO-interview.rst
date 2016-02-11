@@ -151,6 +151,7 @@ Timsort! Read more here: :ref:`algorithms-sorting`
 Facebook Glassdoor
 ^^^^^^^^^^^^^^^^^^
 - What is a filesystem, how does it work?
+A filesystem is a method of organizing data on some form of media. Read about specific filesystems here: :ref:`filesystems`
  
 - What is a socket file? What is a named pipe?  
 Read more about sockets here: :ref:`linux-kernel-sockets`. A named pipe is just a | that exists on a filesystem rather than only in your command line. Here are some cool things you can do with named pipes:
@@ -203,46 +204,65 @@ If you're not seeing high IOWait, the high cpu is likely due to many very short 
 If float == 0: bool = False ; else: bool = True  ? Not sure what more to say here
   
 - Given a database with slow I/O, how can we improve it?
-If relational, check out :ref:`rdbms` notes.
-  -Profile the thing to see where it's slow (expand)
-  -indexing (expand)
-  -disk optimisations (expand)
+  - If relational, check out :ref:`rdbms` notes.
+  - Profile the thing to see where it's slow (expand)
+  - indexing (expand)
+  - disk optimisations (expand)
 
 - What options do you have, nefarious or otherwise, to stop people on a wireless network you are also on (but have no admin rights to) from hogging bandwidth by streaming videos?
-  -discover their mac address (iwconfig wlan0 mode monitor;tcpdump), create another interface and assign their mac address as your own, make script to forever perform gratuitous ARP until offender gets annoyed at poor performance and stops using internet. (might also just be able to do arping -U ip.addre.s.s & echo 1 > /proc/sys/net/ipv4/ip_nonlocal_bind http://serverfault.com/questions/175803/how-to-broadcast-arp-update-to-all-neighbors-in-linux) 
-  -If you can gain access to wifi router, ban their mac or set QoS if available
-  -(expand)
+  - discover their mac address (iwconfig wlan0 mode monitor;tcpdump), create another interface and assign their mac address as your own, make script to forever perform gratuitous ARP until offender gets annoyed at poor performance and stops using internet. (might also just be able to do arping -U ip.addre.s.s & echo 1 > /proc/sys/net/ipv4/ip_nonlocal_bind http://serverfault.com/questions/175803/how-to-broadcast-arp-update-to-all-neighbors-in-linux) 
+  - If you can gain access to wifi router, ban their mac or set QoS if available
+  - (expand)
 
 - How exactly does the OS transfer information across a pipe?
 :ref:`linux-kernel-ipc`
 Linux has an in-memory VFS called pipefs that gets mounted in kernel space at boot. The entry point to pipefs is the pipe(2) syscall. This system call creates a pipe in pipefs and then returns two file descriptors (one for the read end, opened using O_RDONLY, and one for the write end, opened using O_WRONLY).
 
 - What problems are you going to run into when doing IPC (pipes, shared memory structures)?
+In computer science, "Classic" IPC problems all refer to resource contention, or synchronization and deadlock problems. These are generally solved by using semaphores and mutexes, and ensuring access to multiple mutexes is done in order.
+  https://en.wikipedia.org/wiki/Producer%E2%80%93consumer_problem
+  https://en.wikipedia.org/wiki/Readers%E2%80%93writers_problem
+  https://en.wikipedia.org/wiki/Dining_philosophers_problem
+  https://en.wikipedia.org/wiki/Sleeping_barber_problem
 
-- what is "file descriptor 2"
-  -STDERR apparently?
+- What is "file descriptor 2"
+STDERR. fd0 is STDIN, and fd1 is STDOUT. Read more in :ref:`linux-file-descriptors`
 
 - What's the difference between modprobe and insmod?
+Modprobe is more intelligent than insmod. It refers to a /lib/modules/$(uname -r)/modules.dep.bin (or other depending on OS) dependency file to read available modules and their dependencies. It'll accept the name of .ko files in /lib/modules/$(uname -r) as well. Insmod on the other hand will not do dependency resolution, and accepts paths to module files. Modprobe uses insmod to do its work once it does its more intelligent work.
 
 
 
 Study Topics
 ------------
-Brush up on RAID
-quick brush up on more complicated regex
-learn the particulars of ssh
-core system functionality such as I/O buffering
-SMTP
-(googs)Prepare for Hashmap/hashtable questions
-(googs)Understand how job scheduling is handled in the most recent iterations of the kernel
-(googs)Know your signals
-(googs)Study up on algorithms and data structs
-(googs)Study the book "Cracking the Coding Interview" for several weeks prior to interviewing. practice "whiteboarding" your code
-(fb)Review DNS, TCP, HTTP, system calls, signals, semaphores, complete paths (ie: telnet blah.com 80), boot process (incl UEFI)
-(fb)Refresh CCNA related knowledge, TCPDump commands (memorize syntax, memorize basic "listen"), ipv6 notes, load balancing types, load balancer failover modes & how VIP mac addr changes (gratuitous/unsolicited ARP), direct routing vs NAT, jumbo frames, MTU size, fragmentation and when it can occur, what a packet looks like
-(fb)Review systemtap, perftools, sar(sysstat), and other options
-(fb)Write about shared file systems which are read/written to from many servers.
-(fb)Write about distributed systems and different types of consistency models and where they are used
+- Brush up on RAID
+The RAID write hole problem can crop up when a power loss or some other event causes a disk write to be interrupted such that raid parity bits are not consistent with the data. Prevent this by using Battery Backed caches or PDUs, and/or consider storage systems that use transactional-style writes.
+
+- learn the particulars of ssh
+- core system functionality such as I/O buffering
+
+- (googs)Prepare for Hashmap/hashtable questions
+
+- (googs)Understand how job scheduling is handled in the most recent iterations of the kernel
+:ref:`linux-scheduling`
+
+- (googs)Know your signals
+See above, "What are signals?"
+
+- (googs)Study up on algorithms and data structs
+:ref:`algorithms`
+
+- (googs)Study the book "Cracking the Coding Interview" for several weeks prior to interviewing. practice "whiteboarding" your code
+
+- (fb)Review DNS, TCP, HTTP, system calls, signals, semaphores, complete paths (ie: telnet blah.com 80), boot process (incl UEFI)
+
+- (fb)Refresh CCNA related knowledge, TCPDump commands (memorize syntax, memorize basic "listen"), ipv6 notes, load balancing types, load balancer failover modes & how VIP mac addr changes (gratuitous/unsolicited ARP), direct routing vs NAT, jumbo frames, MTU size, fragmentation and when it can occur, what a packet looks like
+
+- (fb)Review systemtap, perftools, sar(sysstat), and other options
+
+- (fb)Write about shared file systems which are read/written to from many servers.
+
+- (fb)Write about distributed systems and different types of consistency models and where they are used
 
 
 Design
@@ -251,8 +271,19 @@ Design
 * (googs)How do you best deal with processing huge amounts of data? (if you say map reduce, learn a ton about it)
 * (fb)Outline a generic performant, scalable system. From frontend (lb's? or cluster-aware metadata like kafka) to backend (db's, storage, nosql options, etc). Remember networking as well: what features does a high performance network card supply - what can it offload? What should you tweak network wise for high bandwidth connections
 * (fb)How would you design a cache API?
+
 * (fb)How would you design facebook?
+1) Define desired features, and split them into their own design. ie: photos, video, news feed, messenger, events
+
+Video: Use GPU's to transcode streams to different quality levels
+
 * (fb)How would you design a system that manipulates content sent from a client (eg: clean bad words in a comment post)?
+For the clean bad words from a comment post, I would consider splitting the words in a comment post to a list (order matters here if we are to reconstruct the sentence, so can't sort or use a dict) and then iterating over them against a badwords hash/dict where the dict key is the badword. This would be O(n)+O(1), or an O(n) operation (this assumes that the hash function for the dict keys is sufficiently robust to make collisions uncommon, giving linear time O(1)).
+
+If badwords is massive, you could consider keeping it sorted and then doing a binary search (O(log n)) against it when comparing words.
+
+If the comment is huge or has many duplicate words and we want to prevent comparing them against the badwords more than once, you could consider splitting each word to a dict where the key is the word, and then doing a str.replace() on the original comment text if a badword match is found.
+
 * Design the SQL database tables for a car rental database.
 * How would you design a real-time sports data collection app?
 * design a highly-available production service from bare metal all the way to algorithms and data structures. (eg: gmail, hangouts, google maps, etc.)
