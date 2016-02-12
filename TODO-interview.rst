@@ -267,6 +267,8 @@ See above, "What are signals?"
 
 Design
 ------
+Reference stackshare.io for ideas.
+
 * (googs)How would you design Gmail?
 * (googs)How do you best deal with processing huge amounts of data? (if you say map reduce, learn a ton about it)
 * (fb)Outline a generic performant, scalable system. From frontend (lb's? or cluster-aware metadata like kafka) to backend (db's, storage, nosql options, etc). Remember networking as well: what features does a high performance network card supply - what can it offload? What should you tweak network wise for high bandwidth connections
@@ -294,8 +296,34 @@ Coding Questions
 Google Glassdoor
 ^^^^^^^^^^^^^^^^
 - Implement a hash table
+dicky = {'herp': 1, 'derp': 2, 'potato': 3}
+
 - Remove all characters from string1 that are contained in string2
+This is O(n), but inefficient as strings are immutable in python, so string1 keeps getting recreated.
+  string1 = "can you still read this?"
+  string2 = "aeiou"
+  for char in string2:
+    string1 = string1.replace(char, "")
+  return string1
+
+str.translate() in python uses C string magic, ends up being fastest at *removing* chars
+
+Python 2 only:
+  string1 = "can you still read this?"
+  string2 = "aeiou"
+  string1.translate(None, string2)
+
+Python 3's translate method expects a translation table (ie: dict) passed to it which contains the unicode ordinal value of a character as the key, and an associated ord, str, or None as the value. maketrans() will create this table for us. Any characters entered in the *third* argument will be mapped to None, which is what we want in this case
+  string1 = "can you still read this?"
+  string2 = "aeiou"
+  charTransTable = str.maketrans('', '', 'aeiou')
+  # or
+  charTransTable = str.maketrans('', '', string2)
+  string1.translate(charTransTable)
+
 - implement quicksort. Determine its running time.
+
+
 - Given a numerym (first letter + length of omitted characters + last letter), how would you return all possible original words? E.G. i18n the numeronym of internationalization
 - Find the shortest path between two words (like "cat" and "dog), changing only one letter at a time.
 - Reverse a linked list

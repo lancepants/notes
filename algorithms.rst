@@ -81,6 +81,21 @@ Sorting Algorithms
 ------------------
 Write about python's default, timsort. ref: http://corte.si//posts/code/timsort/index.html
 
+Quicksort
+^^^^^^^^^
+https://en.wikipedia.org/wiki/Quicksort
+
+Quicksort is a comparison sort, meaning that it can sort items of any type so long as there is a "less-than" relationship relationship between items. It may also be considered a "divide and conquer" algorithm. When implemented well, quicksort can be about two or three times faster than merge sort or heapsort. On average, quicksort is an O(n log n), and in the worst case (rare) it is an O(n^2).
+
+The general quicksort steps are:
+* Pick an element, called a *pivot*, from the array
+* **Partitioning**: reorder the array so that all elements with values less than the pivot point come before the pivot, while all elements with values grater than the pivot come after it (equal values go either way). After this partitioning, the pivot is in its final position. This is called the **partition** operation
+* Recursively apply the above steps to the sub-array of elements with smaller values, and separately do the same to the sub-array with the higher values
+
+The pivot selection point and the partitioning steps can be done in several different ways, and which method you choose greatly affects the algorithm's performance.
+
+
+
 Searching Algorithms
 --------------------
 
