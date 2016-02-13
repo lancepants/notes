@@ -106,7 +106,7 @@ Look here: :ref:`networking-tcp`
 A variant of "the rabbit hole" question. :ref:`rabbithole`
 
 - what is the worst case time for a quicksort?
-Depends on your pivot. Look here: :ref:`algorithms`
+O(n^2) for already-sorted lists if your pivot is the final element in the array you're sorting, or if all elements in an array are the same. Quicksort performance generally depends on your pivot. Look here: :ref:`algorithms`
 
 - What is the maximum length(depth) of a binary tree?
 http://codercareer.blogspot.com/2013/01/no-35-depth-of-binary-trees.html
