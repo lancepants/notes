@@ -31,8 +31,8 @@
 
   
     <link rel="top" title="PantsNotes 1 documentation" href="index.html"/>
-        <link rel="next" title="DYNAMO" href="dynamo.html"/>
-        <link rel="prev" title="&lt;no title&gt;" href="TODO-thought.html"/> 
+        <link rel="next" title="Dynamo" href="dynamo.html"/>
+        <link rel="prev" title="Algorithms" href="algorithms.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -83,12 +83,31 @@
             
                 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="TODO-interview.html">Interview Material</a></li>
+<li class="toctree-l1"><a class="reference internal" href="TODO-rdbms.html">Relational Databases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="algorithms.html">Algorithms</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="">Cassandra</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#intro">Intro</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#data-model">Data Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#api">API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#system-architecture">System Architecture</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#general">General</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#partitioning">Partitioning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#replication">Replication</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#cluster-membership">Cluster Membership</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#failure-detection">Failure Detection</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#bootstrapping">Bootstrapping</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#scaling">Scaling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#local-persistence">Local Persistence</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#implementation-details">Implementation Details</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="dynamo.html">DYNAMO</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#practical-noteable">Practical Noteable</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="dynamo.html">Dynamo</a></li>
 <li class="toctree-l1"><a class="reference internal" href="filesystems.html">Filesystems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="kafka-public.html">Kafka</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rabbithole.html">Rabbit Hole</a></li>
 </ul>
 
             
@@ -137,12 +156,106 @@
 <span id="id1"></span><h1>Cassandra<a class="headerlink" href="#cassandra" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="intro">
 <h2>Intro<a class="headerlink" href="#intro" title="Permalink to this headline">¶</a></h2>
-<p>Cassandra uses consistent hashing to distribute data and transfers request and data between nodes directly (peer to peer), much the same way as <a class="reference internal" href="dynamo.html#dynamo"><span>DYNAMO</span></a>. A client may choose, upon each request (SELECT, UPDATE, INSERT, DELETE...), how much consistency they desire (ie: how many nodes to respond before a confirmed operation). Interaction with Cassandra uses <em>Cassandra Query Language</em> (CQL), which is nearly identical to SQL. Cassandra allows you to apply replication configurations to each of your databases (ie: keyspaces) which take into account running a keyspace across multiple datacenters and physical racks.</p>
+<p>Cassandra uses consistent hashing to distribute data and transfers request and data between nodes directly (peer to peer), much the same way as <a class="reference internal" href="dynamo.html#dynamo"><span>Dynamo</span></a>. A client may choose, upon each request (SELECT, UPDATE, INSERT, DELETE...), how much consistency they desire (ie: how many nodes to respond before a confirmed operation). Interaction with Cassandra uses <em>Cassandra Query Language</em> (CQL), which is nearly identical to SQL. Cassandra allows you to apply replication configurations to each of your databases (ie: keyspaces) which take into account running a keyspace across multiple datacenters and physical racks.</p>
 <p>In contrast to Dynamo&#8217;s preference list, any Cassandra node in a cluster can become coordinator for any read/write request. Similar to Dynamo&#8217;s &#8220;hinted handoff,&#8221; if one or more nodes responsible for a particular set of data are down, data is simply written to another node which temporarily holds the data until the downed node comes back online.</p>
 <p>When data is written to Cassandra, it is first written to a commit log. It is also written to an in-memory structure called a memtable, which is eventually flushed to a disk structure called a <em>sorted strings table</em> (sstable). When a read request comes in, it is sent out to the node(s) containing the data, who then perform their work in parallel. If a node is down, the request is forwarded to one of its replicas.</p>
 <p>Regarding performance, in 2011 Netflix was able to achieve 3.3million writes per second (1.1million with N=3) across three amazon availability zones using 288 medium size instances (96 instances per AZ). Cassandra is touted to have a linear performance increase as you add more nodes.</p>
 <p>With regards to data structure, Cassandra can store structured, semi structured, and unstructured data. In contrast to RDBMS&#8217;s, you can&#8217;t do JOINs, so data tends to be pretty denormalized (ie: lots of columns). This is no big deal - Cassandra operates very quickly on objects with many thousands of columns. Within a keyspace are one or more column families, which are like relational tables. These families have one to many thousands of columns, with both primary and secondary indexes on columns being supported. More on this later.</p>
 <p>Datastax is the main &#8220;enterprise support&#8221; for Cassandra company. They employ some Cassandra contributors and have employees who sit on Apache&#8217;s board.</p>
+</div>
+<div class="section" id="data-model">
+<h2>Data Model<a class="headerlink" href="#data-model" title="Permalink to this headline">¶</a></h2>
+<p>A table in Cassandra is a distributed multi dimensional map, indexed by a key. The value is an object which is highly structured. The row key in a table is a string with no size restrictions, although typically 16 to 36 bytes long. Every operation under a single row key is atomic per replica no matter how many columns are being read or written into.</p>
+<p>Columns are grouped together into sets called column families very similar to what happens in BigTable. Cassandra exposes two kinds of column families, Simple and Super column families. Super column families can be visualized as a column family within a column family. Furthermore, applications can specify the sort order of columns within a super column or simple column, sorted either by time or by name. Time sorting is good for things like inbox search, where results are always in time sorted order.</p>
+<p>Any column within a column family is accessed using the convention <em>column_family : column</em> and any column within a column family that is of type super is accessed using hte convention <em>column_family : super_column : column</em>. More on this later.</p>
+<p>Typically, applications use a dedicated Cassandra cluster and manage them as part of their service. Although the system supports the notion of multiple tables, all deployments (at facebook) have only one table in their schema. In other deployments, users may have multiple tables which are each designed to be efficient in serving certain types of queries (eg: grouping by an attribute, ordering by an attribute, filtering based on some set of conditions...etc). Using separate tables and (most likely necessarily) having duplicate copies of data between them (but with different column layouts) is necessary and recommended in order to gain maximum read optimization. In short, design your tables around what high-level queries you have.</p>
+</div>
+<div class="section" id="api">
+<h2>API<a class="headerlink" href="#api" title="Permalink to this headline">¶</a></h2>
+<p>The Cassandra API consists of the following three simple methods:</p>
+<ul class="simple">
+<li><em>insert(table, key, rowMutation)</em></li>
+<li><em>get(table, key, columnName)</em></li>
+<li><em>delete(table, key, columnName)</em></li>
+</ul>
+<p><em>columnName</em> can refer to a specific column within a column family, a column family, a super column family, or a column within a super column.</p>
+</div>
+<div class="section" id="system-architecture">
+<h2>System Architecture<a class="headerlink" href="#system-architecture" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="general">
+<h3>General<a class="headerlink" href="#general" title="Permalink to this headline">¶</a></h3>
+<p>Typically a read/write request for a key gets routed to any node in the cluster. The node then determines the replicas for this particular key. For writes, the system routes the requests to the replicas and waits for a quorum of replicas to acknowledge the completion of writes. For reads, based on the consistency guarantees required by the client, the system either routes the requests to the closest replica or routes the requests to all replicas and waits for a quorum of responses.</p>
+</div>
+<div class="section" id="partitioning">
+<h3>Partitioning<a class="headerlink" href="#partitioning" title="Permalink to this headline">¶</a></h3>
+<p>Much like Dynamo, Cassandra partitions data across the cluster using consistent hashing - but uses an order preserving hash function to do so (TODO: how does this order preserving hash function affect key placement? what are they talking about here?).</p>
+<p><em>Basic consistent hashing:</em> In consistent hashing, the output <em>range</em> of a hash function is treated as a fixed circular space or &#8220;ring&#8221; (ie: the largest hash value wraps around to the smallest hash value). Each node in this system is assigned a random value within this sapcve which represents its position on the ring. Each data item identified by a key is assigned to a node by hashing the key of the data item, getting that value, and then walking the ring from that value clockwise until it hits the first node with a position larger than the item&#8217;s position. That node then becomes coordinator for that piece of data. So, each node when walking clockwise on the ring is responsible for the range between itself and its predecessor node. The advantage of this system is that when a node is added or removed (and gets a new position on the ring or is removed from its position), it only affects two neighbouring nodes.</p>
+<p>Disadvantages of this method include the random-node-position-assignment and the system being oblivious to node hardware differences. The random node assignment around the ring leads to some nodes being responsible for larger keyspaces than others, leading to uneven load distribution. The lack of heterogenity awareness leads to some higher powered nodes not taking on larger key ranges and load than lower power nodes.</p>
+<p>To get around this problem, you could assign the same node to multiple positions along the ring, and/or you can analyze the load along the ring and move lightly loaded nodes into keyspace owned by heavily loaded nodes in order to distribute work more efficiently. Both of these approaches incorporate the usage of virtual nodes, or <em>tokens</em>, which sit in positions along the ring in place of actual physical nodes. Physical nodes can then be assigned or removed more or less tokens.</p>
+</div>
+<div class="section" id="replication">
+<h3>Replication<a class="headerlink" href="#replication" title="Permalink to this headline">¶</a></h3>
+<p>As with Dynamo, each data item (ie: <strong>row</strong>) is replicated to N hosts where N is a given replication factor. Each key is assigned to a coordinator node and that coordinator node is responsible for replicating these keys to N-1 other nodes in the ring.</p>
+<p>Cassandra provides the client with various options for how data needs to be replicated, such as &#8220;Rack Unaware&#8221;, &#8220;Rack Aware (within a datacenter)&#8221; and &#8220;Datacenter Aware.&#8221; If a client chooses rack unaware, the data is simply replicated to the next N-1 successors of the coordinator on the ring.</p>
+<p>For <em>rack aware</em> and <em>datacenter aware</em> the system is a bit more complicated. Cassandra first elects a leader amongst its nodes and stores that info in zookeeper. All nodes upon joining a cluster read zookeeper and then contact the leader, who tells them for what ranges they are replicas for. The leader makes a best effort to ensure that no node is responsible for more than N-1 ranges in the ring. The metadata about the ranges a node is responsible for is cached locally at each node as well as in your zookeeper cluster. As such, a node can crash and lose its disk, and still come back up and know what it is responsible for. Cassandra borrows the <em>preference list</em> parlance from Dynamo by calling the nodes that are responsible for a given range the <em>preference list</em> for that range.</p>
+<p>Cassandra is configured to replicate each <em>row</em>. It can be configured such that each <em>row</em> is replicated across multiple data centers. In this configuration, the preference list for a given key is constructed such that the member storage nodes are spread across multiple datacenters.</p>
+</div>
+<div class="section" id="cluster-membership">
+<h3>Cluster Membership<a class="headerlink" href="#cluster-membership" title="Permalink to this headline">¶</a></h3>
+<p>Cluster membership in Cassandra is based off of Scuttlebutt, an efficient anti-entropy gossip based algorithm. This gossip based system is used for membership as well as other system related control state data.</p>
+<p>TODO: More about scuttlebutt</p>
+</div>
+<div class="section" id="failure-detection">
+<h3>Failure Detection<a class="headerlink" href="#failure-detection" title="Permalink to this headline">¶</a></h3>
+<p>Φ aka PHI
+A modified version of ΦAccrual Failure Detector is used by each node to determine whether any other node in the system is up or down. The idea of an Accrual Failure Detector is that you are not working with a boolean stating whether a node is up or down. Instead, the value is more of a sliding scale or a &#8220;suspicion level.&#8221; This value is defined as Φ, and its value can be dynamically adjusted to reflect network and load conditions at the monitored nodes.</p>
+<p>Φ has the following meaning: given some threshold Φ, and assuming that we decide to &#8220;suspect&#8221; that node A is down when Φ = 1, then the likelihood that we will make a mistake (ie: the decision will be contradicted in the future by the reception of a late heartbeat) is about 10%. When Φ = 2 that chance of error decreases to 1%, and when Φ = 3 the chance further decreases to 0.1%, and so on.</p>
+<p>Every node in the system maintains a sliding window of inter-arrival times of gossip messages from other nodes in the cluster. The distribution of these inter-arrival times is determined and Φ is calculated. In general, accrual failure detectors have been found to be very good in both their accuracy, speed, and in their ability to adjust well to network conditions and server load conditions.</p>
+<p>Facebook found that a slightly conservative PHI value of 5 was able to detect failures in a 100 node cluster on average in about 15 seconds.</p>
+</div>
+<div class="section" id="bootstrapping">
+<h3>Bootstrapping<a class="headerlink" href="#bootstrapping" title="Permalink to this headline">¶</a></h3>
+<p>When a node starts for the first time, it chooses a random token for its position in the ring (this contradicts other stated info: &#8220;when a new node is added to the system, it gets assigned a token such that it can alleviate a heavily loaded node&#8221;). For fault tolerance, this position is saved both locally to disk and also to zookeeper. This info is then gossip&#8217;d around the cluster, which is how each node knows about all other nodes and their respective positions in the ring. When a node is bootstrapped for the first time, it reads its config (or zookeeper) for a listing of seed nodes - initial contact points to gain information of the cluster from.</p>
+<p>TODO: Does the initial gossip advertisement require knowing about one or more seed nodes (likely answered after reading more about scuttlebutt)?</p>
+</div>
+<div class="section" id="scaling">
+<h3>Scaling<a class="headerlink" href="#scaling" title="Permalink to this headline">¶</a></h3>
+<p>When a new node is added to the system, it gets assigned a token such that it can alleviate a heavily loaded node (note: contradicts &#8220;randomly selected&#8221; info above...). This results in the new node splitting a range off the heavily loaded node for itself. The node giving up the data will stream data over to the new node using kernel-kernel copy techniques (TODO: expand). The Cassandra bootstrap algorithm can be initiated by any other node in the cluster, either via command line utility or Cassandra web dashboard.</p>
+<p>Operational experience at facebook has shown that data can be transferred at a rate of 40MB/sec from a single node. They are currently working on improving this transfer rate by having multiple replicas take part in the bootstrap transfer, thereby parallelizing the effort, using a method similar to bittorrent.</p>
+</div>
+<div class="section" id="local-persistence">
+<h3>Local Persistence<a class="headerlink" href="#local-persistence" title="Permalink to this headline">¶</a></h3>
+<p>Cassandra saves data to disk using a format that lends itself well to efficient data retrieval. A typical write operation involes a write into a commit log, after which (if a successful write to commit log occurs) an update into an in-memory data structure occurs. Facebook uses a dedicated LUN/disk for their commit log. Writes to the commit log are sequential.</p>
+<p>As for the in-memory data structure, once it crosses a certain threshold (calculated based on data size and number of objects) it dumps itself to disk. Along with each data structure, an index is generated which allows efficient lookups on the associated data structure based on row key. Over time, you end up with a lot of files. As such, a background merge process will occaisionally collate all these different files into a single file. This process is very similar to what happens in Bigtable.</p>
+<p>A typical read operation will first query the in-memory structure before looking into the files on disk. If a disk hit is needed, the files are looked at in order of newest to oldest. For some reads, a disk lookup could occur which looks up a key in multiple files on disk. In order to prevent looking into files tha tdo not contain the key, a bloom filter which summarizes the keys in the file is also stored in each data file and as well as kept in memory. This bloom filter is first consuletd to check if the key being looked up does indeed exist in a given file.</p>
+<p>A key in a column family could have many columns. In order to prevent scanning of every column on disk, we maintain column indexes which allow us to jump to the right chunk on disk for column retrieval. This is done by generating indeces at every 256K chunk boundary as the columns for a given key are being serialized and written out to disk. This boundary is configurable, but facebook has found that 256K works well in their production workloads.</p>
+</div>
+<div class="section" id="implementation-details">
+<h3>Implementation Details<a class="headerlink" href="#implementation-details" title="Permalink to this headline">¶</a></h3>
+<p>Cassandra is mainly made up of three abstractions: the partitioning module, cluster membership &amp; failure detection module, and the storage engine module. Each of these modules follow something along the lines of <em>staged event-driven architecture (SEDA)</em>, which decomposes a complex, event driven application into a set of stages connected by queues. Message processing pipeline and task pipeline are used to refer to the queues and inter-module data flow in this system.</p>
+<p>The cluster membership &amp; failure detection module is built on top of a network layer which uses non-blocking I/O. The system control messages rely on UDP, while the application related messages for replication and request routing rely on TCP.</p>
+<p>The request routing modules (ie: the other two?) are implemented using a certain state machine. When a read/write request arrives at any node in the cluster, the state machine morphs through the following states (excluding failure scenarios for now):</p>
+<ol class="arabic simple">
+<li>identify the node(s) that own the data for the key</li>
+<li>route the requests to the nodes and wait ont he responses to arrive</li>
+<li>if the replies do not arrive within a configured timeout value, fail the request and return to the client</li>
+<li>figure out the latest response based on timestamp</li>
+<li>schedule a repair of the data at any replica if they do not have the latest piece of data.</li>
+</ol>
+<p>The system can be configured to perform either synchronous or asynchronous writes. While asynchronous writes allow a very high write throughput, synchronous writes require a quorum of responses before a response is passed back to the client.</p>
+<p>As for the commit log, it is rolled over to a new file every 128MB. The write operation into the commit log can either be in normal mode or in fast sync mode. In the fast sync mode, the writes to the commit log are buffered and we also dump the in-memory data structure to disk in a buffered fashion. As such, this mode has the potential for data loss upon a machine crash.</p>
+<p>Cassandra morphs all writes to disk into a sequential format, and the files written to disk are never mutated. This means no locks need to be taken when reading the files. TODO: how is old data removed? during compaction process?</p>
+<p>The Cassandra system indexes all data based on primary key. The data file on disk is broken down into a sequence of blocks. Each block contains at most 128 keys and is demarcated by a block index. The block index captures the relative offset of a key within the block and the size of its data. When an in-memery data structure is dumped to disk, a block index is generated and their offsets written out to disk as indices. This index is also maintained in memory for fast access.</p>
+<p>As stated prior, the number of data files on disk will increase over time. The compaction process, very much like the Bigtable system, will merge multiple files into one; essentially merge sort on a bunch of sorted data files. The system will always compact files that are close to each other with respect to their sizes (ie: a 100GB file will never be compacted together with a sub-50GB files). Periodically a major compaction process is run to compact all related data files into one big file. This compaction process is disk I/O intensive and can be optimized so as not to affect incoming read requests.</p>
+</div>
+</div>
+<div class="section" id="practical-noteable">
+<h2>Practical Noteable<a class="headerlink" href="#practical-noteable" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Setting a value of PHI to 5 on a 100 node cluster resulted in an average node failure detection time of 15 seconds</li>
+<li>Cassandra is well integrated with Ganglia</li>
+<li>Facebook&#8217;s inbox was holding around 50+TB on a 150 node east/west cost cluster in 2009</li>
+</ul>
 </div>
 </div>
 
@@ -153,10 +266,10 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="dynamo.html" class="btn btn-neutral float-right" title="DYNAMO" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="dynamo.html" class="btn btn-neutral float-right" title="Dynamo" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="TODO-thought.html" class="btn btn-neutral" title="&lt;no title&gt;" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="algorithms.html" class="btn btn-neutral" title="Algorithms" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

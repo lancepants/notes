@@ -87,11 +87,14 @@ Also reference: :ref:`networking-mtu`
 
 
 - What are signals? What signal does the "kill" command send by default? What happens if the signal is not caught by the target process?
+
+Check out :ref:`kernel-signals`
+
 Signals are software interrupts. Kill sends a SIGTERM by default. The kernel delivers signals to target processes or process groups on behalf of an originating process, or on behalf of itself. If the originating process has the permissions to send a signal to another, the kernel forwards it on.
 
 Note that processes can ignore, block, or catch all signals except SIGSTOP and SIGKILL. If a process catches a signal, it means that *it includes code that will take appropriate action when the signal is received*. If the signal is not caught, the kernel will take the appropriate action for the signal.
 
-* SIGHUP is useful, most applications use this as an indication to reload their configuration without terminating themselves.
+* SIGHUP hangup. Send this to a terminal and it will likely log you out. Other applications may instead use this signal as an indication to reload their configuration without terminating themselves.
 * SIGINT is sent when you ctrl-c something. It is intended to provide a mechanism for an orderly, graceful shutdown of the foreground process. Interactive shells (mysql, other) may take it to mean "terminate current query" rather than the whole process.
 * SIGQUIT signals a process to terminate and do a core dump
 * SIGSTOP suspends a processes execution. If you are experiencing some sort of intermittent socket/buffer full or backflow buildup related bug, SIGSTOP is a good way to reproduce the issue. File handles will be kept open.
@@ -180,7 +183,7 @@ When a process ends via exit, all of the memory and resources associated with it
 If a parent process doesn't handle the SIGCHLD and call wait(), you end up with a zombie process. Let run wild under high load, you may run out of PIDs. To get rid of zombie processes, you may try using kill to send SIGCHLD to the parent, and if that doesn't work, kill the parent. The zombie will become an orphan which is then picked up by init (1), who calls wait() periodically.
 
 - What does user vs system cpu load mean?
-Read more about the user and system separation in :ref:`linux-kernel`.
+Read more about the user and system separation in :ref:`linux-internals`.
 
 - How can disk performance be improved?
 Caching, sequential reads/writes, block/stripe alignment.
@@ -215,8 +218,14 @@ If float == 0: bool = False ; else: bool = True  ? Not sure what more to say her
   - (expand)
 
 - How exactly does the OS transfer information across a pipe?
-:ref:`linux-kernel-ipc`
+:ref:`linux-internals-systemcalls`
 Linux has an in-memory VFS called pipefs that gets mounted in kernel space at boot. The entry point to pipefs is the pipe(2) syscall. This system call creates a pipe in pipefs and then returns two file descriptors (one for the read end, opened using O_RDONLY, and one for the write end, opened using O_WRONLY).
+
+In the case of unnamed pipes using bash, bash will call pipe(2) and get its file descriptors back, dup2 the pipe's stdin and first program's stdout, start up the second program and dup2 its stdin with the pipe's stdout.
+
+The "left" program writes out, and that data ends up in a 64KB (usually) sized buffer, which is immediately read by the "right" program. Once the "left" program is done writing, it closes its fd, and the listening end then gets an EOF (read(2) will return 0). 
+
+If the pipe is full, the write will block. If the pipe is empty, the read will block. It's possible to create FIFOs or socket files non-blocking, which will return an error if full.
 
 - What problems are you going to run into when doing IPC (pipes, shared memory structures)?
 In computer science, "Classic" IPC problems all refer to resource contention, or synchronization and deadlock problems. These are generally solved by using semaphores and mutexes, and ensuring access to multiple mutexes is done in order.
@@ -244,7 +253,7 @@ The RAID write hole problem can crop up when a power loss or some other event ca
 - (googs)Prepare for Hashmap/hashtable questions
 
 - (googs)Understand how job scheduling is handled in the most recent iterations of the kernel
-:ref:`linux-scheduling`
+:ref:`linux-internals-scheduling`
 
 - (googs)Know your signals
 See above, "What are signals?"

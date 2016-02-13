@@ -1,9 +1,11 @@
 .. _dynamo:
 
-DYNAMO
+Dynamo
 ======
 
-A highly available key/value store. Provides a place for various services (shopping cart, best seller lists, customer preferences, session management, product catalog, etc) to store their data in a "primary key only," non-relational way.
+Summary
+-------
+A highly available key/value store. Provides a place for various services (shopping cart, best seller lists, customer preferences, session management, product catalog, etc) to store their data in a "primary key only," non-relational way. Dynamo’s gossip-based membership algorithm helps every node maintain information about every other node. Dynamo can be defined as a structured overlay with at most one-hop request routing. Dynamo detects updated conflicts using a vector clock scheme, but prefers a client side conflict resolution mechanism.
 
 To achieve "always on", dynamo will sacrifice consistency under certain failure scenarios (eventually consistent). It makes extensive use of object versioning and application-assisted conflict resolution in order to provide the most accurate state of the database as possible. That said, dynamo does try to give some control to services over durability and consistency, and allow them to make trade-offs between functionality, performance, and cost effectiveness.
 
@@ -19,6 +21,7 @@ Dynamo (at the time of the dynamo paper release) was able to support hundreds of
 
 General
 -------
+
 Query Model
 ^^^^^^^^^^^
 Simple read and write operations to a data item that is uniquely identified by a key. State is stored as binary objects (blobs) identified by unique keys. No operations span multiple data items and there is no need for relational schemas. Dynamo targets applications that need to store relatively small objects (sub 1MB).
@@ -67,7 +70,7 @@ A typical replication model performs a synchronous replication across some inter
    :alt: Partitioning and replication of keys in Dynamo ring.
    :align: center
 
-  **Figure 2: Partitioning and replication of keys in Dynamo ring.**
+   **Figure 2: Partitioning and replication of keys in Dynamo ring.**
 
 Other Considerations
 ^^^^^^^^^^^^^^^^^^^^
@@ -139,7 +142,7 @@ Let's reference this image again:
    :alt: Figure 2: Partitioning and replication of keys in Dynamo ring.
    :align: center
 
-  **Figure 2: Partitioning and replication of keys in Dynamo ring.**
+   **Figure 2: Partitioning and replication of keys in Dynamo ring.**
 
 **Consistent hashing** works by treating the output range of a hash function as a fixed circular space or "ring" (ie: the largest hash value wraps around to the smallest hash value). Each node in the system is assigned a random value within this space, which represents is "position" in the ring. When a data item represented by a key comes in, the key is hashed in order to get a value, and then the ring is walked **clockwise** until a node is found with a position larger than the data item's position. That node, the first node found with a position larger than the data item, is assigned to be the coordinator for that key+data. As such, each node becomes responsible for the region in the ring between itself and its **predecessor** node. Because of this, we can see in Figure 2 that Key K would be owned by Node B. Node B owns the whole range between itself and Node A.
 
@@ -205,8 +208,9 @@ Once everything is back to normal, nodes with D3 and/or D4 will find that they c
 
 So, a client comes along and wants to update this key associated with D3/D4. The node it's reading from, let's say Y, knows of the two versions and as such passes back that information in the read's "context". In this context is a summary of the clocks of D3 and D4, namely [(X, 2), (Y, 1), (Z, 1)]. If the client can reconciliate the data received, it will then perform a put(). Let's say that hits Node X. X will then create a new object with its sequence number iterated, ie D5[(X, 3), (Y, 1), (Z, 1)]. D3 and D4 can then be safely garbage collected by Dynamo.
 
-
-TODO: open Q: does a dynamo client download the entire object on read every time, or just context?
+    Dynamo needs to do a read prior to every write operation in order to grab vector
+    clock information. This can be very limiting in systems which have high write
+    loads. Look at Cassandra for environments like this.
 
 .. _dynamo-failure:
 

@@ -1,0 +1,319 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Algorithms &mdash; PantsNotes 1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="PantsNotes 1 documentation" href="index.html"/>
+        <link rel="next" title="Cassandra" href="cassandra.html"/>
+        <link rel="prev" title="&lt;no title&gt;" href="TODO-thought.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> PantsNotes
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="TODO-interview.html">Interview Material</a></li>
+<li class="toctree-l1"><a class="reference internal" href="TODO-rdbms.html">Relational Databases</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Algorithms</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#big-o-notation">Big O Notation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#o-n-o-n-2-and-o-1">O(n), O(n^2), and O(1)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#o-log-n">O(log n)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#calculatink-big-o">Calculatink Big-O</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#sorting-algorithms">Sorting Algorithms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#searching-algorithms">Searching Algorithms</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#binary-search">Binary Search</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="cassandra.html">Cassandra</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dynamo.html">Dynamo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="filesystems.html">Filesystems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="kafka-public.html">Kafka</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rabbithole.html">Rabbit Hole</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">PantsNotes</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>Algorithms</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/algorithms.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="algorithms">
+<h1>Algorithms<a class="headerlink" href="#algorithms" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="big-o-notation">
+<span id="id1"></span><h2>Big O Notation<a class="headerlink" href="#big-o-notation" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="https://justin.abrah.ms/computer-science/big-o-notation-explained.html">https://justin.abrah.ms/computer-science/big-o-notation-explained.html</a></p>
+<div class="section" id="o-n-o-n-2-and-o-1">
+<h3>O(n), O(n^2), and O(1)<a class="headerlink" href="#o-n-o-n-2-and-o-1" title="Permalink to this headline">¶</a></h3>
+<p>A function(algorithm)&#8217;s Big-O notation is determined by how it responds to different inputs. How much slower is it if we give it a list of 1000 things to work on instead of a list of 1 thing?</p>
+<p>Let&#8217;s give an example:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>def is_myitem_in_list(myitem, the_list):</dt>
+<dd><dl class="first docutils">
+<dt>for item in the_list:</dt>
+<dd><dl class="first last docutils">
+<dt>if myitem == item:</dt>
+<dd>return True</dd>
+</dl>
+</dd>
+</dl>
+<p class="last">return False</p>
+</dd>
+</dl>
+</div></blockquote>
+<p>So if we call this function like is_myitem_in_list(1, [1,2,3]), we loop over our list looking for 1. Should be pretty fast. If we change to is_myitem_in_list(&#8220;potato&#8221;, [1,2,3]) then we have our worst possible runtime - it has to go through all list values before it returns False.</p>
+<p>From the looks of it, in the worst case scenario, the for loop will run a maximum of len(the_list) times. Since Big-O notation measures the <em>worst cast</em> run time of an algorithm (function), the Big-O notation of this function is <em>O(n)</em>, roughly meaning that the number of inputs has a linear relationship with how long it&#8217;s going to take to run. If you graphed it out where x=num_inputs and y=time_taken, you&#8217;d get a nice linear graph. The assumption here is that every item in your input list takes the same amount of time to process.</p>
+<p>So what about this function:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>def is_none(item):</dt>
+<dd>return item is None</dd>
+</dl>
+</div></blockquote>
+<p>This is a bit contrived...but it serves as a good example of an O(1) function, also called <em>constant time</em>. What it means is no matter how big our input, it always takes the same amount of time to compute things. You could pass it a million integers and it will take the same amount of time to process as if you passed a single integer. Constant time is the best case scenario for a function.</p>
+<p>Another example:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>def all_combinations(the_list):</dt>
+<dd><p class="first">results = []
+for item in the_list:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>for item_again in the_list:</dt>
+<dd>results.append((item, item_again))</dd>
+</dl>
+</div></blockquote>
+<p class="last">return results</p>
+</dd>
+</dl>
+</div></blockquote>
+<p>This matches every item in the list with every other item in the list. For example, if we passed in [1,2,3], we&#8217;d get back [(1,1),(1,2),(1,3),(2,1),(2,2),(2,3),(3,1),(3,2),(3,3)]. You could use this idea to brute force a PIN number. This is part of the field of combinatorics. The above algorithm is considered O(n^2) because for every item in the list (aka <strong>n</strong> for input size), we have to do <strong>n</strong> more operations. So <strong>n * n == n^2</strong>.</p>
+<p>Referring back to Figure 1, as we add input items, we can see quadratic growth.</p>
+</div>
+<div class="section" id="o-log-n">
+<h3>O(log n)<a class="headerlink" href="#o-log-n" title="Permalink to this headline">¶</a></h3>
+<p>O(log n) basically means that time goes up linearly while the <strong>n</strong> goes up exponentially. So if it takes <strong>1</strong> second to compute <strong>10</strong> elements, it will take <strong>2</strong> seconds to compute <strong>100</strong> elements, <strong>3</strong> seconds to compute <strong>1000</strong> elements, and so on. Remember again that big-O is stating <em>worst case</em>, so it&#8217;s more accurate to say that the running time of an O(log n) (or any other big-O) grows <em>at most</em> proportional to &#8220;log n&#8221;.</p>
+<p>Divide-and-conquer type algorithms are typically O(log n) - for example binary search and part of quick sort. More detail about these algorithms later, but a quick example of an O(log n) operation would be looking up someone in a phone book. You first open up the middle of the book, and since it is sorted alphabetically, you can immediately discard half the book from your search since you may be at letter &#8220;K&#8221; and the person you are looking up has a last name starting with the letter &#8220;R&#8221;. You&#8217;ve just narrowed your search to the final half of the book. You then open halfway the remaining half of the book, and continue doing this until you get to the R&#8217;s, then the Ri&#8217;s, then the Ric&#8217;s, and so on. With each guess, your search range is cut in half (or more, if you are predicting the number of pages between letters). Read about binary search later on this page for a better understanding.</p>
+</div>
+<div class="section" id="calculatink-big-o">
+<h3>Calculatink Big-O<a class="headerlink" href="#calculatink-big-o" title="Permalink to this headline">¶</a></h3>
+<p>Just follow your code!</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>def count_ones(a_list):</dt>
+<dd><p class="first">total = 0
+for element in a_list:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>if element == 1:</dt>
+<dd>total += 1</dd>
+</dl>
+</div></blockquote>
+<p class="last">return total</p>
+</dd>
+</dl>
+</div></blockquote>
+<ul class="simple">
+<li>First, we&#8217;re setting total to 0. We&#8217;re writing out a chunk of memory, passing in a value and not operating on that value in any way. This is an O(1) operation.</li>
+<li>Next, we&#8217;re doing a loop. Each item in a_list is done once (worst case). As we add more input values, the time it takes to get through the loop increases linearly. We use a variable to represent the size of the input, which everyone calls <strong>n</strong>. So, the &#8220;loop over a list&#8221; function is O(n) where <strong>n</strong> represents the size of a_list.</li>
+<li>Next, we check whether an element is equal to 1. This is a binary comparison - it happens once. &#8220;element&#8221; could be 8, [1,2,3,4,9], or a binary blob, it makes no difference to the comparison, it happens once. This is an O(1) operation.</li>
+<li>Next we add 1 to total. This is the same as setting total to zero, except a read happens first and addition happens. Addition of one, like equality, is constant time. O(1)</li>
+<li>So now we have <strong>O(1)+O(n) * (O(1)+O(1))</strong>. This reduces to 1+n*2, or O(1)+O(2n). In big O, we only care about the biggest &#8220;term&#8221;, where &#8220;term&#8221; is a portion of the algebraic statement, so we&#8217;re left with <strong>O(2n)</strong>.</li>
+<li>Since big O only cares about approximation, 2n and n are not fundamentally different - they are simply greater or lesser grades on a linear graph. For example, (1,1),(2,2),(3,3) and (1,2),(2,4),(3,6) is still a linear increase in runtime. Because of this, we can say O(2n) is O(n)</li>
+<li>To sum it up, the answer is that this function has an O(n) runtime (or a linear runtime). It runs slower the more things you give it, but should grow at a predictable rate.</li>
+</ul>
+</div>
+</div>
+<div class="section" id="sorting-algorithms">
+<span id="algorithms-sorting"></span><h2>Sorting Algorithms<a class="headerlink" href="#sorting-algorithms" title="Permalink to this headline">¶</a></h2>
+<p>Write about python&#8217;s default, timsort. ref: <a class="reference external" href="http://corte.si//posts/code/timsort/index.html">http://corte.si//posts/code/timsort/index.html</a></p>
+</div>
+<div class="section" id="searching-algorithms">
+<h2>Searching Algorithms<a class="headerlink" href="#searching-algorithms" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="binary-search">
+<h3>Binary Search<a class="headerlink" href="#binary-search" title="Permalink to this headline">¶</a></h3>
+<p>Binary search is a good example of an algorithm which is O(log n). As <strong>n</strong> (number of elements) increases exponentially, time to process only increases linearly.</p>
+<img alt="O(log n) graph plot :align: center **O(log n) graph plot. The rise of the curve decelerates as n increases**" src="_images/algorithms-ologn-graph.png" />
+</div>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="cassandra.html" class="btn btn-neutral float-right" title="Cassandra" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="TODO-thought.html" class="btn btn-neutral" title="&lt;no title&gt;" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Pants.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

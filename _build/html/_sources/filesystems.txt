@@ -12,6 +12,21 @@ Most filesystems store the names of all the files which are in one directory in 
 
 Most filesystems also store metadata not associated with any one particular file. Such metadata includes information about unused regions - free space bitmap, or a B-Tree structure - and information about bad sectors. Often such information about an allocation group is stored inside the allocation group itself. More on this information in the filesystem-specific sections.
 
+Features
+--------
+
+Journaling
+^^^^^^^^^^
+
+
+Write Barriers
+^^^^^^^^^^^^^^
+So as mentioned above, in journaling filesystems changes to filesystem metadata are first written to a journal, and then once that journal write succeeds, a "commit record" is added to the journal to indicate that everything else there is valid. Only after the journal transaction has been comitted in this fashion can the kernel do the real metadata writes. Should the system crash in the middle, the info needed to safely finish the job can be found in the journal.
+
+The catch here though is that the filesystem code must, before writing the commit record to the end of the journal, be absolutely sure that all of the transactions information has made it to the journal. Just doing the writes in proper order (metadata journal update then commit record) is not enough. Drives and arrays these days have large internal caches and will re-order operations for better performance. As such, the filesystem must explicitly instruct the disk to get all of the journal data onto the media before a commmit record can be written. If the commit record gets written before the metadata, your journal can become corrupt.
+
+
+
 XFS
 ---
 

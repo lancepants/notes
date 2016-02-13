@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>DYNAMO &mdash; PantsNotes 1 documentation</title>
+  <title>Dynamo &mdash; PantsNotes 1 documentation</title>
   
 
   
@@ -83,8 +83,11 @@
             
                 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="TODO-interview.html">Interview Material</a></li>
+<li class="toctree-l1"><a class="reference internal" href="TODO-rdbms.html">Relational Databases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="algorithms.html">Algorithms</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cassandra.html">Cassandra</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="">DYNAMO</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Dynamo</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#summary">Summary</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#general">General</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#query-model">Query Model</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#acid-properties">ACID Properties</a></li>
@@ -123,6 +126,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="filesystems.html">Filesystems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rabbithole.html">Rabbit Hole</a></li>
 </ul>
 
             
@@ -153,7 +157,7 @@
   <ul class="wy-breadcrumbs">
     <li><a href="index.html">Docs</a> &raquo;</li>
       
-    <li>DYNAMO</li>
+    <li>Dynamo</li>
       <li class="wy-breadcrumbs-aside">
         
           
@@ -168,8 +172,10 @@
            <div itemprop="articleBody">
             
   <div class="section" id="dynamo">
-<span id="id1"></span><h1>DYNAMO<a class="headerlink" href="#dynamo" title="Permalink to this headline">¶</a></h1>
-<p>A highly available key/value store. Provides a place for various services (shopping cart, best seller lists, customer preferences, session management, product catalog, etc) to store their data in a &#8220;primary key only,&#8221; non-relational way.</p>
+<span id="id1"></span><h1>Dynamo<a class="headerlink" href="#dynamo" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="summary">
+<h2>Summary<a class="headerlink" href="#summary" title="Permalink to this headline">¶</a></h2>
+<p>A highly available key/value store. Provides a place for various services (shopping cart, best seller lists, customer preferences, session management, product catalog, etc) to store their data in a &#8220;primary key only,&#8221; non-relational way. Dynamo’s gossip-based membership algorithm helps every node maintain information about every other node. Dynamo can be defined as a structured overlay with at most one-hop request routing. Dynamo detects updated conflicts using a vector clock scheme, but prefers a client side conflict resolution mechanism.</p>
 <p>To achieve &#8220;always on&#8221;, dynamo will sacrifice consistency under certain failure scenarios (eventually consistent). It makes extensive use of object versioning and application-assisted conflict resolution in order to provide the most accurate state of the database as possible. That said, dynamo does try to give some control to services over durability and consistency, and allow them to make trade-offs between functionality, performance, and cost effectiveness.</p>
 <p>Dynamo (at the time of the dynamo paper release) was able to support hundreds of thousands of concurrently active sessions (shopping cart service, holiday season). Keep in mind all the condensed notes in this file are from a paper written in 2007.</p>
 <ul class="simple">
@@ -179,6 +185,7 @@
 <li>Employs a gossip based distributed failure detection and membership protocol</li>
 <li>Completely decentralized: storage nodes can be added/removed without needing any manual partitioning or redistribution</li>
 </ul>
+</div>
 <div class="section" id="general">
 <span id="dynamo-general"></span><h2>General<a class="headerlink" href="#general" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="query-model">
@@ -324,7 +331,10 @@ percentile distribution. Pay some attention to it.</div></blockquote>
 <p>Now a new client comes along and does a read for a key associated to D. It ends up getting the old version D2(X,2) from a stale node. It does its change and then does a put(), and the request ends up hitting Node Z. Z says, ok, I am in the top of the preference list (or the top N in the preference list are down/unavailable, or Z is temporarily in a network segmentation), so it performs the operation, creating a new object D4[(X, 2),(Z, 1)].</p>
 <p>Once everything is back to normal, nodes with D3 and/or D4 will find that they can get rid of D1 and D2, but upon receiving D3 or D4 they will find that there are changes between the two that are not reflected in each other. Both versions of the data must be kept and presented to a client (upon a read) for <em>semantic</em> reconciliation. These two versions are kept forever, until a client comes along and reconciles the data!</p>
 <p>So, a client comes along and wants to update this key associated with D3/D4. The node it&#8217;s reading from, let&#8217;s say Y, knows of the two versions and as such passes back that information in the read&#8217;s &#8220;context&#8221;. In this context is a summary of the clocks of D3 and D4, namely [(X, 2), (Y, 1), (Z, 1)]. If the client can reconciliate the data received, it will then perform a put(). Let&#8217;s say that hits Node X. X will then create a new object with its sequence number iterated, ie D5[(X, 3), (Y, 1), (Z, 1)]. D3 and D4 can then be safely garbage collected by Dynamo.</p>
-<p>TODO: open Q: does a dynamo client download the entire object on read every time, or just context?</p>
+<blockquote>
+<div>Dynamo needs to do a read prior to every write operation in order to grab vector
+clock information. This can be very limiting in systems which have high write
+loads. Look at Cassandra for environments like this.</div></blockquote>
 </div>
 </div>
 <div class="section" id="failure-and-membership">
