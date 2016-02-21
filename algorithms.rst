@@ -79,7 +79,10 @@ Just follow your code!
 
 Sorting Algorithms
 ------------------
-Write about python's default, timsort. ref: http://corte.si//posts/code/timsort/index.html
+
+Explanations of common sorting algorithms: https://www.hackerearth.com/notes/sorting-code-monk/
+
+Python's default, timsort, is an implementation which combines quicksort and mergesort. It's O(n) best case and O(n log n) worst. ref: http://corte.si//posts/code/timsort/index.html
 
 Quicksort
 ^^^^^^^^^

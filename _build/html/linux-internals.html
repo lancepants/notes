@@ -1,0 +1,402 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Linux Internals &mdash; PantsNotes 1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="PantsNotes 1 documentation" href="index.html"/>
+        <link rel="next" title="Networking" href="networking.html"/>
+        <link rel="prev" title="Kafka" href="kafka-public.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> PantsNotes
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="TODO-interview.html">Interview Material</a></li>
+<li class="toctree-l1"><a class="reference internal" href="TODO-rdbms.html">Relational Databases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="algorithms.html">Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bootprocess.html">Boot Process</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cassandra.html">Cassandra</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dynamo.html">Dynamo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="filesystems.html">Filesystems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="kafka-public.html">Kafka</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Linux Internals</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#system-calls">System Calls</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#an-example-with-sys-read">An example with sys_read()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pipe-2">pipe(2)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#vfs">VFS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#i-o-stack">I/O Stack</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#linux-signals">Linux Signals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#character-vs-block-devices">Character vs Block Devices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#proc-and-sys">/proc and /sys</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#process-management">Process Management</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#processes-vs-threads">Processes vs Threads</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#task-struct">task_struct</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#process-creation">Process Creation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#process-scheduling">Process Scheduling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#process-destruction">Process Destruction</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="networking.html">Networking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rabbithole.html">Rabbit Hole</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">PantsNotes</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>Linux Internals</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/linux-internals.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="linux-internals">
+<h1>Linux Internals<a class="headerlink" href="#linux-internals" title="Permalink to this headline">¶</a></h1>
+<p>TODO:
+- user vs system
+- context switching
+- CPU and IO schedulers .. _linux-internals-scheduling:</p>
+<div class="section" id="system-calls">
+<span id="linux-internals-systemcalls"></span><h2>System Calls<a class="headerlink" href="#system-calls" title="Permalink to this headline">¶</a></h2>
+<p>The kernel is the only program running in a special CPU mode called kernel mode, allowing full access to devices and the execution of privileged instructions.</p>
+<p>User processes run in user mode. These processes have a separate stack and registers (memory space) from kernel mode processes. These processes must request privileged operations from the kernel via system calls.</p>
+<p>System calls are the primary mechanism by which user-space programs interact with the Linux kernel. The execution of privileged instructions in user mode causes exceptions, which are then handled by the kernel.</p>
+<p>Popular system calls are open, read, write, close, wait, execve, fork, exit, and kill</p>
+<div class="section" id="an-example-with-sys-read">
+<h3>An example with sys_read()<a class="headerlink" href="#an-example-with-sys-read" title="Permalink to this headline">¶</a></h3>
+<p>my_app wants to access a storage device to read some info and then transfer that info to its memory space:</p>
+<ul class="simple">
+<li>main process passes its arguments to libc_read</li>
+<li>libc_read loads the specific system call number (in this case __NR_read) into the cpu&#8217;s EAX register, as well as loads whatever other arguments (ie:what to read, the file descriptor of the file to read, etc) into other processor registers.</li>
+<li>libc_read then throws a special software interrupt which triggers an exception, which the kernel picks up and handles</li>
+<li>kernel code function system_call() is called, which has a look at the eax register to find out what system call to load</li>
+<li>sys_read() is called, which then uses the file descriptor it was passed to check for locks, and looks up a file struct which has a pointer to the function to call in order to handle that file type.</li>
+<li>sys_read() then does a read request to the device node driver function, which passes back information, and the process back up to userland is reversed</li>
+</ul>
+</div>
+<div class="section" id="pipe-2">
+<span id="linux-internals-pipes"></span><h3>pipe(2)<a class="headerlink" href="#pipe-2" title="Permalink to this headline">¶</a></h3>
+<p><a class="reference external" href="https://brandonwamboldt.ca/how-linux-pipes-work-under-the-hood-1518/">https://brandonwamboldt.ca/how-linux-pipes-work-under-the-hood-1518/</a></p>
+<p>Linux has an in-memory VFS called pipefs that gets mounted in kernel space at boot. The entry point to pipefs is the pipe(2) syscall. This system call creates a file in pipefs and then returns two file descriptors (one for the read end, opened using O_RDONLY, and one for the write end, opened using O_WRONLY).</p>
+<p>Each unix process (except perhaps a daemon) has at least three standard POSIX file descriptors - STDIN, STDOUT, STDERR. In the case of unnamed pipes (eg: ls -la | grep blah), bash will:
+* clone/exec grep
+* call pipe(2) and get STDIN/STDOUT file descriptors back from the new pipe
+* call dup2() on the STDIN (fd[0]) of grep and the STDOUT (fd[1]) of the pipe</p>
+<blockquote>
+<div><ul class="simple">
+<li>dup2() is a system call which duplicates two file descriptors, which will result in the two descriptors being able to be used interchangably (they refer to the same open file description, and thus share the file offset and file status flags. This means that, for example, if the file offset is modified by using lseek(2) on one of the descriptors, the offset is also changed for the other</li>
+</ul>
+</div></blockquote>
+<ul class="simple">
+<li>clone/exec ls -la</li>
+<li>call dup2() on the stdout (fd[1]) of ls and stdin (fd[0]) of the pipe</li>
+</ul>
+<p>Named pipes, also known as FIFOs, work pretty much the same as unnamed pipes, except they stick around when programs are done using them.</p>
+<p>Pipe size default is typically 64KB. When a pipe&#8217;s buffer is full, a write(2) will block. If all file descriptors pointing to the read end of the pipe have been closed, writing to the pipe willr aise the SIGPIPE signal. If this signal is ignored, write(2) fails with error EPIPE.</p>
+<p>When a pipe is empty, a read(2) will block. If there is nobody listening on the other end (all the file descriptors pointing to the write end of the pipe have been closed), then the pipe will return an EOF (ie: read(2) will return 0).</p>
+</div>
+</div>
+<div class="section" id="vfs">
+<h2>VFS<a class="headerlink" href="#vfs" title="Permalink to this headline">¶</a></h2>
+<p>VFS works as an abstraction layer sitting between filesystems and system calls. By having this layer, a system call doesn&#8217;t need to know how to communicate with all these different filesystems (ext3, ufs, zfs, nfs, /proc, /dev), and instead only communicates to VFS. VFS then communicates to the file system.</p>
+</div>
+<div class="section" id="i-o-stack">
+<h2>I/O Stack<a class="headerlink" href="#i-o-stack" title="Permalink to this headline">¶</a></h2>
+<p>Application -&gt; System Calls -&gt; VFS -&gt; File System -&gt; Volume Manager -&gt; Block Device Interface -&gt; Target I/O Driver -&gt; Host Bus Adapter Driver -&gt; Disk Devices
+It&#8217;s also possible for the system call to skip straight to block device interface.</p>
+</div>
+<div class="section" id="linux-signals">
+<span id="kernel-signals"></span><h2>Linux Signals<a class="headerlink" href="#linux-signals" title="Permalink to this headline">¶</a></h2>
+<p>Signals are software interrupts. Kill sends a SIGTERM by default. The kernel delivers signals to target processes or process groups on behalf of an originating process, or on behalf of itself. If the originating process has the permissions to send a signal to another, the kernel forwards it on.</p>
+<p>SIGHUP(1) - hangup - users terminal is disconnected somehow. Some daemons are programmed to reload their config and log files rather than close when they get this signal. If a process does not catch this signal, the default action of the parent is to close the process.
+SIGINT(2) - interrupt - ctrl+c sends a sigint. SIGINT is nearly identical to SIGTERM, but &#8220;nicer.&#8221; Interactive shells such as mysql may take it to mean &#8220;terminate current query&#8221; rather than terminate itself.
+SIGKILL(9) - kill - forceful termination. Memory stripped. Cannot be ignored
+SIGTERM(15) - Terminate. This asks the process to quit, go through its normal cleanup procedure
+SIGSTOP(17,19,23) - Suspends a processes execution. Cannot be ignored. If you are experiencing some sort of intermittent socket/buffer full or backflow buildup related bug, SIGSTOP is a good way to reproduce the issue. File handles will be kept open.</p>
+<p>Note that processes can ignore, block, or catch all signals except SIGSTOP and SIGKILL. If a process catches a signal, it means that <em>it includes code that will take appropriate action when the signal is received</em>. If the signal is not caught, the kernel will take the appropriate action for the signal.</p>
+</div>
+<div class="section" id="character-vs-block-devices">
+<h2>Character vs Block Devices<a class="headerlink" href="#character-vs-block-devices" title="Permalink to this headline">¶</a></h2>
+<p>Character (aka raw) devices provide unbuffered, sequential access of any I/O size down to a single character, depending on the device. An example of this would be a keyboard  or a serial port.</p>
+<p>Block devices perform I/O in units of blocks, which are typically 512bytes. Blocks can be accessed randomly based on their block offset (location), which begins at 0 at the start of the block device.</p>
+</div>
+<div class="section" id="proc-and-sys">
+<h2>/proc and /sys<a class="headerlink" href="#proc-and-sys" title="Permalink to this headline">¶</a></h2>
+<p>procfs exposes runtime information &amp; statistics of devices and processes, as well as allows you to change runtime variables on those devices and processes. Sysfs does the same thing, but provides a structure for this information. This structure is created by the kernel. Sysfs is intended as a replacement for procfs. All new stuff is expected to use sysfs rather than the unstructured dumping grounds of proc.</p>
+<p>The sysfs (or /sys filesystem) was designed to add structure to the proc mess and provide a uniform way to expose system information and control points (settable system and driver attributes) to user-space from the kernel. Now, the driver framework in the kernel automatically creates directories under /sys when drivers are registered, based on the driver type and the values in their data structures.</p>
+<dl class="docutils">
+<dt>Check number of caches available to cpu0 and the size of those caches:</dt>
+<dd># grep . is same as cat /path/to/files*
+grep . /sys/devices/system/cpu/cpu0/cache/index*/size
+# typical results: two 32k level 1 cache, 256k lvl2 cache, and 3MB lvl3 cache)</dd>
+</dl>
+</div>
+<div class="section" id="process-management">
+<h2>Process Management<a class="headerlink" href="#process-management" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="processes-vs-threads">
+<h3>Processes vs Threads<a class="headerlink" href="#processes-vs-threads" title="Permalink to this headline">¶</a></h3>
+<p>Separate processes can not see each others memory. They have to communicate with each other via system calls (IPC). Threads share the same memory, so you lose the overhead. Unfortunately this also makes it easy for threads to step all over each other, with one thread perhaps changing a variable value without telling another thread. These are called Concurrency Problems.</p>
+<p>It&#8217;s fully possible for a process to create a bunch of threads to do stuff, and the kernel won&#8217;t know about it. Its schedulers will keep treating the process as having one thread. This is bad for performance reasons. As such, there is a clone() system call (also used for process cloning) which allows registration and resource consideration within the kernel for a thread.</p>
+</div>
+<div class="section" id="task-struct">
+<h3>task_struct<a class="headerlink" href="#task-struct" title="Permalink to this headline">¶</a></h3>
+<p>Each process has a task_struct. This is a large structure which holds process data such as the state of execution, a stack, a set of flags, the parent process, the thread of execution (of which there can be many), and open files. The state variable is a set of bits that indicate the state of the task. The most common states indicate that the process is running or in a run queue about to be running (TASK_RUNNING), sleeping (TASK_INTERRUPTIBLE), sleeping but unable to be woken up (TASK_UNINTERRUPTIBLE), stopped (TASK_STOPPED), or a few others. The flags word defines a large number of indicators, indicating everything from whether the process is being created (PF_STARTING) or exiting (PF_EXITING), or even if the process is currently allocating memory (PF_MEMALLOC). The name of the executable (excluding the path) occupies the comm (command) field. The mm field represents the process&#8217;s memory descriptors.</p>
+<p>So, each userspace process gets its own task_struct, except init which has a statically defined struct called init_task. <em>These are collected into either a hash table (hashed by PID) or a circular doubly linked list</em>. The circular list is <strong>ideal for iterating</strong> through, such as a process scheduler would do. There is no head or tail to this list, so you can use the init_task struct as a reference point to iterate further.</p>
+</div>
+<div class="section" id="process-creation">
+<h3>Process Creation<a class="headerlink" href="#process-creation" title="Permalink to this headline">¶</a></h3>
+<p>In User Space:
+- Program calls fork() (actually clone() these days, but using fork() in this description)
+- fork() system calls to sys_fork()
+- sys_fork() calls do_fork()
+- do_fork() does an alloc_pidmap to get a new PID
+- do_fork() then calls copy_process and passes the flags, stack, and registers used by the parent process, the parent process PID, and the newly allocated PID
+- copy_process consults with Linux Security Module (LSM) to see whether the current task is allowed to create a new task
+- copy_process then calls dup_task_struct, which creates a new kernel stack, thread_info structure, and task_struct for the new process. The new values are identical to those of the current task. At this point, the child and parent process descriptors are identical.
+- Now the child needs to differentiate itself from its parent. Various members of the process descriptor are cleared or set to initial values. Members of the process descriptor that are not inherited are primarily statistic information. The bulk of the data in the process descriptor is shared.
+- Next, the child&#8217;s state is set to TASK_UNINTERRUPTIBLE, to ensure that it does not yet run.
+- Now, copy_process() calls copy_flags() to update the flags member of the task_struct. The PF_FORKNOEXEC flag, which denotes a process that has not called exec(), is set.
+- Depending on the flags passed to clone(), copy_process() then either duplicates or shares open files, filesystem information, signal handlers, process address space, and namespace.
+- The new task is then assigned to a processor, and control is passed back to do_fork() with a pointer to the new child
+- The process isn&#8217;t actually running at this point, so do_fork() calls the function wake_up_new_task on it. This places the new process in a run queue and wakes it up for execution
+- do_fork() then returns the new PID value back on up through fork() to the caller
+- <strong>The parent process and the child process resume execution at the exact same spot.</strong> fork() returns a PID &gt; 0 to the parent process, such that it knows when it resumes execution that it is the parent. It will then likely call wait() in order to wait for the child to finish executing (or at least close all its related file descriptors, off-handedly letting the parent process know that the child ran successfully)
+- The child process gets woken up and continues executing at the same spot as its parent, just after the fork() call. In contrast to the parent process, it gets a return PID of 0 from the fork() call, and hits an if pid == 0 block (true) which will then call execve() in order to replace the executable image of this child process</p>
+<p><strong>tldr;</strong> clone() is called, a new PID is generated as well as a new task_struct and other process-related info, flags are copied over to the new process&#8217;s task_struct, the new task is assigned to a processor and then woken up and its PID is passed back to the parent process.</p>
+<dl class="docutils">
+<dt>Example (NOTE: asterisks escaped (*) due to markup formatting. Remove before running code):</dt>
+<dd><p class="first">#include &lt;unistd.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;fcntl.h&gt;</p>
+<p>int main(void)
+{</p>
+<blockquote>
+<div><p>int pid = fork();
+// Child and Parent resume execution here</p>
+<dl class="docutils">
+<dt>if (pid == -1) {</dt>
+<dd>// fork threw an error
+fprintf(stderr, &#8220;Could not fork processn&#8221;);
+return -1;</dd>
+<dt>} else if (pid == 0) {</dt>
+<dd><p class="first">// retcode 0 means this is a child process
+fprintf(stdout, &#8220;Child will now replace itself with lsn&#8221;);</p>
+<p>// Setup the arguments/environment to call
+char *argv[] = { &#8220;/bin/ls&#8221;, &#8220;-la&#8221;, 0 };
+char *envp[] = { &#8220;HOME=/&#8221;, &#8220;PATH=/bin:/usr/bin&#8221;, &#8220;USER=derp&#8221;, 0 };</p>
+<p>// Call execve(2) which will replace the executable image of this
+// process
+execve(argv[0], &amp;argv[0], envp);</p>
+<p class="last">// Execution will never continue in this process unless execve returns
+// because of an error
+fprintf(stderr, &#8220;Oops!n&#8221;);
+return -1;</p>
+</dd>
+<dt>} else if (pid &gt; 0) {</dt>
+<dd><p class="first">// retval greater than 0, we are the parent process
+int status;</p>
+<p class="last">fprintf(stdout, &#8220;Parent will now wait for child to finish executionn&#8221;);
+wait(&amp;status);
+fprintf(stdout, &#8220;Child has finished execution (returned %i), parent is donen&#8221;, status);</p>
+</dd>
+</dl>
+<p>}</p>
+<p>return 0;</p>
+</div></blockquote>
+<p class="last">}</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="process-scheduling">
+<h3>Process Scheduling<a class="headerlink" href="#process-scheduling" title="Permalink to this headline">¶</a></h3>
+<p>The scheduler maintains lists of task_struct&#8217;s. Each list has a different priority number. task_struct&#8217;s are placed in each list based on loading and prior process execution history, along with other factors depending on which process scheduler you&#8217;re using.</p>
+</div>
+<div class="section" id="process-destruction">
+<h3>Process Destruction<a class="headerlink" href="#process-destruction" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>User space calls exit(), which makes a sys_exit() system call, which calls do_exit()</li>
+<li>do_exit() sets the PF_EXITING flag in the processes task_struct, which tells the kernel to avoid manipulating this process while it&#8217;s being removed</li>
+<li>do_exit() makes a series of calls. exit_mm to remove memory pages, exit_notify to notify the parent process and other things, and more?</li>
+<li>Finally, the process state is changed to PF_DEAD in its task_struct and the schedule function is called to select a new process to execute</li>
+<li>release_task is called which will reclaim memory that the process was using</li>
+</ul>
+</div>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="networking.html" class="btn btn-neutral float-right" title="Networking" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="kafka-public.html" class="btn btn-neutral" title="Kafka" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Pants.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

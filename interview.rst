@@ -3,7 +3,9 @@
 Interview Material
 ==================
 
-TODO: Fix all ref links.
+TODO: 
+- Fix all ref links.
+- Finish all questions and coding challenges
 
 Questions
 ---------
@@ -342,20 +344,102 @@ Python 3's translate method expects a translation table (ie: dict) passed to it 
 Facebook Glassdoor
 ^^^^^^^^^^^^^^^^^^
 - re-implement 'tail' in a scripting language
+  - From lern/tail.py:
+
+  import time
+  import sys
+  def main(f):
+    # Go to end of file
+    f.seek(0, 2)
+    # Start printing from EOF minus 100 chars. If file not 100chars, start printing from beginning
+    pos = f.tell() - 100
+    if pos < 0:
+      f.seek(0)
+    else:
+      f.seek(pos)
+      # Using readline() and silencing output will cheaply get our file position pointer to the next
+      # line without printing a truncated line to the user (as a result of seeking back an arbitrary
+      # 100chars)
+      silence = f.readline()
+    while True:
+      # The method tell() returns the current position of the file read/write pointer within the file.
+      position = f.tell()
+      # readline() reads a line and then advances the position read/write pointer on the file object
+      line = f.readline()
+      # If readline doesn't return anything, sleep for a second
+      if not line:
+        time.sleep(1)
+      else:
+        print line,
+  if __name__ == '__main__':
+    main(open(sys.argv[1]))
+
+
 - Battleship game: write a function that finds a ship and return its coordinates.
+
 - Write a script to ssh to 100 hosts, find a process, and email the result to someone
-- or i in {1..100} ; do ssh user@host${i} "ps -ef|grep blah|grep -v grep|mail -s "This is the subject" user@myemail.com" ; done
-- Write a function to sort a list of integers like this [5,2,0,3,0,1,6,0] in the most efficient way (look up sorting algorithms)
-- Given a sentence convert the sentence to the modified pig-latin language: Words beginning with a vowel, remove the vowel letter and append the letter to the end. All words append the letters 'ni' to the end. All words incrementally append the letter 'j'. i.e. 'j','jj','jjj', etc... (what's the last part mean? append j's incrementally, what?)
+  for s in $(cat hosts) ; do ssh user@${s} "ps -ef|grep blah|grep -v grep|mail -s "This is the subject" user@myemail.com" ; done
+  - For anything more complicated, or sent out to thousands of nodes instead of hundreds, I would consider trying out Rundeck instead of an ssh loop. Could also use salt, ansible, or mcollective if these are already in use in the org
+
+- Write a function to sort a list of integers like this [5,2,0,3,0,1,6,0] in the most efficient way
+  sorted(listy)
+  - :ref:`algorithms-sorting`
+
+- Given a sentence, convert the sentence to the modified pig-latin language: Words beginning with a vowel, remove the vowel letter and append the letter to the end. All words append the letters 'ni' to the end.
+
+  sentence = "The origin of species is a detailed book requiring many hours of study"
+  listsentence = sentence.split()
+  pigsentence = []
+  vowels = "aeiou"
+  for w in listsentence:
+    for v in vowels:
+      if w[0] == v:
+        w = w[1:]
+        w += v
+        break
+    w += "ni"
+    pigsentence.append(w)
+  " ".join(pigsentence)
+
+
 - take input text and identify the unique words in the text and how many times each word occurred. Edge cases as well as performance is important. How do you identify run time and memory usage?
+  - Here's a rough script. Needs syntax removal and lower-casing everything:
+  import sys
+  def freqgen(wlist):
+      dicky = {}
+      for w in wlist:
+          try:
+              dicky[w] = dicky[w] + 1
+          except KeyError:
+              dicky[w] = 1
+      # Let's convert the dict to a list of tuples (dicky.items()) 
+      # for easier sorting. Key off the second value in each tuple
+      for k, v in sorted(dicky.items(), key=lambda x: x[1]):
+          print(k + " " + str(v))
+  if __name__ == '__main__': 
+      with open(sys.argv[1], "r") as f:
+          bigstring = f.read().replace("\n", " ")
+          wlist = bigstring.split()
+      freqgen(wlist)
+  - Runtime:
+  python3 -m cProfile wordfreq.py short-story.txt
+  - Check out runsnakerun for visualization of cProfile output, pretty cool. www.vrplumber.com/programming/runsnakerun/
+  python3 -m cProfile -o out.profile wordfreq.py short-story.txt ; python runsnake.py out.profile
+  - Memory. There is a module called memory_profiler that will output, line by line, how much memory your script uses:
+  pip install -U memory_profiler
+  pip instlal psutil #this is for better memory_profiler module performance
+  vim freqgen #add @profile decorator above the function you're interested in
+  python -m memory_profiler freqgen.py short-story.txt
+
+
 - build a performance monitoring script, adding more features and improving efficiency as you go
-- For a given set of software checkins, write a program that   will determine which part along the branch where the fault lies. 
- -So we assume we already have a list of git revisions, and once a certain revision gets hit everything after it fails
- -Do a binary search in order to determine where the build starts breaking. Ie: pick the middle number, do a checkout, build, if fail then do another binary search in the middle of startrevision and failedrevision-1. If success, then do another binary search between successrevision+1 and finalrevision..etc etc. Do this until you find that failedrevision-1=a successful revision
-- Given a list of integers, output all subsets of size three, which sum to zero. (wtf? http://www.glassdoor.com/Interview/Given-a-list-of-integers-output-all-subsets-of-size-three-which-sum-to-zero-QTN_580995.htm )
+
+- For a given set of software checkins, write a program that will determine which part along the branch where the fault lies. 
+ - So we assume we already have a list of git revisions, and once a certain revision gets hit everything after it fails
+ - Do a binary search in order to determine where the build starts breaking. Ie: pick the middle number, do a checkout, build, if fail then do another binary search in the middle of startrevision and failedrevision-1. If success, then do another binary search between successrevision+1 and finalrevision..etc etc. Do this until you find that failedrevision-1=a successful revision
+
 - Given a list of integers which are sorted, but rotated   ([4, 5, 6, 1, 2, 3]), search for a given integer in the list. 
- --Think of the array as two separate lists. If number we're searching for is less than or equal to the last number in the array (3 in this case), then cut array in half and do a binary search on just that half until number is found
-- Write a frequency list generator! Do one attempt, then try to make it more efficient. Good problem to test performance with. Have it output the top 10 words or something.
+ - Think of the array as two separate lists. If number we're searching for is less than or equal to the last number in the array (3 in this case), then cut array in half and do a binary search on just that half until number is found
 
     For above questions, elaborate on theoretical best performance. Talk about 
     memory vs CPU usage. Talk about whether certain system calls take more 

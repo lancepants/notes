@@ -31,7 +31,7 @@
 
   
     <link rel="top" title="PantsNotes 1 documentation" href="index.html"/>
-        <link rel="next" title="Cassandra" href="cassandra.html"/>
+        <link rel="next" title="Boot Process" href="bootprocess.html"/>
         <link rel="prev" title="&lt;no title&gt;" href="TODO-thought.html"/> 
 
   
@@ -91,17 +91,23 @@
 <li class="toctree-l3"><a class="reference internal" href="#calculatink-big-o">Calculatink Big-O</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#sorting-algorithms">Sorting Algorithms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sorting-algorithms">Sorting Algorithms</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#quicksort">Quicksort</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#searching-algorithms">Searching Algorithms</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#binary-search">Binary Search</a></li>
 </ul>
 </li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="bootprocess.html">Boot Process</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cassandra.html">Cassandra</a></li>
 <li class="toctree-l1"><a class="reference internal" href="dynamo.html">Dynamo</a></li>
 <li class="toctree-l1"><a class="reference internal" href="filesystems.html">Filesystems</a></li>
 <li class="toctree-l1"><a class="reference internal" href="kafka-public.html">Kafka</a></li>
+<li class="toctree-l1"><a class="reference internal" href="linux-internals.html">Linux Internals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="networking.html">Networking</a></li>
 <li class="toctree-l1"><a class="reference internal" href="rabbithole.html">Rabbit Hole</a></li>
 </ul>
 
@@ -237,6 +243,16 @@ for element in a_list:</p>
 <div class="section" id="sorting-algorithms">
 <span id="algorithms-sorting"></span><h2>Sorting Algorithms<a class="headerlink" href="#sorting-algorithms" title="Permalink to this headline">¶</a></h2>
 <p>Write about python&#8217;s default, timsort. ref: <a class="reference external" href="http://corte.si//posts/code/timsort/index.html">http://corte.si//posts/code/timsort/index.html</a></p>
+<div class="section" id="quicksort">
+<h3>Quicksort<a class="headerlink" href="#quicksort" title="Permalink to this headline">¶</a></h3>
+<p><a class="reference external" href="https://en.wikipedia.org/wiki/Quicksort">https://en.wikipedia.org/wiki/Quicksort</a></p>
+<p>Quicksort is a comparison sort, meaning that it can sort items of any type so long as there is a &#8220;less-than&#8221; relationship relationship between items. It may also be considered a &#8220;divide and conquer&#8221; algorithm. When implemented well, quicksort can be about two or three times faster than merge sort or heapsort. On average, quicksort is an O(n log n), and in the worst case (rare) it is an O(n^2).</p>
+<p>The general quicksort steps are:
+* Pick an element, called a <em>pivot</em>, from the array
+* <strong>Partitioning</strong>: reorder the array so that all elements with values less than the pivot point come before the pivot, while all elements with values grater than the pivot come after it (equal values go either way). After this partitioning, the pivot is in its final position. This is called the <strong>partition</strong> operation
+* Recursively apply the above steps to the sub-array of elements with smaller values, and separately do the same to the sub-array with the higher values</p>
+<p>The pivot selection point and the partitioning steps can be done in several different ways, and which method you choose greatly affects the algorithm&#8217;s performance.</p>
+</div>
 </div>
 <div class="section" id="searching-algorithms">
 <h2>Searching Algorithms<a class="headerlink" href="#searching-algorithms" title="Permalink to this headline">¶</a></h2>
@@ -255,7 +271,7 @@ for element in a_list:</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="cassandra.html" class="btn btn-neutral float-right" title="Cassandra" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="bootprocess.html" class="btn btn-neutral float-right" title="Boot Process" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="TODO-thought.html" class="btn btn-neutral" title="&lt;no title&gt;" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
