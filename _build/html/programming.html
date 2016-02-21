@@ -1,0 +1,369 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Programming &mdash; PantsNotes 1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="PantsNotes 1 documentation" href="index.html"/>
+        <link rel="next" title="Protocols" href="protocols.html"/>
+        <link rel="prev" title="Performance and Troubleshooting" href="perf-and-sysadmin.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> PantsNotes
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="TODO-rdbms.html">Relational Databases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="TODO-thought.html">Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="algorithms.html">Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bootprocess.html">Boot Process</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cassandra.html">Cassandra</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dynamo.html">Dynamo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="encryption.html">Encryption</a></li>
+<li class="toctree-l1"><a class="reference internal" href="filesystems.html">Filesystems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="interview.html">Interview Material</a></li>
+<li class="toctree-l1"><a class="reference internal" href="kafka-public.html">Kafka</a></li>
+<li class="toctree-l1"><a class="reference internal" href="linux-internals.html">Linux Internals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="networking.html">Networking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="perf-and-sysadmin.html">Performance and Troubleshooting</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Programming</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#python">Python</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#list-comprehension">List Comprehension</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#what-s-a-lambda">What&#8217;s a lambda?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#why-main">Why __main__?</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#stacks">Stacks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#registers">Registers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#classes">Classes</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="protocols.html">Protocols</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rabbithole.html">Rabbit Hole</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">PantsNotes</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>Programming</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/programming.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="programming">
+<h1>Programming<a class="headerlink" href="#programming" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="python">
+<h2>Python<a class="headerlink" href="#python" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="list-comprehension">
+<h3>List Comprehension<a class="headerlink" href="#list-comprehension" title="Permalink to this headline">¶</a></h3>
+<p>A list comprehension is just a shorthand way of defining a function.</p>
+<blockquote>
+<div>[do stuff to x    for x in list      if x&gt;0]       ##The if x&gt;0 is optional</div></blockquote>
+<p>Is the same as this:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>def omg(list):</dt>
+<dd><dl class="first last docutils">
+<dt>for x in list:</dt>
+<dd><dl class="first last docutils">
+<dt>if x&gt;0:</dt>
+<dd>do stuff to x</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="docutils">
+<dt>Eg:</dt>
+<dd>poweroftwo = [x**2 for x in range(10)]
+ifdivbytwo = [x for x in poweroftwo if x % 2 == 0]</dd>
+<dt>You can perform more than one operation on each item in your list too:</dt>
+<dd>wordlist = &#8216;The quick brown fox jumps over the lazy dog&#8217;.split()
+derp = [[w.upper(), w.lower(), len(w)] for w in wordlist]</dd>
+</dl>
+</div>
+<div class="section" id="what-s-a-lambda">
+<h3>What&#8217;s a lambda?<a class="headerlink" href="#what-s-a-lambda" title="Permalink to this headline">¶</a></h3>
+<dl class="docutils">
+<dt>lambda is just an in-place, anonymous function. Eg:</dt>
+<dd>addTwo = lambda x: x+2
+addTwo(2)  #4</dd>
+<dt>It&#8217;s the same thing as defining this:</dt>
+<dd><dl class="first last docutils">
+<dt>def addTwo(x):</dt>
+<dd>return x+2</dd>
+</dl>
+</dd>
+<dt>You can even throw them into dictionaries/hash trees:</dt>
+<dd><dl class="first docutils">
+<dt>mapTree = {</dt>
+<dd>&#8216;number&#8217;: lambda x: x**x,
+&#8216;string&#8217;: lambda x: x[1:]</dd>
+</dl>
+<p class="last">}
+otype = &#8216;number&#8217;
+mapTree[otype](3)  #27
+otype = &#8216;string&#8217;
+mapTree[otype](&#8216;foo&#8217;)  #&#8217;oo&#8217;</p>
+</dd>
+</dl>
+<p>It&#8217;s really just a syntactical thing. It&#8217;s good if you know that your &#8220;function&#8221; is only going to be used once, by one thing. Otherwise just create a def(). Note above that ** means to the power of.</p>
+<dl class="docutils">
+<dt>One good use for it is with the key= value in your sort() and sorted(). eg:</dt>
+<dd>pairs = [(1, &#8216;one&#8217;), (2, &#8216;two&#8217;), (3, &#8216;three&#8217;), (4, &#8216;four&#8217;)]
+pairs.sort(key=lambda english: english[1])</dd>
+<dt>This will sort by the second value of each tuple, giving this:</dt>
+<dd>[(4, &#8216;four&#8217;), (1, &#8216;one&#8217;), (3, &#8216;three&#8217;), (2, &#8216;two&#8217;)]</dd>
+</dl>
+</div>
+<div class="section" id="why-main">
+<h3>Why __main__?<a class="headerlink" href="#why-main" title="Permalink to this headline">¶</a></h3>
+<dl class="docutils">
+<dt>Why do some python files have this? Why should you use it in your python scripts?</dt>
+<dd><dl class="first last docutils">
+<dt>if __name__ == &#8216;__main__&#8217;:</dt>
+<dd>main()</dd>
+</dl>
+</dd>
+</dl>
+<p>The python interpreter, when it reads a source (.py) file, will execute everything in it. If, for example, &#8220;python myfirstscript.py&#8221; is ran, then the interpreter prior to running the source will set the special variable &#8220;__name__&#8221; to equal &#8220;__main__&#8221;. If, inside of myfirstscript.py, you have &#8220;import random_module&#8221;, then the interpreter will set the __name__ variable for that module to its name, in this case &#8220;random_module&#8221;.</p>
+<p>So what&#8217;s the point? Well, let&#8217;s say random_module.py could, if you wanted, be ran by itself. myfirstscript.py is just importing it because it has some functions in there that are useful. Well, the interpreter just runs whatever code it opens up. If inside the random_module script you don&#8217;t have the if __name__ == &#8216;__main__&#8217;: main_function() clause, then the interpreter is just going to run the file. You probably don&#8217;t want this...you just want the functions out of it, you are running myfirstscript.py not random_module.py. So, if you make sure the if __name__ clause is the only thing that starts the actual work of the script, then you can avoid this.</p>
+<dl class="docutils">
+<dt>Doing it this way, you can still run random_module from inside myfirstscript.py if you want. Just do this:</dt>
+<dd>import random_module
+random_module.main()</dd>
+</dl>
+</div>
+</div>
+<div class="section" id="stacks">
+<h2>Stacks<a class="headerlink" href="#stacks" title="Permalink to this headline">¶</a></h2>
+<p>Stacks are useful (and one of the original) data structures which are well suited to expression evaluation and variable storage (in particular, holding variables outside of a subroutine).</p>
+<p>FIFO  (first in first out) stacks are useful as they naturally work with the structure of code. The deeper you nest into if/for/whatever, each level has variables. As you nest back up to the top, these variables are popped off in order.</p>
+<p>Another reason stacks are useful is if a subroutine is called by multiple threads at the same time, or are recursively called. In this instance, a variable could be set to one value by one thread, and then changed to another value by another thread, thereby invalidating the result. To prevent this, a stack can be allocated in memory which essentially gives the subroutine a working memory it can use. Each call of the subroutine pushes and pulls more stuff onto and off the stack.</p>
+</div>
+<div class="section" id="registers">
+<h2>Registers<a class="headerlink" href="#registers" title="Permalink to this headline">¶</a></h2>
+<p>A register is a small bit of information that lives in the register file, which resides in a small bit of memory on the CPU.</p>
+<p>Usually the EAX register holds a return value. EBP is the stack pointer, pointing to the beginning of your stack. Then you&#8217;ve got the program counter, which points to the current instruction, EIP. The other registers you just use however you want.</p>
+<p>In assembly, these registers are referred to through names like %eax, %esp, %rdi, %edi, etc.</p>
+</div>
+<div class="section" id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h2>
+<p>You can think of a class as a template, it&#8217;s a struct basically. It holds variables with default values, functions(/methods, described below).</p>
+<dl class="docutils">
+<dt>Let&#8217;s say you&#8217;ve got a class defined like this:</dt>
+<dd><dl class="first last docutils">
+<dt>class Door:</dt>
+<dd><p class="first">scopeExample1 = &#8216;inside the class&#8217;
+def open(self, arrrg):</p>
+<blockquote class="last">
+<div><p>print &#8216;hello stranger&#8217;
+scopeExample2 = &#8216;inside the method inside the class&#8217;
+self.scopeExample3 = &#8216;using self. inside the method inside the class&#8217;
+if arrrg:</p>
+<blockquote>
+<div>print arrrg</div></blockquote>
+</div></blockquote>
+</dd>
+</dl>
+</dd>
+<dt>You can instantiate a class (create a class object) like this (mfi means my_first_instantiation):</dt>
+<dd>mfi = Door()</dd>
+<dt>Now you have an object that contains all the properties inside the class. Test some stuff:</dt>
+<dd><p class="first">mfi.open() ## hello stranger
+mfi.open(&#8216;blahhh&#8217;) ## hello stranger n blahhh
+scopeExample1  ##NameError. Not defined.
+mfi.scopeExample1  ## &#8216;inside the class&#8217;
+mfi.scopeExample2  ##Door instance has no attribute scopeExample2
+mfi.scopeExample3  ##Door instance has no attribute scopeExample3
+mfi.self.scopeExample3</p>
+<dl class="docutils">
+<dt>class Door:</dt>
+<dd><dl class="first last docutils">
+<dt>def open(self):</dt>
+<dd>print &#8216;hello stranger&#8217;</dd>
+</dl>
+</dd>
+<dt>def knock_door:</dt>
+<dd>a_door = Door()
+Door.open(a_door)</dd>
+</dl>
+<p class="last">knock_door()</p>
+</dd>
+</dl>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="protocols.html" class="btn btn-neutral float-right" title="Protocols" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="perf-and-sysadmin.html" class="btn btn-neutral" title="Performance and Troubleshooting" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Pants.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

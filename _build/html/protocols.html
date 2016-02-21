@@ -31,7 +31,8 @@
 
   
     <link rel="top" title="PantsNotes 1 documentation" href="index.html"/>
-        <link rel="prev" title="Kernel" href="kernel.html"/> 
+        <link rel="next" title="Rabbit Hole" href="rabbithole.html"/>
+        <link rel="prev" title="Programming" href="programming.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -81,10 +82,34 @@
             
             
                 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="interview.html">Interview Questions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="ip.html">IP</a></li>
-<li class="toctree-l1"><a class="reference internal" href="kernel.html">Kernel</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="">Protocols</a></li>
+<li class="toctree-l1"><a class="reference internal" href="TODO-rdbms.html">Relational Databases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="TODO-thought.html">Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="algorithms.html">Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bootprocess.html">Boot Process</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cassandra.html">Cassandra</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dynamo.html">Dynamo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="encryption.html">Encryption</a></li>
+<li class="toctree-l1"><a class="reference internal" href="filesystems.html">Filesystems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="interview.html">Interview Material</a></li>
+<li class="toctree-l1"><a class="reference internal" href="kafka-public.html">Kafka</a></li>
+<li class="toctree-l1"><a class="reference internal" href="linux-internals.html">Linux Internals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="networking.html">Networking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="perf-and-sysadmin.html">Performance and Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="programming.html">Programming</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Protocols</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#dns">DNS</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#dns-resolution-process">DNS Resolution process</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#general">General</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#query-and-reply-structure">Query and Reply Structure</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#http">HTTP</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#stateless">Stateless?</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="rabbithole.html">Rabbit Hole</a></li>
 </ul>
 
             
@@ -131,6 +156,48 @@
             
   <div class="section" id="protocols">
 <h1>Protocols<a class="headerlink" href="#protocols" title="Permalink to this headline">¶</a></h1>
+<p>This is a general catch-all. Topic-specific protocols (eg: TCP) may exist under other pages.</p>
+<div class="section" id="dns">
+<h2>DNS<a class="headerlink" href="#dns" title="Permalink to this headline">¶</a></h2>
+<p>port:53</p>
+<div class="section" id="dns-resolution-process">
+<h3>DNS Resolution process<a class="headerlink" href="#dns-resolution-process" title="Permalink to this headline">¶</a></h3>
+<p># Host looks in its cache for www.wiki.org (if it has a dns cache)
+# Host asks its configured nameserver(s) where www.wiki.org is
+# nameserver checks its cache
+# nameserver either asks a configured recursive nameserver, or has recursive lookup itself
+# recursive nameserver has &#8220;hints&#8221; of the known address of root name servers, or is configured to have some
+# recursive nameserver asks root nameserver for www.wiki.org, root nameserver passes back auth nameserver for .org
+# recursive nameserver asks authoritative nameserver for .org for www.wiki.org, .org nameserver passes back auth nameserver for wiki.org
+# recursive nameserver asks authoritative nameserver for wiki.org for www.wiki.org
+# authoritative nameserver for wiki.org answers www.wiki.org = 147.0.2.3
+# recursive nameserver passes back info to previous host or nameserver</p>
+</div>
+<div class="section" id="general">
+<h3>General<a class="headerlink" href="#general" title="Permalink to this headline">¶</a></h3>
+<p>Every domain has at least one authoritative DNS server (eg: ns1.wiki.org). These authoritative servers publish info about that domain and the name servers of any domains subordinate to it. These servers pass back their answers with the Authoritave Answer (AA) flag set.</p>
+<p>These ns[1,2].wiki.org records are configured at the .org nameserver as well as the authoritative wiki.org server. In the example above, the recursive server is querying the .org server for www.wiki.org. In that response, the .org nameserver is telling it to contact ns1.wiki.org. The recursive nameserver doesn&#8217;t know the IP of ns1.wiki.org and it&#8217;s already querying about finding wiki.org. In this case, the .org nameserver must pass back a <strong>&#8220;glue&#8221;</strong> record containing the IP&#8217;s of ns1&amp;2. This is contained in the &#8220;additional&#8221; section of the DNS response.</p>
+<p>An <em>authoritative-only</em> nameserver is configured to only return answers to queries about domain names that have been specifically configured by the admin. So, an authoritative server lets recursive nameservers know address info for the domains it has configured.</p>
+</div>
+<div class="section" id="query-and-reply-structure">
+<h3>Query and Reply Structure<a class="headerlink" href="#query-and-reply-structure" title="Permalink to this headline">¶</a></h3>
+<p>Each message consists of a header and four sections: question, answer, authority, and additional. Queries and replies have the same structure. The header section contains the fields: Identification, Flags, Number of questions, Number of answers, Number of authority resource records (RRs), and Number of additional RRs. The flags field has bits that are flipped to say whether it&#8217;s a reply or a query, whether the response (only on replies) is authoritative, whether a recursive query is requested, and whether a dns server supports recursion (reply only).</p>
+<dl class="docutils">
+<dt>A RR (Resource Record) is just a line in a DNS file</dt>
+<dd>NAME  TYPE(# in numberic form, eg:15 for MX)  CLASS(Almost always &#8220;IN&#8221; for internet)  TTL     RDLENGTH(length of RDATA field) RDATA(ie: an ip address)</dd>
+</dl>
+</div>
+</div>
+<div class="section" id="http">
+<h2>HTTP<a class="headerlink" href="#http" title="Permalink to this headline">¶</a></h2>
+<p>TODO: EXPAND</p>
+<div class="section" id="stateless">
+<h3>Stateless?<a class="headerlink" href="#stateless" title="Permalink to this headline">¶</a></h3>
+<p>Most HTTP conversation does not drop the connection on every request, but rather multiple HTTP requests are pipelined in the same connection. In HTTP 1.0, client can indicate that it wants to send multiple requests in the same connection by using Connection: Keep-Alive header, in HTTP 1.1, keep alive is the default, and client and server only drops connection when explicitly requested and on timeout.</p>
+<p>Upon hearing that HTTP is stateless, you might then assume that HTTP uses a new connection for every request. This is incorrect. HTTP is stateless because every request is independent of any other request whether they are transported through the same connection or a different connection. In other words <strong>every request contains all information (even if just a token that represents the full context) that is needed to process that request.</strong></p>
+<p>As a real life analogy, a stateless communication is like radio conversation between pilot and ground controllers, where you&#8217;re expected to always state your callsign and usually the callsign of the message destination with every spurt of messages. On the other hand, a stateful protocol is like a telephone conversation, where you rely that the person on the other side to remember who you are.</p>
+</div>
+</div>
 </div>
 
 
@@ -140,8 +207,10 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
+        <a href="rabbithole.html" class="btn btn-neutral float-right" title="Rabbit Hole" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
-        <a href="kernel.html" class="btn btn-neutral" title="Kernel" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+        <a href="programming.html" class="btn btn-neutral" title="Programming" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

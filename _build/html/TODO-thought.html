@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>&lt;no title&gt; &mdash; PantsNotes 1 documentation</title>
+  <title>Architecture &mdash; PantsNotes 1 documentation</title>
   
 
   
@@ -31,8 +31,8 @@
 
   
     <link rel="top" title="PantsNotes 1 documentation" href="index.html"/>
-        <link rel="next" title="Cassandra" href="cassandra.html"/>
-        <link rel="prev" title="&lt;no title&gt;" href="TODO-protocols.html"/> 
+        <link rel="next" title="Algorithms" href="algorithms.html"/>
+        <link rel="prev" title="Relational Databases" href="TODO-rdbms.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -81,11 +81,23 @@
           
             
             
-                <ul>
-<li class="toctree-l1"><a class="reference internal" href="TODO-interview.html">Interview Material</a></li>
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="TODO-rdbms.html">Relational Databases</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="algorithms.html">Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bootprocess.html">Boot Process</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cassandra.html">Cassandra</a></li>
-<li class="toctree-l1"><a class="reference internal" href="dynamo.html">DYNAMO</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dynamo.html">Dynamo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="encryption.html">Encryption</a></li>
 <li class="toctree-l1"><a class="reference internal" href="filesystems.html">Filesystems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="interview.html">Interview Material</a></li>
+<li class="toctree-l1"><a class="reference internal" href="kafka-public.html">Kafka</a></li>
+<li class="toctree-l1"><a class="reference internal" href="linux-internals.html">Linux Internals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="networking.html">Networking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="perf-and-sysadmin.html">Performance and Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="programming.html">Programming</a></li>
+<li class="toctree-l1"><a class="reference internal" href="protocols.html">Protocols</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rabbithole.html">Rabbit Hole</a></li>
 </ul>
 
             
@@ -116,7 +128,7 @@
   <ul class="wy-breadcrumbs">
     <li><a href="index.html">Docs</a> &raquo;</li>
       
-    <li>&lt;no title&gt;</li>
+    <li>Architecture</li>
       <li class="wy-breadcrumbs-aside">
         
           
@@ -130,16 +142,20 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <p>TODO: put thought notes here?</p>
-<p>~~Broad/Architectural~~
+  <div class="section" id="architecture">
+<h1>Architecture<a class="headerlink" href="#architecture" title="Permalink to this headline">¶</a></h1>
+<p>TODO:
+- Note summary kleppmann&#8217;s designing data intensive applications book
+- Put &#8220;how would you design x&#8221; thoughts here where x is some big thing like facebook</p>
+<p>Broad/Architectural
 Concerns with distributed architectures - moving to stateful microservices, or microservices that talk to other microservices in order to do their tasks. Start worrying about network latency, fault tolerance, message serialization, unreliable networks, asynchronicity, versioning, varying loads within the application tiers etc. etc. Moving to a cloud service shares some of these problems too.</p>
 <p><a class="reference external" href="http://blog.xebialabs.com/2014/12/31/8-questions-need-ask-microservices-containers-docker-2015/">http://blog.xebialabs.com/2014/12/31/8-questions-need-ask-microservices-containers-docker-2015/</a></p>
-<p>~~Random~~</p>
 <p>Message queue&#8217;s are useful because:
 -They decouple a process, act as an intermediary. The advantages of this include scenarios such as traffic spikes, or when one side of the queue is offline for some reason. During a traffic spike, perhaps one process will get totally overwhelmed. This process can be decoupled so as not to take the entire system down. The MQ still exists, and allows the other side to pull off messages at its leisure without getting overwhelmed as well.
 -A message queue can provide built-in message delivery guarantees, and also ordering guarantees. This saves you from having to build the logic into your application.
 -A message queue acts as a buffer between two sides that may be operating at different speeds. This helps normalize speed. Additionally, analyzing the MQ&#8217;s stats will give you an idea if one side is performing poorly.
 -Finally, MQ&#8217;s allow for asynchronous communication. This means that one side can push on a bunch of data and forget about it, the other side doesn&#8217;t have to process it right away either.</p>
+</div>
 
 
            </div>
@@ -148,10 +164,10 @@ Concerns with distributed architectures - moving to stateful microservices, or m
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="cassandra.html" class="btn btn-neutral float-right" title="Cassandra" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="algorithms.html" class="btn btn-neutral float-right" title="Algorithms" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="TODO-protocols.html" class="btn btn-neutral" title="&lt;no title&gt;" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="TODO-rdbms.html" class="btn btn-neutral" title="Relational Databases" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

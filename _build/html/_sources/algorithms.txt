@@ -56,7 +56,7 @@ O(log n) basically means that time goes up linearly while the **n** goes up expo
 
 Divide-and-conquer type algorithms are typically O(log n) - for example binary search and part of quick sort. More detail about these algorithms later, but a quick example of an O(log n) operation would be looking up someone in a phone book. You first open up the middle of the book, and since it is sorted alphabetically, you can immediately discard half the book from your search since you may be at letter "K" and the person you are looking up has a last name starting with the letter "R". You've just narrowed your search to the final half of the book. You then open halfway the remaining half of the book, and continue doing this until you get to the R's, then the Ri's, then the Ric's, and so on. With each guess, your search range is cut in half (or more, if you are predicting the number of pages between letters). Read about binary search later on this page for a better understanding.
 
-Calculatink Big-O
+Calculating Big-O
 ^^^^^^^^^^^^^^^^^
 Just follow your code!
 

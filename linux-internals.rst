@@ -2,9 +2,10 @@ Linux Internals
 ===============
 
 TODO:
+
 - user vs system
 - context switching
-- CPU and IO schedulers .. _linux-internals-scheduling:
+- CPU and IO schedulers, use tag ".. _linux-internals-scheduling:"
 
 .. _linux-internals-systemcalls:
 
@@ -38,6 +39,7 @@ https://brandonwamboldt.ca/how-linux-pipes-work-under-the-hood-1518/
 Linux has an in-memory VFS called pipefs that gets mounted in kernel space at boot. The entry point to pipefs is the pipe(2) syscall. This system call creates a file in pipefs and then returns two file descriptors (one for the read end, opened using O_RDONLY, and one for the write end, opened using O_WRONLY).
 
 Each unix process (except perhaps a daemon) has at least three standard POSIX file descriptors - STDIN, STDOUT, STDERR. In the case of unnamed pipes (eg: ls -la | grep blah), bash will:
+
 * clone/exec grep
 * call pipe(2) and get STDIN/STDOUT file descriptors back from the new pipe 
 * call dup2() on the STDIN (fd[0]) of grep and the STDOUT (fd[1]) of the pipe
@@ -89,6 +91,7 @@ procfs exposes runtime information & statistics of devices and processes, as wel
 The sysfs (or /sys filesystem) was designed to add structure to the proc mess and provide a uniform way to expose system information and control points (settable system and driver attributes) to user-space from the kernel. Now, the driver framework in the kernel automatically creates directories under /sys when drivers are registered, based on the driver type and the values in their data structures.
 
 Check number of caches available to cpu0 and the size of those caches:
+
   # grep . is same as cat /path/to/files*
   grep . /sys/devices/system/cpu/cpu0/cache/index*/size 
   # typical results: two 32k level 1 cache, 256k lvl2 cache, and 3MB lvl3 cache)
@@ -114,7 +117,7 @@ So, each userspace process gets its own task_struct, except init which has a sta
 
 Process Creation
 ^^^^^^^^^^^^^^^^
-In User Space:
+
 - Program calls fork() (actually clone() these days, but using fork() in this description)
 - fork() system calls to sys_fork()
 - sys_fork() calls do_fork()
@@ -181,8 +184,10 @@ Process Scheduling
 ^^^^^^^^^^^^^^^^^^
 The scheduler maintains lists of task_struct's. Each list has a different priority number. task_struct's are placed in each list based on loading and prior process execution history, along with other factors depending on which process scheduler you're using.
 
+
 Process Destruction
 ^^^^^^^^^^^^^^^^^^^
+
 - User space calls exit(), which makes a sys_exit() system call, which calls do_exit()
 - do_exit() sets the PF_EXITING flag in the processes task_struct, which tells the kernel to avoid manipulating this process while it's being removed
 - do_exit() makes a series of calls. exit_mm to remove memory pages, exit_notify to notify the parent process and other things, and more?

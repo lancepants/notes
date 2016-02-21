@@ -32,7 +32,7 @@
   
     <link rel="top" title="PantsNotes 1 documentation" href="index.html"/>
         <link rel="next" title="Boot Process" href="bootprocess.html"/>
-        <link rel="prev" title="&lt;no title&gt;" href="TODO-thought.html"/> 
+        <link rel="prev" title="Architecture" href="TODO-thought.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -83,11 +83,12 @@
             
                 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="TODO-rdbms.html">Relational Databases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="TODO-thought.html">Architecture</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="">Algorithms</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#big-o-notation">Big O Notation</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#o-n-o-n-2-and-o-1">O(n), O(n^2), and O(1)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#o-log-n">O(log n)</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#calculatink-big-o">Calculatink Big-O</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#calculating-big-o">Calculating Big-O</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#sorting-algorithms">Sorting Algorithms</a><ul>
@@ -103,12 +104,15 @@
 <li class="toctree-l1"><a class="reference internal" href="bootprocess.html">Boot Process</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cassandra.html">Cassandra</a></li>
 <li class="toctree-l1"><a class="reference internal" href="dynamo.html">Dynamo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="encryption.html">Encryption</a></li>
 <li class="toctree-l1"><a class="reference internal" href="filesystems.html">Filesystems</a></li>
 <li class="toctree-l1"><a class="reference internal" href="interview.html">Interview Material</a></li>
 <li class="toctree-l1"><a class="reference internal" href="kafka-public.html">Kafka</a></li>
 <li class="toctree-l1"><a class="reference internal" href="linux-internals.html">Linux Internals</a></li>
 <li class="toctree-l1"><a class="reference internal" href="networking.html">Networking</a></li>
 <li class="toctree-l1"><a class="reference internal" href="perf-and-sysadmin.html">Performance and Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="programming.html">Programming</a></li>
+<li class="toctree-l1"><a class="reference internal" href="protocols.html">Protocols</a></li>
 <li class="toctree-l1"><a class="reference internal" href="rabbithole.html">Rabbit Hole</a></li>
 </ul>
 
@@ -212,8 +216,8 @@ for item in the_list:</p>
 <p>O(log n) basically means that time goes up linearly while the <strong>n</strong> goes up exponentially. So if it takes <strong>1</strong> second to compute <strong>10</strong> elements, it will take <strong>2</strong> seconds to compute <strong>100</strong> elements, <strong>3</strong> seconds to compute <strong>1000</strong> elements, and so on. Remember again that big-O is stating <em>worst case</em>, so it&#8217;s more accurate to say that the running time of an O(log n) (or any other big-O) grows <em>at most</em> proportional to &#8220;log n&#8221;.</p>
 <p>Divide-and-conquer type algorithms are typically O(log n) - for example binary search and part of quick sort. More detail about these algorithms later, but a quick example of an O(log n) operation would be looking up someone in a phone book. You first open up the middle of the book, and since it is sorted alphabetically, you can immediately discard half the book from your search since you may be at letter &#8220;K&#8221; and the person you are looking up has a last name starting with the letter &#8220;R&#8221;. You&#8217;ve just narrowed your search to the final half of the book. You then open halfway the remaining half of the book, and continue doing this until you get to the R&#8217;s, then the Ri&#8217;s, then the Ric&#8217;s, and so on. With each guess, your search range is cut in half (or more, if you are predicting the number of pages between letters). Read about binary search later on this page for a better understanding.</p>
 </div>
-<div class="section" id="calculatink-big-o">
-<h3>Calculatink Big-O<a class="headerlink" href="#calculatink-big-o" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="calculating-big-o">
+<h3>Calculating Big-O<a class="headerlink" href="#calculating-big-o" title="Permalink to this headline">¶</a></h3>
 <p>Just follow your code!</p>
 <blockquote>
 <div><dl class="docutils">
@@ -276,7 +280,7 @@ for element in a_list:</p>
         <a href="bootprocess.html" class="btn btn-neutral float-right" title="Boot Process" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="TODO-thought.html" class="btn btn-neutral" title="&lt;no title&gt;" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="TODO-thought.html" class="btn btn-neutral" title="Architecture" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
