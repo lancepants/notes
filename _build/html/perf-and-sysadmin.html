@@ -1,6 +1,5 @@
 
 
-
 <!DOCTYPE html>
 <!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
 <!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
@@ -9,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Index &mdash; PantsNotes 1 documentation</title>
+  <title>Performance and Troubleshooting &mdash; PantsNotes 1 documentation</title>
   
 
   
@@ -31,7 +30,9 @@
   
 
   
-    <link rel="top" title="PantsNotes 1 documentation" href="index.html"/> 
+    <link rel="top" title="PantsNotes 1 documentation" href="index.html"/>
+        <link rel="next" title="Rabbit Hole" href="rabbithole.html"/>
+        <link rel="prev" title="Networking" href="networking.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -80,7 +81,7 @@
           
             
             
-                <ul>
+                <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="TODO-rdbms.html">Relational Databases</a></li>
 <li class="toctree-l1"><a class="reference internal" href="algorithms.html">Algorithms</a></li>
 <li class="toctree-l1"><a class="reference internal" href="bootprocess.html">Boot Process</a></li>
@@ -91,7 +92,15 @@
 <li class="toctree-l1"><a class="reference internal" href="kafka-public.html">Kafka</a></li>
 <li class="toctree-l1"><a class="reference internal" href="linux-internals.html">Linux Internals</a></li>
 <li class="toctree-l1"><a class="reference internal" href="networking.html">Networking</a></li>
-<li class="toctree-l1"><a class="reference internal" href="perf-and-sysadmin.html">Performance and Troubleshooting</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Performance and Troubleshooting</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#general">General</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#python">Python</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#runtime">Runtime</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#memory">Memory</a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="rabbithole.html">Rabbit Hole</a></li>
 </ul>
 
@@ -123,9 +132,11 @@
   <ul class="wy-breadcrumbs">
     <li><a href="index.html">Docs</a> &raquo;</li>
       
-    <li></li>
+    <li>Performance and Troubleshooting</li>
       <li class="wy-breadcrumbs-aside">
         
+          
+            <a href="_sources/perf-and-sysadmin.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -135,17 +146,55 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-
-<h1 id="index">Index</h1>
-
-<div class="genindex-jumpbox">
- 
+  <div class="section" id="performance-and-troubleshooting">
+<h1>Performance and Troubleshooting<a class="headerlink" href="#performance-and-troubleshooting" title="Permalink to this headline">¶</a></h1>
+<p>TODO:
+- perftools, systemtap
+- jconsole, java heap info
+- bgregg stuff in general. Also ref <a class="reference external" href="http://techblog.netflix.com/2015/11/linux-performance-analysis-in-60s.html">http://techblog.netflix.com/2015/11/linux-performance-analysis-in-60s.html</a></p>
+<div class="section" id="general">
+<h2>General<a class="headerlink" href="#general" title="Permalink to this headline">¶</a></h2>
+<img alt="Linux Performance Observability Tools, bgregg" class="align-center" src="_images/performance-linux_observability_tools.png" />
+</div>
+<div class="section" id="python">
+<h2>Python<a class="headerlink" href="#python" title="Permalink to this headline">¶</a></h2>
+<p>Excellent: <a class="reference external" href="https://www.huyng.com/posts/python-performance-analysis">https://www.huyng.com/posts/python-performance-analysis</a></p>
+<div class="section" id="runtime">
+<h3>Runtime<a class="headerlink" href="#runtime" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div>python3 -m cProfile wordfreq.py short-story.txt</div></blockquote>
+<dl class="docutils">
+<dt>Check out runsnakerun for visualization of cProfile output, pretty cool. www.vrplumber.com/programming/runsnakerun/</dt>
+<dd>python3 -m cProfile -o out.profile wordfreq.py short-story.txt ; python runsnake.py out.profile</dd>
+</dl>
+<p>Can also check out python visualization libraries that use graphvis.</p>
+</div>
+<div class="section" id="memory">
+<h3>Memory<a class="headerlink" href="#memory" title="Permalink to this headline">¶</a></h3>
+<dl class="docutils">
+<dt>There is a module called memory_profiler that will output, line by line, how much memory your script uses:</dt>
+<dd>pip install -U memory_profiler
+pip install psutil #this is for better memory_profiler module performance
+vim freqgen.py #add &#64;profile decorator above the function you&#8217;re interested in
+python -m memory_profiler freqgen.py short-story.txt</dd>
+</dl>
+</div>
+</div>
 </div>
 
 
            </div>
           </div>
           <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="rabbithole.html" class="btn btn-neutral float-right" title="Rabbit Hole" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="networking.html" class="btn btn-neutral" title="Networking" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
   
 
   <hr/>

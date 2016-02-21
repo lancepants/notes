@@ -42,7 +42,7 @@ Nameserver
 - (if nameserver not recursive) nameserver sends request to configured recursive nameserver 
 - recursive nameserver has "hints" of the known address of root (top level domain) name servers, or explicit config entries for some
 - recursive nameserver asks root nameserver for www.google.com, root nameserver passes back authoritative nameserver for .com
-- recursive nameserver asks authoritative nameserver for .com for www.google.com, .com nameserver passes back auth nameserver for google.com
+- recursive nameserver asks authoritative nameserver for .com for www.google.com, .com nameserver passes back auth nameserver for google.com (perhaps ns[1,2].google.com , along with a "glue" record containing IP's for ns#.google.com)
 - recursive nameserver asks authoritative nameserver for google.com for www.google.com
 - authoritative nameserver for google.com answers www.google.com = 147.0.2.3
 - recursive nameserver passes back info to previous host or nameserver

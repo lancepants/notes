@@ -1,0 +1,26 @@
+Encryption
+==========
+
+Alice and Bob
+-------------
+An analogy that can be used to understand the advantages of an asymmetric system is to imagine two people, Alice and Bob, who are sending a secret message through the public mail. In this example, Alice wants to send a secret message to Bob, and expects a secret reply from Bob.
+
+Symmetric
+^^^^^^^^^
+With a *symmetric* key system, Alice first puts the secret message in a box, and locks the box using a padlock to which she has a key. She then sends the box to Bob through regular mail. When Bob receives the box, he uses an identical copy of Alice's key (which he has somehow obtained previously, maybe by a face-to-face meeting) to open the box, and reads the message. Bob can then use the same padlock to send his secret reply.
+
+Asymmetric
+^^^^^^^^^^
+In an *asymmetric* key system, Bob and Alice have separate padlocks. First, Alice asks Bob to send his open padlock (*public key*) to her through regular mail, keeping his key (*private key*) to himself. When Alice receives it she uses it to lock a box containing her message, and sends the locked box to Bob. Bob can then unlock the box with his key and read the message from Alice. To reply, Bob must similarly get Alice's open padlock to lock the box before sending it back to her.
+
+The critical advantage in an asymmetric key system is that Bob and Alice never need to send a copy of their keys to each other. This prevents a third party – perhaps, in this example, a corrupt postal worker – from copying a key while it is in transit, allowing the third party to spy on all future messages sent between Alice and Bob. So, in the public key scenario, Alice and Bob need not trust the postal service as much. In addition, if Bob were careless and allowed someone else to copy his key, Alice's messages to Bob would be compromised, but Alice's messages to other people would remain secret, since the other people would be providing different padlocks for Alice to use.
+
+Alternate Asymmetric
+^^^^^^^^^^^^^^^^^^^^
+**In another kind of asymmetric key system** in which neither party needs to even touch the other party's padlock (or key), Bob and Alice have separate padlocks. 
+
+First, Alice puts the secret message in a box, and locks the box using a padlock to which *only she has a key*. She then sends the box to Bob through regular mail. When Bob receives the box, he *adds his own padlock* to the box, and sends it back to Alice. When Alice receives the box with the two padlocks, she removes her padlock and sends it back to Bob. When Bob receives the box with only his padlock on it, Bob can then unlock the box with his key and read the message from Alice. 
+
+Note that, in this scheme, the order of decryption is the same as the order of encryption – this is only possible if commutative ciphers are used. A commutative cipher is one in which the order of encryption and decryption is interchangeable, just as the order of multiplication is interchangeable (i.e. A*B*C = A*C*B = C*B*A). 
+
+A simple XOR with the individual keys is such a commutative cipher. For example, let E1() and E2() be two encryption functions, and let "M" be the message so that if Alice encrypts it using E1() and sends E1(M) to Bob. Bob then again encrypts the message as E2(E1(M)) and sends it to Alice. Now, Alice decrypts E2(E1(M)) using E1(). Alice will now get E2(M), meaning when she sends this again to Bob, he will be able to decrypt the message using E2() and get "M". Although none of the keys were ever exchanged, the message "M" may well be a key (e.g. Alice's Public key). **This three-pass protocol is typically used during key exchange.**
