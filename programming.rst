@@ -70,6 +70,49 @@ Doing it this way, you can still run random_module from inside myfirstscript.py 
   import random_module
   random_module.main()
 
+Decorators
+^^^^^^^^^^
+http://simeonfranklin.com/blog/2012/jul/1/python-decorators-in-12-steps/
+
+A decorator is just a callable that takes a function as an argument, and returns a replacement function. Let's create a simple decorator:
+
+  def outer(some_func):
+    def inner():
+      print "i'm the inner function"
+      ret = some_func()
+      return ret + 1
+    return inner
+  def foo():
+    return 1
+  
+  decorated = outer(foo)
+  decorated()
+  ..i'm the inner function
+  ..2
+
+outer() **returns a function**, inner(), which applies some operation on whatever function is passed to outer(). In this example, outer() is our "decorator" and it is "decorating" the foo() function (we passed it foo, and it's adding 1 to whatever foo returned).
+
+In fact, we can completely replace our foo object with its decorated version by re-assigning it:
+
+  foo = outer(foo)
+
+This works since outer(foo) is ran first, uses the original foo() definition, and then assigns the result to the foo object, overwriting the old foo definition. From now on, any calls to foo() won't get the original foo, they'll get our decorated version.
+
+We can use the myfunc = wrapper(myfunc) syntax as mentioned above, but python provides support to do this simply by using @wrapper above some function:
+
+  @wrapper
+  def myfunc:
+    return blahblahblah
+
+So what's the point? Well, slapping a memory/cpu/other performance profiling wrapper on some function could let you see how many calls it's making, how much memory it is allocating, and whatever else. There also exists situations where you have a class or function in which you cannot change the source code of, but need to extend its functionality. You may also want to write a wrapper that logs all arguments passed to a certain function, or some wrapper that does some bounds checking/filtering on function output, or any use case where you only want to temporarily apply some decorator to some function, where adding a simple @decorator above a function is much easier than changing the function itself.
+
+Quickies
+^^^^^^^^
+Both list.sort() and sorted() have a **key** parameter which allows you to specify *a function to be called on each list element*. The results of this will determine how elements in a list are sorted.
+
+  students = [ ('john','A','23'), ('jamal','B','32'), ('jerry','C','42') ]
+  sorted(students, key=lambda stu: stu[2])  #sort by age, the 3rd element in each tuple
+
 Stacks
 ------
 Stacks are useful (and one of the original) data structures which are well suited to expression evaluation and variable storage (in particular, holding variables outside of a subroutine). 

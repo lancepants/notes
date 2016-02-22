@@ -450,6 +450,7 @@ General
 ^^^^^^^
 - re-implement nc in python
 - re-implement grep in python
+- make a url shortener in python
 
 Quickies
 --------
