@@ -58,12 +58,18 @@ VFS
 ---
 VFS works as an abstraction layer sitting between filesystems and system calls. By having this layer, a system call doesn't need to know how to communicate with all these different filesystems (ext3, ufs, zfs, nfs, /proc, /dev), and instead only communicates to VFS. VFS then communicates to the file system.
 
+inode vs vnode
+^^^^^^^^^^^^^^
+get pic from http://stackoverflow.com/questions/5256599/what-are-file-descriptors-explained-in-simple-terms
+
+
 I/O Stack
 ---------
 Application -> System Calls -> VFS -> File System -> Volume Manager -> Block Device Interface -> Target I/O Driver -> Host Bus Adapter Driver -> Disk Devices
 It's also possible for the system call to skip straight to block device interface.
 
 .. _kernel-signals:
+
 
 Linux Signals
 -------------
@@ -193,3 +199,18 @@ Process Destruction
 - do_exit() makes a series of calls. exit_mm to remove memory pages, exit_notify to notify the parent process and other things, and more?
 - Finally, the process state is changed to PF_DEAD in its task_struct and the schedule function is called to select a new process to execute
 - release_task is called which will reclaim memory that the process was using
+
+
+File Descriptors
+----------------
+
+- To the kernel, all open files are referred to by File Descriptors. A file descriptor is a non-negative number. 
+- When we open an existing file or create a new file, the kernel returns a file descriptor to the process. 
+- The kernel maintains a table of all open file descriptors which are in use. The allotment of file descriptors is generally sequential and they are alloted to the file as the next free file descriptor from the pool of free file descriptors. When we closes the file, the file descriptor gets freed and is available for further allotment.
+- When we want to read or write a file, we **identify the file with the file descriptor that was returned by the open() or create() system calls**, and **use it as an argument to either read() or write().**
+- It is by convention that, UNIX System shells associates the file descriptor 0 with Standard Input of a process, file descriptor 1 with Standard Output, and file desciptor 2 with Standard Error. File descriptor ranges from 0 to OPEN_MAX.
+
+.. image:: media/linux-twoprocs_same_fd.jpg
+   :alt: Two independent processes with the same file open
+   :align: center
+
