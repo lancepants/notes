@@ -37,8 +37,6 @@ This is faster than just having a single task go through all the data serially, 
 
 -Programmer ease of use :: Programmers want to work with keys, values, JSON, Javascript stored procedures, HTTP, and so on. End users typically want to work on data using SQL, but this preference should not permeate throughout all datastore decisions.
 
--Use the right data model for the right problem :: Different data models are used to solve different problems. Much effort has been put into, for example, wedging graph operations into a relational model, but it doesn't work. Isn't it better to solve a graph problem in a graph database? We are now seeing a general strategy of trying find the best fit between a problem and solution.
-
 -Availability vs Consistency vs Failure Handling :: Relational databases pick strong consistency which means they can't tolerate a partition failure. In the end this is a business decision and should be decided on a case by case basis. Does your app even care about consistency? Are a few drops OK? Does your app need strong or weak consistency? Is availability more important or is consistency? Will being down be more costly than being wrong?
 
 
