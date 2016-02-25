@@ -95,11 +95,11 @@ Read me: https://dougvitale.wordpress.com/2011/12/21/deprecated-linux-networking
 OSI Model
   application							data
   presentation							data
-  session								data
-  transport	[end-to-end connections and reliability]	segments
-  network		[path determination & logical addressing]	packets
-  data link	[physical addressing (MAC & LLC)]		frames
-  physical	[media, signal, binary transmission]		bits
+  session							data
+  transport     [end-to-end connections and reliability]	segments
+  network       [path determination & logical addressing]	packets
+  data link     [physical addressing (MAC & LLC)]		frames
+  physical      [media, signal, binary transmission]		bits
 
 PDNTSPA! or "All People Seem To Need Data Processing"
 
@@ -114,7 +114,25 @@ Start using "ip n" (ip neighbour) instead of arp -a.
 
 Devices which "share" a virtual IP may use gratuitous arp upon virtual IP migration in order to spam update switches and other connected devices with the new associated mac address.
 
+
+Switching and Routing
+---------------------
 STP
 ^^^
+
 - STP (spanning tree protocol) analyzes a network to ensure no looping can occur on networks with shitty design. It does this by designating a root bridge, finding root "ports" which are just paths, and then disabling all ports aside from the least cost path. Updates and such on link down, etc. Disable stp on host ports for faster no shutdown (dont have to wait for convergence)
 - A broadcast storm can occur when switches are in a loop. Switch A is connected to B and C, B connected to A and C, etc etc. Host A on switch A makes a broadcast request. Switch A broadcasts this to B and C. B broadcasts this to C. C broadcasts this to A, and A thinks that this is a new broadcast request and so sends out another broadcast to B. Repeat
+
+Private VLANs
+^^^^^^^^^^^^^
+PVLANs, also known as port isolation, are vlans that contain switchports which are restricted such that they can *only communicate with a given "uplink".* This means that in contrast to using regular VLANs, you can have two servers connected to the same switch who are on the same pvlan, unable to talk to each other without routing through the designated uplink first. This means that direct peer-to-peer traffic between peers on the same switch is blocked - any such communication must go through the uplink.
+
+A PVLAN acheives this by dividing a VLAN (*Primary*) into sub-VLANs (*Secondary*). A regular VLAN has a single broadcast domain, while private VLAN partitions one broadcast domain into multiple smaller broadcast domains. Here's the breakdown:
+
+- *Primary VLAN*: The original VLAN. Used to forward frames downstream to all Secondary VLANs.
+- *Secondary VLAN*: These are configured with one of the following types:
+  - *Isolated*: Any switchports associated with an Isolated VLAN can reac the primary VLAN, but not any other Secondary VLAN. Additionally, hosts associated witht he same isolated VLAN cannot even reach each other. There can be multiple isolated VLANs in one private VLAN domain.
+  - *Community*: Any switchports associated with a common community VLAN can communicate with each other and with the primary VLAN, but not with any other secondary VLAN. There can be multiple different community VLANs within one private VLAN domain.
+
+There are mainly two types of ports in a Private VLAN: *Promiscuous* and *Host*. A Host port further divides into Isolated port, and Community port. From the above description, we can derive that an uplink or cross-connect to a router/firewall/other switch would be configured as Promiscuous, while ports going to physical servers would be configured as host ports in either isolated or community.
+
