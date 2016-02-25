@@ -214,3 +214,32 @@ File Descriptors
    :alt: Two independent processes with the same file open
    :align: center
 
+
+Memory
+------
+
+dentry/inode caches
+^^^^^^^^^^^^^^^^^^^
+Each time you do an 'ls' (or any other open(), stat(), whatever operation) on a filesystem, the kernel needs to get information about the filesystem which resides on the disk. The kernel parses this data and puts it into some *filesystem independent structures* so that access to files can be handled in the same way across all different filesystems.
+
+The kernel has the option of throwing away these data structures, but it bets you are going to need the info again and as such keep these structures around in several caches called the dentry and inode caches.
+
+dentries are common across all filesystems, but each filesystem has its own cache for inodes. This ram is a component of "Slab:" in meminfo. View the different caches and their sizes by doing:
+
+  cat /proc/slabinfo
+  head -2 /proc/slabinfo #get column names ; cat /proc/slabinfo|egrep "dentry|inode"
+
+Note that slabinfo contains various other caches.
+
+Process Memory
+^^^^^^^^^^^^^^
+Per-process memory details:
+
+  cat /proc/<pid>/maps
+  cat /proc/<pid>/smaps  #lots more detail
+
+Check out the [heap] entry to see how much memory the kernel allocated for the process's heap. It may or may not be what was requested!
+
+- **VIRT** stands for the virtual size of a process, which is the sum of memory it is actually using, memory it has mapped into itself (for instance the video cards’s RAM for the X server), files on disk that have been mapped into it (most notably shared libraries), and memory shared with other processes. VIRT represents how much memory the program is able to access at the present moment.
+- **RES** stands for the resident size, which is an accurate representation of how much actual physical memory a process is consuming. (This also corresponds directly to the %MEM column.) 
+- **SHR** indicates how much of the VIRT size is actually sharable (memory or libraries). In the case of libraries, it does not necessarily mean that the entire library is resident. For example, if a program only uses a few functions in a library, the whole library is mapped and will be counted in VIRT and SHR, but *only the parts of the library file containing the functions being used will actually be loaded in and be counted under RES.*
