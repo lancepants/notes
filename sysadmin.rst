@@ -19,3 +19,12 @@ top and ps have VIRT/VSZ for virtual mem, RSS/RES for resident, and (top) SHR fo
 - **SHR** indicates how much of the VIRT size is actually sharable (memory or libraries). In the case of libraries, it does not necessarily mean that the entire library is resident. For example, if a program only uses a few functions in a library, the whole library is mapped and will be counted in VIRT and SHR, but *only the parts of the library file containing the functions being used will actually be loaded in and be counted under RES.*
 - cat /proc/<pid>/maps and smaps as stated above for detailed per-process memory usage
 
+
+Quickies
+--------
+
+Print the last column in each line of output:
+
+  cat something | awk '{print $NF}'
+
+

@@ -7,6 +7,18 @@ TODO:
 - Fix all ref links.
 - Finish all questions and coding challenges
 
+Facebook
+--------
+Study more of:
+- Signals
+- core dumps
+- process states (scheduled? wait? runnig? sleep? uninterruptible?)
+- make a section about kexec
+- python:
+  - input/output practice
+  - interfacing with external proceses
+- design: kleppmann's book
+
 Questions
 ---------
 - What is an initrd and why is it needed?

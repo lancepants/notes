@@ -1,7 +1,7 @@
 OVERVIEW
 -We want to be able to do edge processing, cut down on inter-DC traffic, and not have to have such a massive install and influx of raw data into vegas.
 -We also want to increase the resiliency of our data pipeline at and between our datacenters (as in, find something better than using rsync and multicast round-robin against journalers)
--We do 124TB uncompressed data/day. That is ~5.2TB/hour. IAD1 makes up just under 40% of that.
+-We do 124TB uncompressed data/day. That is ~5.2TB/hour. IAD2 makes up just under 40% of that.
 -We currently have 3-node kafka clusters planned. These are specc'd with 22x900GB SAS drives in RAID10 (+2 SSD host OS)
 -Replication factor N means N-1 brokers can fail before the topic becomes unavailable. We are aiming for Repl factor 2 at the moment.
 
@@ -104,13 +104,13 @@ FAILURE PLANNING / HDD REQUIREMENTS
 -We're doing around 125TB/day uncompressed
 -We're doing round-robin multicast between 2 jrnlrs per ad cluster. HDD corruption = data loss, usually around 3GB sits on a jrnlr at any one time.
 -DC   uncompData        numJrnlrs   compData(55%)
--IAD1 48TB/d:2T/h       21          26.5TB/day
+-IAD2 48TB/d:2T/h       21          26.5TB/day
 -SJC1 30TB/d:1.25T/h    22          16.5TB/day
 -AMS2 29TB/d:1.21T/h    18          16TB/day        
 -FRA1 18TB/d:0.75T/h    14          10TB/day        
 --Kafka spec box: 2xSSD(host), 20x900GSAS(raid10, -2 for hot spares) = ~9TB
 --We're planning for 3 node kafka clusters per DC to start. ~27TB
---IAD1 :: 2T/hr*replFactor2 = 4T/hr :: 27T/4T = ~8hrs backlog possible
+--IAD2 :: 2T/hr*replFactor2 = 4T/hr :: 27T/4T = ~8hrs backlog possible
 
 COMPRESSION
 -The java producer has a built in compression feature, and the java consumer has a complimentary built in decompression feature.
