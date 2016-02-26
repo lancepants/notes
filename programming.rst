@@ -4,6 +4,27 @@ Programming
 Python
 ------
 
+Unit Testing
+^^^^^^^^^^^^
+
+pytest is the one you want. Minimal boilerplate, maximum features. unittest uses some awful classy crap.
+
+#) Install:
+
+  pip install pytest ; pip3 install pytest
+
+#) Write your unit testing code by importing some definition from some file/module you made:
+
+  from your_module import my_fibonacci
+  def test_number_6():
+    assert my_fibonacci(6) == 8
+  def test_number_0():
+    assert my_fibonacci(0) == 1
+
+#) Now test:
+
+  py.test my_fib_unit_test.py
+
 List Comprehension
 ^^^^^^^^^^^^^^^^^^
 

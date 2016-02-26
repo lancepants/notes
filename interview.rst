@@ -16,6 +16,7 @@ presreen q's system, networking, posix signals (done)
 (onsite) deeper coding, deeper systems, networking, architecture, collab/team building scenario questions
 
 Study more of:
+- memcached!!
 - kill -9 will not remove a zombie process...why?
 - Signals
 - core dumps
