@@ -9,7 +9,14 @@ TODO:
 
 Facebook
 --------
+presreen q's system, networking, posix signals (done)
+1st: 45min coding (phone), practical, relavent to sysadmin, some comp sci fundamentals.
+2nd: 45min systems (phone)
+
+(onsite) deeper coding, deeper systems, networking, architecture, collab/team building scenario questions
+
 Study more of:
+- kill -9 will not remove a zombie process...why?
 - Signals
 - core dumps
 - process states (scheduled? wait? runnig? sleep? uninterruptible?)
