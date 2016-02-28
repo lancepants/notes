@@ -54,21 +54,7 @@ Pipe size default is typically 64KB. When a pipe's buffer is full, a write(2) wi
 When a pipe is empty, a read(2) will block. If there is nobody listening on the other end (all the file descriptors pointing to the write end of the pipe have been closed), then the pipe will return an EOF (ie: read(2) will return 0).
 
 
-VFS
----
-VFS works as an abstraction layer sitting between filesystems and system calls. By having this layer, a system call doesn't need to know how to communicate with all these different filesystems (ext3, ufs, zfs, nfs, /proc, /dev), and instead only communicates to VFS. VFS then communicates to the file system.
-
-inode vs vnode
-^^^^^^^^^^^^^^
-get pic from http://stackoverflow.com/questions/5256599/what-are-file-descriptors-explained-in-simple-terms
-
-
-I/O Stack
----------
-Application -> System Calls -> VFS -> File System -> Volume Manager -> Block Device Interface -> Target I/O Driver -> Host Bus Adapter Driver -> Disk Devices
-It's also possible for the system call to skip straight to block device interface.
-
-.. _kernel-signals:
+.. _linux-internals-signals:
 
 
 Linux Signals
@@ -84,19 +70,18 @@ SIGSTOP(17,19,23) - Suspends a processes execution. Cannot be ignored. If you ar
 Note that processes can ignore, block, or catch all signals except SIGSTOP and SIGKILL. If a process catches a signal, it means that *it includes code that will take appropriate action when the signal is received*. If the signal is not caught, the kernel will take the appropriate action for the signal.
 
 
-Character vs Block Devices
---------------------------
-Character (aka raw) devices provide unbuffered, sequential access of any I/O size down to a single character, depending on the device. An example of this would be a keyboard  or a serial port.
-
-Block devices perform I/O in units of blocks, which are typically 512bytes. Blocks can be accessed randomly based on their block offset (location), which begins at 0 at the start of the block device.
 
 /proc and /sys
 --------------
-procfs exposes runtime information & statistics of devices and processes, as well as allows you to change runtime variables on those devices and processes. Sysfs does the same thing, but provides a structure for this information. This structure is created by the kernel. Sysfs is intended as a replacement for procfs. All new stuff is expected to use sysfs rather than the unstructured dumping grounds of proc.
+https://www.kernel.org/doc/pending/hotplug.txt
+
+procfs exposes runtime information & statistics of devices and processes, as well as allows you to change runtime variables on those devices and processes. Over the years, /proc has become a popular dumping grounds for random information and features. It's unruly, mostly because it doesn't follow any standard of structure
+
+Sysfs does the same thing, but provides a structure for this information. This structure is created by the kernel. Sysfs is intended as a replacement for procfs. All new stuff is expected to use sysfs rather than the unstructured dumping grounds of proc.
 
 The sysfs (or /sys filesystem) was designed to add structure to the proc mess and provide a uniform way to expose system information and control points (settable system and driver attributes) to user-space from the kernel. Now, the driver framework in the kernel automatically creates directories under /sys when drivers are registered, based on the driver type and the values in their data structures.
 
-Check number of caches available to cpu0 and the size of those caches:
+Eg: Check number of caches available to cpu0 and the size of those caches:
 
   # grep . is same as cat /path/to/files*
   grep . /sys/devices/system/cpu/cpu0/cache/index*/size 
@@ -215,6 +200,10 @@ File Descriptors
    :align: center
 
 
+Udev, Modprobe, Hardware Discovery
+----------------------------------
+The kernel is constantly monitoring various system buses. When a piece of hardware is initialized (on kernel exec) or plugged in, the kernel generates a "UEVENT" on a netlink socket which UDEV is listening to. This event includes the hardware's *Product/Vendor IDs* (PD/VD)
+
 Memory
 ------
 
@@ -243,3 +232,25 @@ Check out the [heap] entry to see how much memory the kernel allocated for the p
 - **VIRT** stands for the virtual size of a process, which is the sum of memory it is actually using, memory it has mapped into itself (for instance the video cards’s RAM for the X server), files on disk that have been mapped into it (most notably shared libraries), and memory shared with other processes. VIRT represents how much memory the program is able to access at the present moment.
 - **RES** stands for the resident size, which is an accurate representation of how much actual physical memory a process is consuming. (This also corresponds directly to the %MEM column.) 
 - **SHR** indicates how much of the VIRT size is actually sharable (memory or libraries). In the case of libraries, it does not necessarily mean that the entire library is resident. For example, if a program only uses a few functions in a library, the whole library is mapped and will be counted in VIRT and SHR, but *only the parts of the library file containing the functions being used will actually be loaded in and be counted under RES.*
+
+
+VFS
+---
+VFS works as an abstraction layer sitting between filesystems and system calls. By having this layer, a system call doesn't need to know how to communicate with all these different filesystems (ext3, ufs, zfs, nfs, /proc, /dev), and instead only communicates to VFS. VFS then communicates to the file system.
+
+inode vs vnode
+^^^^^^^^^^^^^^
+get pic from http://stackoverflow.com/questions/5256599/what-are-file-descriptors-explained-in-simple-terms
+
+
+I/O Stack
+---------
+Application -> System Calls -> VFS -> File System -> Volume Manager -> Block Device Interface -> Target I/O Driver -> Host Bus Adapter Driver -> Disk Devices
+It's also possible for the system call to skip straight to block device interface.
+
+
+Character vs Block Devices
+--------------------------
+Character (aka raw) devices provide unbuffered, sequential access of any I/O size down to a single character, depending on the device. An example of this would be a keyboard  or a serial port.
+
+Block devices perform I/O in units of blocks, which are typically 512bytes. Blocks can be accessed randomly based on their block offset (location), which begins at 0 at the start of the block device.
