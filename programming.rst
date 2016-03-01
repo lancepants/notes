@@ -3,6 +3,56 @@ Programming
 
 Python
 ------
+Objects and Mutability
+^^^^^^^^^^^^^^^^^^^^^^
+
+In languages like C, a variable represents storage for "stuff". If we wrote:
+
+  int foo = 42;
+
+it would be correct to say that the integer variable *foo* contained the value *42*. That is, variables are a sort of container for values.
+
+In Python, this is not the case. When we say:
+
+  foo = Foo()
+
+it would be wrong to say that *foo* "contained" a *Foo* object. Rather, foo is a *name* with a *binding* to *the object created by Foo()*. The portion to the right side of the equals sign creates an object. Assigning *foo* to that object merely says "I want to be able to refer to this object as foo." **Instead of variables (in the classic sense), Python has names and bindings.**
+
+So when we do this:
+
+  >>> class Foo(): pass
+  >>> foo = Foo()
+  >>> print(foo)
+  <__main__.Foo object at 0xd3adb33f>
+
+What we're seeing is a pointer to the memory address of the object created by Foo(). This can allow us to quickly and easily see whether two *names* are *bound* to the same *object*. In Python we can use the *is* operator for this.
+
+So a name is just a name, and in Python, **everything** is an object:
+
+  >>> foo = 10
+  >>> print(foo.__add__)
+  <method-wrapper '__add__' of int object at 0x8503c0>
+  >>> dir(10)
+  [whole shitload of member functions]
+
+Even numbers are objects.
+
+So, it turns out that python has two types of objects: **mutable** and **immutable**. The value of mutable objects can be changed after they are created, The value of immutable objects cannot be. **A list is a mutable object.** You can create a list, append some values, and the list is updated in place. **A string is an immutable object.** Once you create as tring, you can't change its value. **Tuples are also immutable.**
+
+When you think you're changing a string, *you're actually rebinding the name to a newly created string object.* The original object remains unchanged, even though it's possible that nothing refers to it anymore.
+
+  >>> a = 'foo'
+  >>> a
+  'foo'
+  >>> b = a
+  >>> a += 'bar'
+  >>> a
+  'foobar'
+  >>> b
+  'foo'
+
+See that? The a+='bar' created a bran new object, and the 'a' *name* was re-bound to point to the new object. 'b' on the other hand is left pointing to the original object.
+
 
 Unit Testing
 ^^^^^^^^^^^^
