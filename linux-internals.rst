@@ -6,6 +6,7 @@ TODO:
 - user vs system
 - context switching
 - CPU and IO schedulers, use tag ".. _linux-internals-scheduling:"
+- how does /proc and /sys get populated? When does the kernel do this?
 
 .. _linux-internals-systemcalls:
 
