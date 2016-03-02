@@ -40,7 +40,7 @@ def checkio(stringy):
     return ret
 
 '''
-aaaaaan here's the top "clear" answer 
+Top "clear" answer 
 '''
 def checkioTopClear(text):
         reform = lambda match: match.group(0).translate(str.maketrans(',.', '.,'))
@@ -53,7 +53,12 @@ def checkioTopClear(text):
         # (?!\d)        no [0-9] after pattern, if something after pattern exists
 
 # Once a match is found, it's passed to that lambda function which uses maketrans to swap , where it sees . and . where it sees ,.
-# This is ok because we never match more than the first part of US-based currency numbers (eg: $200,284.23 only has $200 matched, and $3.68 only has $3 matched, so maketrans does nothing as there are no , or .)
+#  This is ok because we never match more than the first part of US-based currency numbers (eg: $200,284.23 only has $200 matched, and $3.68 only has $3 matched, so maketrans does nothing as there are no , or .)
+
+# Here's a less busy version:
+def checkioSecondClear(text):
+        EU2US = lambda match: match.group().translate({44: 46, 46: 44})
+        return re.sub('\$\d{,3}(\.\d{3})*(,\d{2})?(?!\d)', EU2US, text)
 
 if __name__ == '__main__':
     checkio("Lot 192.001 costs $1.000,94 and 2918.028 costs $5.028.281.247,36")
