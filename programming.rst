@@ -3,6 +3,8 @@ Programming
 
 Python
 ------
+*break* terminates the entire loop. *continue* moves on to the next loop item.
+
 Objects and Mutability
 ^^^^^^^^^^^^^^^^^^^^^^
 
