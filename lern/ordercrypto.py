@@ -25,27 +25,55 @@ string (eg: "acbbdzwa")
 
 def checkio(crypto):
   alphabet='abcdefghijklmnopqrstuvwxyz'
-  alphalist = list(alphabet)
-  for ele in crypto:
-    numchars = len(ele)
-    lookahead = numchars-1
-    if numchars <= 1:
-      continue
-    for i in range(numchars):
-      while True:
-        if ele[i] > ele[i+lookahead]:
-          alphalist.remove(ele[i])
-          alphalist.insert(alphalist.index(ele[i+lookahead]), ele[i])
-        elif ele[i] < ele[i+lookahead]:
-          alphalist.remove(ele[i+lookahead])
-          alphalist.insert(alphalist.index(ele[i]), ele[i+lookahead])
-        lookahead -= 1
-        if lookahead < 1:
-          break
-  print(''.join(alphalist))
+  alpharank = {}
+  # generate an indexed ranking of letters. Spread has to be longer in length
+  # than the longest input list element, ie 100 is good for 100 chars.
+  hundreds = 100
+  for index, char in enumerate(alphabet):
+    alpharank[char] = (index+1) * hundreds
+
+  for chars in crypto:
+    remaining = len(chars)
+
+    # Mark the first character as our "pivot" comparison. Always compare it
+    # against the last character in the string, then recurse again with the
+    # formerly last character removed.
+    def recurse(rchars, rremaining):
+      if alpharank[rchars[0]] > alpharank[rchars[-1]]:
+        alpharank[rchars[0]] = alpharank[rchars[-1]] - rremaining
+      rremaining -= 1
+      if rremaining > 1:
+        recurse(rchars[:-1], rremaining)
+
+    # Pass the recursion function a slice from current iteration character
+    # to end of the string.
+    for i, c in enumerate(chars):
+      recurse(chars[i:], len(chars[i:]))
+    print(sorted(alpharank.items(), key=lambda x: x[1]))
+
+  # TODO: concatenate input characters, uniq them, then print them in ranked
+  # order as mapped in alpharank.
+
 
 
 if __name__ == '__main__':
+  checkio(["zwa"])
+
+  #e 500
+  #c 300
+  #a 100
+  ## subtract len(elem)
+  #e 97
+  #c 300
+  #a 100
+  ## compare 99 against 300
+  #e 99
+  #c 300
+  #a 100
+  ## on to our next char, subtract len(elem)-1
+  #e 97
+  #c 98
+  #a 100
   checkio(["acb", "bd", "zwa"])
   #checkio(["klm", "kadl", "lsm"])
   #checkio(["a", "b", "c"])
