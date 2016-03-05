@@ -25,57 +25,66 @@ string (eg: "acbbdzwa")
 
 def checkio(crypto):
   alphabet='abcdefghijklmnopqrstuvwxyz'
-  alpharank = {}
-  # generate an indexed ranking of letters. Spread has to be longer in length
+  allchars = ''.join(crypto)
+  # generate an indexed ranking of letters. Spread has to be greater
   # than the longest input list element, ie 100 is good for 100 chars.
+  alpharank = {}
   hundreds = 100
   for index, char in enumerate(alphabet):
     alpharank[char] = (index+1) * hundreds
 
-  for chars in crypto:
-    remaining = len(chars)
+  def setrank():
+    for chars in crypto:
+      # Mark the first character as our "pivot" comparison. Always compare it
+      # against the last character in the string, then recurse again with the
+      # formerly last character removed.
+      def recurse(rchars, rremaining):
+        if alpharank[rchars[0]] > alpharank[rchars[-1]]:
+          alpharank[rchars[0]] = alpharank[rchars[-1]] - rremaining
+        rremaining -= 1
+        if rremaining > 1:
+          recurse(rchars[:-1], rremaining)
+  
+      # Pass the recursion function a slice from current iteration character
+      # to end of the string.
+      for i, c in enumerate(chars):
+        recurse(chars[i:], len(chars[i:]))
 
-    # Mark the first character as our "pivot" comparison. Always compare it
-    # against the last character in the string, then recurse again with the
-    # formerly last character removed.
-    def recurse(rchars, rremaining):
-      if alpharank[rchars[0]] > alpharank[rchars[-1]]:
-        alpharank[rchars[0]] = alpharank[rchars[-1]] - rremaining
-      rremaining -= 1
-      if rremaining > 1:
-        recurse(rchars[:-1], rremaining)
+  # Rank until no more changes
+  # Do the dict.copy() or you'll just end up with a new binding
+  # to the exact same object.
+  while True:
+    oldrank = alpharank.copy()
+    setrank()
+    if oldrank == alpharank:
+      break
 
-    # Pass the recursion function a slice from current iteration character
-    # to end of the string.
-    for i, c in enumerate(chars):
-      recurse(chars[i:], len(chars[i:]))
-    print(sorted(alpharank.items(), key=lambda x: x[1]))
 
-  # TODO: concatenate input characters, uniq them, then print them in ranked
-  # order as mapped in alpharank.
+  # Since we're determining character rank for multiple elements, it is
+  # possible for two characters to end up with the same rank (value),
+  # eg ["zwa","xya"] makes z=97,x=97,w=98,y=98
+  # Should this happen, we should sort first by value and then by character.
+  # sorted() does this tie breaker for us, just pass key a tuple
+  sortedchars = [x[0] for x in sorted(alpharank.items(), key=lambda x: (x[1],x[0]))]
+
+  # concatenate input characters, uniq them (order doesn't matter), 
+  # then print them in ranked order as mapped in alpharank.
+
+  # set() will uniq the chars, but the result won't be ordered the same as
+  # the input. Try OrderedDict if uniq+preserve input order is desired
+  allchars = ''.join(set(allchars))
+  ret = []
+  for a in sortedchars:
+    if a in allchars:
+      ret.append(a)
+  print(''.join(ret))
 
 
 
 if __name__ == '__main__':
-  checkio(["zwa"])
-
-  #e 500
-  #c 300
-  #a 100
-  ## subtract len(elem)
-  #e 97
-  #c 300
-  #a 100
-  ## compare 99 against 300
-  #e 99
-  #c 300
-  #a 100
-  ## on to our next char, subtract len(elem)-1
-  #e 97
-  #c 98
-  #a 100
-  checkio(["acb", "bd", "zwa"])
+  checkio(["hfecba","hgedba","hgfdca"])  # "hgfedcba"
+  checkio(["dfg", "frt", "tyg"]) # "dfrtyg"
+  #checkio(["acb", "bd", "zwa"])
   #checkio(["klm", "kadl", "lsm"])
   #checkio(["a", "b", "c"])
   #checkio(["aazzss"])
-  #checkio(["dfg", "frt", "tyg"])
