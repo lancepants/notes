@@ -16,6 +16,38 @@ Example:
 '''
 
 '''
-for c in each ele see if c's position when compared to all characters in ahead of it lines up with the normal alphabet. If not, move it in front of offending character and move all other characters down (insert into list? move all indexes up one? possible?)
-then iterate over new alphabet and print if char is in a joined + uniq'd input string (eg: "acbbdzwa")
+for c in each ele see if c's position when compared to all characters in ahead
+of it lines up with the normal alphabet. If not, move it in front of offending
+character and move all other characters down (listy.insert(index, "blah")))
+then iterate over new alphabet and print if char is in a joined + uniq'd input
+string (eg: "acbbdzwa")
 '''
+
+def checkio(crypto):
+  alphabet='abcdefghijklmnopqrstuvwxyz'
+  alphalist = list(alphabet)
+  for ele in crypto:
+    numchars = len(ele)
+    lookahead = numchars-1
+    if numchars <= 1:
+      continue
+    for i in range(numchars):
+      while True:
+        if ele[i] > ele[i+lookahead]:
+          alphalist.remove(ele[i])
+          alphalist.insert(alphalist.index(ele[i+lookahead]), ele[i])
+        elif ele[i] < ele[i+lookahead]:
+          alphalist.remove(ele[i+lookahead])
+          alphalist.insert(alphalist.index(ele[i]), ele[i+lookahead])
+        lookahead -= 1
+        if lookahead < 1:
+          break
+  print(''.join(alphalist))
+
+
+if __name__ == '__main__':
+  checkio(["acb", "bd", "zwa"])
+  #checkio(["klm", "kadl", "lsm"])
+  #checkio(["a", "b", "c"])
+  #checkio(["aazzss"])
+  #checkio(["dfg", "frt", "tyg"])
