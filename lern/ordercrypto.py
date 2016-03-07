@@ -39,7 +39,10 @@ def checkio(crypto):
       # against the last character in the string, then recurse again with the
       # formerly last character removed.
       def recurse(rchars, rremaining):
-        if alpharank[rchars[0]] > alpharank[rchars[-1]]:
+        # If ranking of preceding char is the same or equal as proceding char, 
+        # and we are not comparing the same chars,
+        # then set pivot char rank "higher" than compared character
+        if alpharank[rchars[0]] >= alpharank[rchars[-1]] and rchars[0] != rchars[-1]:
           alpharank[rchars[0]] = alpharank[rchars[-1]] - rremaining
         rremaining -= 1
         if rremaining > 1:
@@ -51,9 +54,9 @@ def checkio(crypto):
         recurse(chars[i:], len(chars[i:]))
 
   # Rank until no more changes
-  # Do the dict.copy() or you'll just end up with a new binding
-  # to the exact same object.
   while True:
+    # Do the dict.copy() or you'll just end up with a new binding
+    # to the exact same object.
     oldrank = alpharank.copy()
     setrank()
     if oldrank == alpharank:
@@ -80,11 +83,42 @@ def checkio(crypto):
   print(''.join(ret))
 
 
+'''
+Here's the highest rated simple solution.
+It first concatenates and then sorts all the chars in the input data. It then
+iterates len(alphabet) times, each time seeing if each character in alphabet
+is either already in the result (continue on to next char without adding to
+result), then if it's the first character of *each* element in the data list, 
+or if it's not in *each* element of the data list, add the char to result and
+then removes that character from each element in the input data list.
+
+If you follow this logic through with data=["hfecba","hgedba","hgfdca"], this
+method works to get the result...bit of a mind bender though
+'''
+def checkioHighestRated(data):
+    alphabet = sorted(set(''.join(data))) # unique alphabet
+    result = ''
+    for n in range(len(alphabet)):
+        # find minimum
+        for c in alphabet:
+            if c in result:
+              continue # already used
+            # all() returns True if all elements of the iterable=True (or iter is empty)
+            # if each word in input list does not contain c, or c is the first char in
+            # the word, return true. It has to return True for both operations on each 
+            # element (word) of the data list, or the char doesn't get added to result.
+            if all(c not in word or c == word[0] for word in data): 
+              break # found
+        result += c
+        # remove c from each element in data
+        for i in range(len(data)): 
+          data[i] = data[i].replace(c, '')
+    return result
 
 if __name__ == '__main__':
   checkio(["hfecba","hgedba","hgfdca"])  # "hgfedcba"
   checkio(["dfg", "frt", "tyg"]) # "dfrtyg"
-  #checkio(["acb", "bd", "zwa"])
-  #checkio(["klm", "kadl", "lsm"])
-  #checkio(["a", "b", "c"])
-  #checkio(["aazzss"])
+  checkio(["acb", "bd", "zwa"])
+  checkio(["klm", "kadl", "lsm"])
+  checkio(["a", "b", "c"])
+  checkio(["aazzss"])
