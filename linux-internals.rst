@@ -74,19 +74,37 @@ Note that processes can ignore, block, or catch all signals except SIGSTOP and S
 
 /proc and /sys
 --------------
-https://www.kernel.org/doc/pending/hotplug.txt
 
-procfs exposes runtime information & statistics of devices and processes, as well as allows you to change runtime variables on those devices and processes. Over the years, /proc has become a popular dumping grounds for random information and features. It's unruly, mostly because it doesn't follow any standard of structure
+procfs exposes runtime information & statistics of devices and processes, as well as allows you to change runtime variables on those devices and processes. Over the years, /proc has become a popular dumping grounds for random information and features. It's unruly, mostly because it doesn't follow any standard of structure.
 
 Sysfs does the same thing, but provides a structure for this information. This structure is created by the kernel. Sysfs is intended as a replacement for procfs. All new stuff is expected to use sysfs rather than the unstructured dumping grounds of proc.
 
-The sysfs (or /sys filesystem) was designed to add structure to the proc mess and provide a uniform way to expose system information and control points (settable system and driver attributes) to user-space from the kernel. Now, the driver framework in the kernel automatically creates directories under /sys when drivers are registered, based on the driver type and the values in their data structures.
+
+sysfs
+^^^^^
+  https://www.kernel.org/doc/pending/hotplug.txt
+  http://devicetree.org/Device_Tree_Usage
+
+sysfs is a virtual file system provided by the linux kernel that exports information about various kernel subsystems, hardware devices, and associated device drivers from the kernel's device model to user space through virtual files.
+
+Basically, the kernel reads a device tree that is passed to it by a device's firmware, then takes information in that device tree along with whatever BUS path it got the message from and uses it to populate under /sys a file/directory structure for that device. A UEVENT is then generated and shot out through a 'netlink' socket, which udev receives.
 
 Eg: Check number of caches available to cpu0 and the size of those caches:
 
   # grep . is same as cat /path/to/files*
   grep . /sys/devices/system/cpu/cpu0/cache/index*/size 
   # typical results: two 32k level 1 cache, 256k lvl2 cache, and 3MB lvl3 cache)
+
+ 
+
+/dev and Device Nodes
+---------------------
+
+- Firmware passes (ePAPR & IEEE stanard) device tree to linux kernel listening on some bus
+  - Device tree has "bindings", which are descriptions of a device, requested major number (optional)
+  - In almost all cases, keyword "compatible" is used to assign bindings
+  - Compatible=mymodule tells the kernel what module should be loaded to interact with this device
+- kernel determines a standard major number (either based on a map of major numbers and device types), or allocates a new major number (16 bits, 4096)
 
 
 Process Management
