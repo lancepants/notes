@@ -39,7 +39,7 @@ So a name is just a name, and in Python, **everything** is an object:
 
 Even numbers are objects.
 
-So, it turns out that python has two types of objects: **mutable** and **immutable**. The value of mutable objects can be changed after they are created, The value of immutable objects cannot be. **A list is a mutable object.** You can create a list, append some values, and the list is updated in place. **A string is an immutable object.** Once you create as tring, you can't change its value. **Tuples are also immutable.**
+So, it turns out that python has two types of objects: **mutable** and **immutable**. The value of mutable objects can be changed after they are created, The value of immutable objects cannot be. **Lists and dictionaries are mutable object.** You can create a list, append some values, and the list is updated in place. **Strings and Tuples are immutable objects.** Once you create as string, you can't change its value.
 
 When you think you're changing a string, *you're actually rebinding the name to a newly created string object.* The original object remains unchanged, even though it's possible that nothing refers to it anymore.
 

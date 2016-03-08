@@ -114,4 +114,19 @@ Binary Search
 Binary search is a good example of an algorithm which is O(log n). As **n** (number of elements) increases exponentially, time to process only increases linearly.
 
 .. image:: /media/algorithms-ologn-graph.png
-   :alt: O(log n) graph plot :align: center **O(log n) graph plot. The rise of the curve decelerates as n increases** 
+   :alt: O(log n) graph plot. The rise of the curve decelerates as n increases** 
+   :align: center
+
+
+Other Comp Sci
+--------------
+B-tree
+^^^^^^
+
+.. image:: /media/algorithms-btree.png
+   :alt: A B-tree of order 2 or order 5
+   :align: center
+
+- A B-tree is a self-balancing tree data structure that keeps data sorted and allows searches, sequential access, insertions, and deletions in *logarithmic time*
+- The B-tree is a generalization of a Binary Search Tree in that a node can have more than two children
+- The B-tree is optimized for systems that read and write large blocks of data. As such, they are commonly used in *databases and filesystems*.

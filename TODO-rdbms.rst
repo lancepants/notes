@@ -1,10 +1,27 @@
 Relational Databases
---------------------
+====================
 .. _rdbms:
 
-This document may be considered with :ref:`distributed-systems`.
-
 # TODO: In addition to the ACID section below, review BASE(basically available, soft state, eventually consistent). BASE is typically used where ACID does not scale
+
+Indexes
+-------
+
+Clustered Index
+^^^^^^^^^^^^^^^
+- This is a sorted index. An example would be a phone book. A clustered index is an index which *physically* orders the data (the actual bits on disk) in a certain way, and when new data arrives it is saved in the same order.
+- A caveat with clustered indexes is that *only one can be created on a given database table*. This is because clustered indexes enforce data order - you can't enforce data order on two rows of the same table as the orders of each row would inevitably conflict.
+- Additionally, clustered indexes increase write time because when new data arrives, all of the data has to be rearranged. On the bright side though, they can greatly increase the read performance from the table.
+
+Non-Clustered Index
+^^^^^^^^^^^^^^^^^^^
+- These are the type that we use the most. These indexes *keep a separate ordered list* that has *pointers to the physical rows*.
+- Unlike the clustered index, a table can have many non-clustered indexes. But the caveat with these indexes is that each new index will increase the time it takes to write new records.
+- To summarize, non-clustered indexes *do not order* the data physically, they just keep a list of the data order.
+
+
+
+
 
 
 ~~Database Shit~~
@@ -29,9 +46,9 @@ This is faster than just having a single task go through all the data serially, 
 
 -Good for people who require a distributed system that can span datacenters while handling failure scenarios, who are not worried about the extreme consistency rules a relational DB may implement. NoSQL systems, because they have focussed on scale, tend to exploit partitions, tend not use heavy strict consistency protocols, and so are well positioned to operate in distributed scenarios.
 
--Massive write performance :: At 80 MB/s it takes a day to store 7TB so writes need to be distributed over a cluster, which implies key-value access, MapReduce, replication, fault tolerance, consistency issues, and all the rest. For faster writes in-memory systems can be used
+-Write performance :: At 80 MB/s it takes a day to store 7TB so writes need to be distributed over a cluster, which implies key-value access, MapReduce, replication, fault tolerance, consistency issues, and all the rest. For faster writes in-memory systems can be used
 
--Fast key/value store access :: Why is key/value store fast? Pass a key to a hashing algorithm, and you get the same "location" output every time of where the value is stored. You end up not having to search for the value.
+-Fast key/value store access :: Why is key/value store fast? Pass a key to a hashing algorithm, and you get the same "location" output every time of where the value is stored. You end up not having to search for the value. Basically an index per data item, rather than choosing an index per column as you would in an RDBMS
 
 -flexible schema/datatypes(eg: JSON), no SPOF
 
