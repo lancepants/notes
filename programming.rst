@@ -179,12 +179,125 @@ We can use the myfunc = wrapper(myfunc) syntax as mentioned above, but python pr
 
 So what's the point? Well, slapping a memory/cpu/other performance profiling wrapper on some function could let you see how many calls it's making, how much memory it is allocating, and whatever else. There also exists situations where you have a class or function in which you cannot change the source code of, but need to extend its functionality. You may also want to write a wrapper that logs all arguments passed to a certain function, or some wrapper that does some bounds checking/filtering on function output, or any use case where you only want to temporarily apply some decorator to some function, where adding a simple @decorator above a function is much easier than changing the function itself.
 
-Quickies
-^^^^^^^^
+Classes
+^^^^^^^
+A Class is like a module. Let's say you have a mystuff.py:
+  def apple():
+      print "I AM APPLES!"
+  tangerine = "Living reflection of a dream"
+
+You can use it like this:
+  import mystuff
+  mystuff.apple()
+  print mystuff.tangerine
+
+Easy enough so far. Now let's represent this module as a Class instead:
+  Class MyStuff(object):
+    def __init__(self):
+      self.tangerine = "Living reflection of a dream"
+
+    def apple(self):
+      print "I AM CLASSY APPLES!"
+
+That looks a lot more complicated. So why use it instead of a module? Well, you can take this MyStuff class and use it to craft many millions of them at a time if you want, and each one won't interfere with each other. When you import a module, there is only one mystuff object for the entire program unless you do some monster hacks.
+
+Let's create (instantiate) a class, in this case MyStuff:
+  thing = MyStuff()
+  thing.apple()
+  print thing.tangerine
+
+So what exactly is going on here?
+# Python looks for MyStuff() and sees that it is a class you've defined.
+# Python crafts an empty object with all the functions you've specified in the class using def.
+# Python then looks to see if you made a "magic" __init__ function, and if you have it calls that function to initialize your newly created empty object.
+# In the MyStuff function __init__ I then get this extra variable self, which is that empty object Python made for me, and I can set variables on it just like you would with a module, dictionary, or other object.
+# In this case, I set self.tangerine to a song lyric and then I've initialized this object.
+# Now Python can take this newly minted object and assign it to the thing variable for me to work with.
+
+Class vs Instance Variables
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+What's the difference between these two classes?
+
+  class A():
+    x=3
+
+  class B():
+    def __init__(self):
+      self.x=3
+
+A.x is a *class* variable, while B's self.x is an *instance* variable.
+
+
+- A **class variable** will be shared across all instances of A, unless specifically overridden within an instance
+- Each instance of a class with an **instance variable** will have its own version of that variable.
+- Note that **self is not a special keyword**, just everyone uses it. You can use s, this, foo, blah, myself, or anything else you want.
+
+  class Machine:
+    # Class Variable counts how many machines have been created.
+    # The value is the same for all objects of this class.
+    counter = 0
+    def __init__(self):
+      # Notice: no 'self'.
+      Machine.counter += 1
+      # Instance variable.
+      # Different for every object of the class.
+      self.id = Machine.counter
+  if __name__ == '__main__':
+    machine1 = Machine()
+    machine2 = Machine()
+    machine3 = Machine()
+  
+    #The value is different for all objects.
+    print machine1.id   # 1
+    print machine2.id   # 2
+    print machine3.id   # 3
+  
+    #The value is the same for all objects.
+    print machine1.counter   # 3
+    print machine2.counter   # 3
+    print machine3.counter   # 3
+  
+    #If you change a class variable, it affects all objects
+    machine3.counter = 6
+    #Changing an instance variable only affects that specific object
+    machine3.id = 9
+    print machine1.counter, machine2.counter, machine3.counter  # 6,6,6
+    print machine1.id, machine2.id, machine3.id   # 1,2,9
+
+Misc
+^^^^
+- **Sorted Keys** 
 Both list.sort() and sorted() have a **key** parameter which allows you to specify *a function to be called on each list element*. The results of this will determine how elements in a list are sorted.
 
   students = [ ('john','A','23'), ('jamal','B','32'), ('jerry','C','42') ]
   sorted(students, key=lambda stu: stu[2])  #sort by age, the 3rd element in each tuple
+
+- **Interpretation**
+Let's say you have a list:
+  mystuff = ["thing", "thing2", "thing3"]
+And you do this:
+  mystuff.append('hello')
+
+What python is doing in the background is looking for mystuff, reading the ., looking for variables that are part of mystuff, seeing that append is part of that list, and then it hits the ( and realizes that this is a function. It then calls the append() function, but it calls it with an extra argument....mystuff. This is weird, but it's how python works.
+So this:
+  mystuff.append('hello')
+Actually results in this:
+  append(mystuff, 'hello')
+
+Why is this significant? Ever gotten one of these errors?:
+  TypeError: blah() takes exactly 1 argument (2 given)
+
+The error can be seen by running this code:
+  class Thing(object):
+    def blah(input):
+        print input
+  a = Thing()
+  a.blah("hi")
+    Traceback (most recent call last):
+    File "<stdin>", line 1, in <module>
+    TypeError: blah() takes exactly 1 argument (2 given)
+
 
 Stacks
 ------
@@ -203,40 +316,3 @@ Usually the EAX register holds a return value. EBP is the stack pointer, pointin
 
 In assembly, these registers are referred to through names like %eax, %esp, %rdi, %edi, etc.
 
-
-Classes
--------
-You can think of a class as a template, it's a struct basically. It holds variables with default values, functions(/methods, described below). 
-
-Let's say you've got a class defined like this:
-  class Door:
-    scopeExample1 = 'inside the class'
-    def open(self, arrrg):
-      print 'hello stranger'
-      scopeExample2 = 'inside the method inside the class'
-      self.scopeExample3 = 'using self. inside the method inside the class'
-      if arrrg:
-        print arrrg
-
-You can instantiate a class (create a class object) like this (mfi means my_first_instantiation):
-  mfi = Door()
-
-Now you have an object that contains all the properties inside the class. Test some stuff:
-  mfi.open() ## hello stranger
-  mfi.open('blahhh') ## hello stranger \n blahhh
-  scopeExample1  ##NameError. Not defined.
-  mfi.scopeExample1  ## 'inside the class'
-  mfi.scopeExample2  ##Door instance has no attribute scopeExample2
-  mfi.scopeExample3  ##Door instance has no attribute scopeExample3
-  mfi.self.scopeExample3
-
-
-  class Door:
-    def open(self):
-      print 'hello stranger'
-  
-  def knock_door:
-    a_door = Door()
-    Door.open(a_door)
-  
-  knock_door()
