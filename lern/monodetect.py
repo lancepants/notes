@@ -88,6 +88,26 @@ def checkio(matrix):
   print(int(ret))
 
 
+'''
+Top clear checkio
+Not exactly time efficient, but clear
+'''
+FONT = ("-XX---X--XXX-XXX-X-X-XXX--XX-XXX-XXX--XX",
+        "-X-X-XX----X---X-X-X-X---X-----X-X-X-X-X",
+        "-X-X--X---XX--X--XXX-XX--XXX--X--XXX-XXX",
+        "-X-X--X--X-----X---X---X-X-X-X---X-X---X",
+        "--XX--X--XXX-XXX---X-XX---XX-X---XXX-XX-")
+def checkioTopClear(image):
+    digits = len(image[0]) // 4
+    result = 0
+    for d in range(digits):
+        for v in range(10):
+            if sum(image[j][4*d+i] != (FONT[j][4*v+i] == 'X')
+                    for j in range(5) for i in range(1, 4)) <= 1:
+                result = result * 10 + v
+    return result
+
+
 if __name__ == '__main__':
   checkio([[0, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0],
            [0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0],
