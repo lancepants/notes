@@ -1,0 +1,111 @@
+REGEX
+-----
+- Basics
+  wordsalphaonly = re.sub(r'[^A-Za-z0-9]+', '', mystring)  # match all ^EXCEPT^ alphas and digits, replace with none
+  re.sub(r'(\d+), blah, (\d+)', r'\1 \2', coords)   # use r'aw strings almost always...
+  [abc] matches 'a' or 'b' or 'c'
+
+- re.findall() does a find all and returns all matches in a list
+  emails = re.findall(r'[\w\.-]+@[\w\.-]+', 'herp alice@google.com blah blah bob@abc.com') ## ['alice@google.com', 'bob@abc.com'] 
+  f = open('blah.txt', 'r') ; matches = re.findall(r'some_pattern', f.read())
+
+- re.finditer() returns an iterator over MatchObject objects
+  
+- re.search() finds the first match. Will NOT find all matches. Use findall()
+  match = re.search(r'..g', 'piiig') # re.search returns None if no match found, or a match object if found
+  if match:  
+    print('found', match.group())  # "found iig"
+  match = re.search('([\w.-]+)@([\w.-]+)', 'blah my-email-addr@derp.com lala')  # match any word char, ., or -. Put the - last.
+  if match:
+    print(match.group())   # my-email-addr@derp.com
+    print(match.group(1))  # my-email-addr
+    print(match.group(2))  # derp.com
+
+  
+- Something more complex
+  return re.sub('\$\d{1,3}(\.\d{3})*(,\d{2}){,1}(?!\d)', r'\1', text)
+  # \$            letter '$'
+  # \d{1,3}       [0-9] of length {1, 3}
+  # (\.\d{3})*    repetition of \.[0-9]{3}, *if exists
+  # (,\d{2}){,1}  ,[0-9]{2}, if exists ({,1} instead of *, though we could have used *, it's more correct for no or only one occurrence of ,\d\d here)
+  # (?!\d)        no [0-9] after pattern, if something after pattern exists
+  
+- Here's a less busy version:
+  EU2US = lambda match: match.group().translate({44: 46, 46: 44})
+  return re.sub('\$\d{,3}(\.\d{3})*(,\d{2})?(?!\d)', EU2US, text)
+
+STRINGS
+-------
+stringy.replace('\n', 'NEWLINE')
+mywords = string_with_multiple_spaces.split(' ')
+if stringy[-1].isdigit() ...  .isalpha()
+
+str.maketrans('abc','123')  # Create a translation map dictionary. a->1, b->2, c->3
+stringy.translate(str.maketrans('abc','123'))  # Use the dict/map with translate
+
+
+print('something', inty, stringy)  # no concatenation. simply prints each ele with a space between
+print('something ' + str(inty) + ' ' + stringy)  # concatenates, and then passes single string to print
+print('one', 'two', sep=' and a ')   # "one and a two"
+print('strip newline), end='')
+print('retain newline, dont print extra newline. Useful for reading files line by line.', end=' ')
+
+
+DICT
+----
+d = {k:v for k,v in enumerate(some_list)}
+d = {k:'' for k in some_list}   # populate a dict with keys, value ''. Can also use None
+d = [k:v for k,v in zip(list1,list2)}   # dict keys will be from list1, vals from list2. list1 and list2 must be same length
+
+
+PERF/PROFILE
+------------
+  python -m cProfile myscript.py
+
+
+UNIT TEST
+---------
+pip3 install pytest
+
+  from your_module import my_fibonacci
+  def test_number_6():
+    assert my_fibonacci(6) == 8
+  def test_number_0():
+    assert my_fibonacci(0) == 1
+
+Test from cmd line:
+  py.test my_fib_unit_test.py
+
+
+FILE OPS
+--------
+with open('path/to/file.txt', 'r') as f:
+  for line in f:
+    match = re.search(pattern,line)
+    if match:
+      print(line)
+
+f.readline()  # read line by line. pos increments by line
+f.readlines()  # read entire file line by line into a list
+f.read()  # read entire file into a string
+
+OS OPS
+------
+https://pymotw.com/2/subprocess
+- Easiest, but deprecated
+  os.popen('ls -l').read()
+- Modern
+  import subprocess
+  subprocess.call('ls -l'), shell=True)
+  subprocess.check_call('ls -l'), shell=True)  # same as call, but raise exception if exit code 2
+  subprocess.check_call(['ls', '-l'])  # Optionally, put each arg into a [list]. No shell=True needed.
+  output = subprocess.check_call(['ls', '-l'])  ;  print('{} bytes in output'.format(len(output))) ; print(output)
+- Pipes
+  proc = subprocess.Popen(
+- Misc
+  sys.stdout.write('durrrr')
+
+
+
+MUTABLE: lists, dictionaries
+IMMUTABLE: strings, tuples

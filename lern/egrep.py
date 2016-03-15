@@ -2,6 +2,8 @@
 '''
 A very basic python egrep
 ToDo:
+-inverse search
+-case insensitive search
 -Add support for 'multiple|patterns'
 '''
 import re

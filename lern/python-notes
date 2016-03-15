@@ -1,27 +1,3 @@
-Let's say you have a list:
-  mystuff = ["thing", "thing2", "thing3"]
-And you do this:
-  mystuff.append('hello')
-
-What python is doing in the background is looking for mystuff, reading the ., looking for variables that are part of mystuff, seeing that append is part of that list, and then it hits the ( and realizes that this is a function. It then calls the append() function, but it calls it with an extra argument....mystuff. This is weird, but it's how python works.
-So this:
-  mystuff.append('hello')
-Actually results in this:
-  append(mystuff, 'hello')
-
-Why is this significant? Ever gotten one of these errors?:
-  TypeError: blah() takes exactly 1 argument (2 given)
-
-The error can be seen by running this code:
-  class Thing(object):
-    def blah(hi):
-        print "hi"
-  a = Thing()
-  a.blah("hi")
-    Traceback (most recent call last):
-    File "<stdin>", line 1, in <module>
-    TypeError: test() takes exactly 1 argument (2 given)
- 
 
 Classes
 -------
@@ -58,4 +34,79 @@ So what exactly is going on here?
 # In this case, I set self.tangerine to a song lyric and then I've initialized this object.
 # Now Python can take this newly minted object and assign it to the thing variable for me to work with.
 
+Class vs Instance Variables
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+What's the difference between these two classes?
+
+  class A():
+    x=3
+
+  class B():
+    def __init__(self):
+      self.x=3
+
+A.x is a *class* variable, while B's self.x is an *instance* variable.
+
+
+- A **class variable** will be shared across all instances of A, unless specifically overridden within an instance
+- Each instance of a class with an **instance variable** will have its own version of that variable.
+- Note that **self is not a special keyword**, just everyone uses it. You can use s, this, foo, blah, myself, or anything else you want.
+
+  class Machine:
+    # Class Variable counts how many machines have been created.
+    # The value is the same for all objects of this class.
+    counter = 0
+    def __init__(self):
+      # Notice: no 'self'.
+      Machine.counter += 1
+      # Instance variable.
+      # Different for every object of the class.
+      self.id = Machine.counter
+  if __name__ == '__main__':
+    machine1 = Machine()
+    machine2 = Machine()
+    machine3 = Machine()
+  
+    #The value is different for all objects.
+    print machine1.id   # 1
+    print machine2.id   # 2
+    print machine3.id   # 3
+  
+    #The value is the same for all objects.
+    print machine1.counter   # 3
+    print machine2.counter   # 3
+    print machine3.counter   # 3
+  
+    #If you change a class variable, it affects all objects
+    machine3.counter = 6
+    #Changing an instance variable only affects that specific object
+    machine3.id = 9
+    print machine1.counter, machine2.counter, machine3.counter  # 6,6,6
+    print machine1.id, machine2.id, machine3.id   # 1,2,9
+
+General
+-------
+Let's say you have a list:
+  mystuff = ["thing", "thing2", "thing3"]
+And you do this:
+  mystuff.append('hello')
+
+What python is doing in the background is looking for mystuff, reading the ., looking for variables that are part of mystuff, seeing that append is part of that list, and then it hits the ( and realizes that this is a function. It then calls the append() function, but it calls it with an extra argument....mystuff. This is weird, but it's how python works.
+So this:
+  mystuff.append('hello')
+Actually results in this:
+  append(mystuff, 'hello')
+
+Why is this significant? Ever gotten one of these errors?:
+  TypeError: blah() takes exactly 1 argument (2 given)
+
+The error can be seen by running this code:
+  class Thing(object):
+    def blah(input):
+        print input
+  a = Thing()
+  a.blah("hi")
+    Traceback (most recent call last):
+    File "<stdin>", line 1, in <module>
+    TypeError: blah() takes exactly 1 argument (2 given)
