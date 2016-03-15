@@ -89,5 +89,23 @@ f.readline()  # read line by line. pos increments by line
 f.readlines()  # read entire file line by line into a list
 f.read()  # read entire file into a string
 
+OS OPS
+------
+https://pymotw.com/2/subprocess
+- Easiest, but deprecated
+  os.popen('ls -l').read()
+- Modern
+  import subprocess
+  subprocess.call('ls -l'), shell=True)
+  subprocess.check_call('ls -l'), shell=True)  # same as call, but raise exception if exit code 2
+  subprocess.check_call(['ls', '-l'])  # Optionally, put each arg into a [list]. No shell=True needed.
+  output = subprocess.check_call(['ls', '-l'])  ;  print('{} bytes in output'.format(len(output))) ; print(output)
+- Pipes
+  proc = subprocess.Popen(
+- Misc
+  sys.stdout.write('durrrr')
+
+
+
 MUTABLE: lists, dictionaries
 IMMUTABLE: strings, tuples
