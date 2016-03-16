@@ -10,6 +10,8 @@ REGEX
   f = open('blah.txt', 'r') ; matches = re.findall(r'some_pattern', f.read())
 
 - re.finditer() returns an iterator over MatchObject objects
+  matcher = re.compile(r'(\w)\1*')   # match one or more word chars
+  [match.group() for match in matcher.finditer('aaaccbddaaaa')]  # return each grouping of unique chars
   
 - re.search() finds the first match. Will NOT find all matches. Use findall()
   match = re.search(r'..g', 'piiig') # re.search returns None if no match found, or a match object if found

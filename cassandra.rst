@@ -25,7 +25,7 @@ A table in Cassandra is a distributed multi dimensional map, indexed by a key. T
 
 Columns are grouped together into sets called column families very similar to what happens in BigTable. Cassandra exposes two kinds of column families, Simple and Super column families. Super column families can be visualized as a column family within a column family. Furthermore, applications can specify the sort order of columns within a super column or simple column, sorted either by time or by name. Time sorting is good for things like inbox search, where results are always in time sorted order.
 
-Any column within a column family is accessed using the convention *column_family : column* and any column within a column family that is of type super is accessed using hte convention *column_family : super_column : column*. More on this later.
+Any column within a column family is accessed using the convention *column_family : column* and any column within a column family that is of type super is accessed using the convention *column_family : super_column : column*. More on this later.
 
 Typically, applications use a dedicated Cassandra cluster and manage them as part of their service. Although the system supports the notion of multiple tables, all deployments (at facebook) have only one table in their schema. In other deployments, users may have multiple tables which are each designed to be efficient in serving certain types of queries (eg: grouping by an attribute, ordering by an attribute, filtering based on some set of conditions...etc). Using separate tables and (most likely necessarily) having duplicate copies of data between them (but with different column layouts) is necessary and recommended in order to gain maximum read optimization. In short, design your tables around what high-level queries you have.
 
@@ -113,9 +113,10 @@ Cassandra saves data to disk using a format that lends itself well to efficient 
 
 As for the in-memory data structure, once it crosses a certain threshold (calculated based on data size and number of objects) it dumps itself to disk. Along with each data structure, an index is generated which allows efficient lookups on the associated data structure based on row key. Over time, you end up with a lot of files. As such, a background merge process will occaisionally collate all these different files into a single file. This process is very similar to what happens in Bigtable.
 
-A typical read operation will first query the in-memory structure before looking into the files on disk. If a disk hit is needed, the files are looked at in order of newest to oldest. For some reads, a disk lookup could occur which looks up a key in multiple files on disk. In order to prevent looking into files tha tdo not contain the key, a bloom filter which summarizes the keys in the file is also stored in each data file and as well as kept in memory. This bloom filter is first consuletd to check if the key being looked up does indeed exist in a given file.
+A typical read operation will first query the in-memory structure before looking into the files on disk. If a disk hit is needed, the files are looked at in order of newest to oldest. For some reads, a disk lookup could occur which looks up a key in multiple files on disk. In order to prevent looking into files that do not contain the key, a bloom filter which summarizes the keys in the file is also stored in each data file and as well as kept in memory. This bloom filter is first consulted to check if the key being looked up does indeed exist in a given file.
 
 A key in a column family could have many columns. In order to prevent scanning of every column on disk, we maintain column indexes which allow us to jump to the right chunk on disk for column retrieval. This is done by generating indeces at every 256K chunk boundary as the columns for a given key are being serialized and written out to disk. This boundary is configurable, but facebook has found that 256K works well in their production workloads.
+
 
 Implementation Details
 ^^^^^^^^^^^^^^^^^^^^^^

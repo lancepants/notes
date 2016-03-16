@@ -1,6 +1,24 @@
 Systems Administration
 ======================
 
+Network Troubleshoots
+---------------------
+
+tcpdump, tshark
+^^^^^^^^^^^^^^^
+
+tcpdump uses libpcap to filter, and libpcap compiles down to BPF (BSD Packet Filter). A readable filter expression like "ip and udp and port 53" would be compiled down to BPF bytecode, and then this filter program would be attached to the network tap interface. tcpdump would then pretty print the filtered packets received from the network tap. See this parsing in action by using the -d flag to tcpdump:
+
+  tcpdump -p -ni eth0 -d "ip and udp"
+  # some jt jf jeq blah blah bytecode
+
+We just mentioned a network tap. tcpdump can open a network tap by requesting a **SOCK_RAW** socket, and after giving a few *setsockopts* calls, a filter can be set on your socket with **SO_ATTACH_FILTER**.
+
+  mysock = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL))
+  ...
+  setsockopt(mysock, SOL_SOCKET, SO_ATTACH_FILTER, ...)
+
+
 Memory
 ------
 
@@ -19,10 +37,6 @@ top and ps have VIRT/VSZ for virtual mem, RSS/RES for resident, and (top) SHR fo
 - **SHR** indicates how much of the VIRT size is actually sharable (memory or libraries). In the case of libraries, it does not necessarily mean that the entire library is resident. For example, if a program only uses a few functions in a library, the whole library is mapped and will be counted in VIRT and SHR, but *only the parts of the library file containing the functions being used will actually be loaded in and be counted under RES.*
 - cat /proc/<pid>/maps and smaps as stated above for detailed per-process memory usage
 
-Diagnostics
------------
-This records some lesser known or less fully understood utilities which should be used more often when diagnosing problems with a server.
-
 
 
 
@@ -30,8 +44,19 @@ This records some lesser known or less fully understood utilities which should b
 Quickies
 --------
 
-Print the last column in each line of output:
+- Find out what module a device is using
+
+  lspci | grep Eth    # 84:00.0 Ethernet controller: Solarfla ....
+  find /sys/ -name '*84:00*   # /sys/bus/pci/drivers/sfc/0000:84:00.0  ,  so, module "sfc"
+  (alternately) lspci -nk
+  (alternately) readlink /sys/class/net/<eth-device>/device/driver  # symlinks to loaded mod
+
+
+- Print the last column in each line of output:
 
   cat something | awk '{print $NF}'
 
+- See all detected block devices (much better than ls /dev/xda<tab><tab>)
+
+    lsblk
 
