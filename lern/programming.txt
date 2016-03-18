@@ -10,6 +10,8 @@ REGEX
   f = open('blah.txt', 'r') ; matches = re.findall(r'some_pattern', f.read())
 
 - re.finditer() returns an iterator over MatchObject objects
+  matcher = re.compile(r'(\w)\1*')   # match one or more word chars
+  [match.group() for match in matcher.finditer('aaaccbddaaaa')]  # return each grouping of unique chars
   
 - re.search() finds the first match. Will NOT find all matches. Use findall()
   match = re.search(r'..g', 'piiig') # re.search returns None if no match found, or a match object if found
@@ -57,6 +59,9 @@ d = {k:v for k,v in enumerate(some_list)}
 d = {k:'' for k in some_list}   # populate a dict with keys, value ''. Can also use None
 d = [k:v for k,v in zip(list1,list2)}   # dict keys will be from list1, vals from list2. list1 and list2 must be same length
 
+sorted(d, key=d.get, reverse=True)  # return KEYS, sorted by their value
+sorted(d.items(), key=lambda x: (x[1],x[0]))  # return key,val tuple, sorted by 2nd tuple (value)
+sorted(d.values())  ;  sorted(d.keys())   # return sorted values only, return sorted keys only
 
 PERF/PROFILE
 ------------
