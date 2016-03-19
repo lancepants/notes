@@ -49,10 +49,14 @@ Quickies
   lspci | grep Eth    # 84:00.0 Ethernet controller: Solarfla ....
   find /sys/ -name '*84:00*   # /sys/bus/pci/drivers/sfc/0000:84:00.0  ,  so, module "sfc"
   (alternately) lspci -nk
+  (alternately) readlink /sys/class/net/<eth-device>/device/driver  # symlinks to loaded mod
 
 
 - Print the last column in each line of output:
 
   cat something | awk '{print $NF}'
 
+- See all detected block devices (much better than ls /dev/xda<tab><tab>)
+
+    lsblk
 
