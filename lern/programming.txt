@@ -60,6 +60,10 @@ d = {k:v for k,v in enumerate(some_list)}
 d = {k:'' for k in some_list}   # populate a dict with keys, value ''. Can also use None
 d = [k:v for k,v in zip(list1,list2)}   # dict keys will be from list1, vals from list2. list1 and list2 must be same length
 
+sorted(d, key=d.get, reverse=True)  # return KEYS, sorted by their value
+sorted(d.items(), key=lambda x: (x[1],x[0]))  # return key,val tuple, sorted by 2nd tuple (value)
+sorted(d.values())  ;  sorted(d.keys())   # return sorted values only, return sorted keys only
+
 PERF/PROFILE
 ------------
   python -m cProfile myscript.py
