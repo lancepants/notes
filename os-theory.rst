@@ -120,7 +120,7 @@ Process Descriptor & Task Structure
 
 - The kernel stores the list of processes in a circular doubly linked list called the *task list*
 - Each element in the task list is a *process descriptor* of the type **struct task_struct**, which contains all the information about a specific process
-- The task_struct contains a processes' open files, address space, pending signals, process state, and much more
+- The task_struct contains a processes' open files, address space, pending signals, process state, *parent*, *children(s)*, and much more
 - Outside of the kernel, processes are identified by a unique *process identification* value or *PID*. Typical max is 32k (short int) due to legacy support, but can be raised via /proc/sys/kernel/pid_max
 - Inside the kernel, tasks are typically referenced directly by a pointer to their task_struct structure. Nearly any kernel function that deals with processes works directly with struct task_struct.
 
@@ -135,3 +135,90 @@ The *state* field of the process descriptor describes the current condition of t
 - **__TASK_TRACED** : The process is being *traced* by another process, such as a debugger, via *ptrace*
 - **__TASK_STOPPED** : Process execution has stopped; the task is not running nor is it eligible to run. This occurs if the task receives the SIGSTOP, SIGTSTP, SIGTTIN, or SIGTTOU signal or if it receives *any* signal while it is being debugged
 
+Process Context
+^^^^^^^^^^^^^^^
+Normal program execution occurs in *user-space*. Whyen a rpogram executes in a system call or triggers an exception, it enters *kernel-space*. At this point, the kernel is said to be "executing on behalf of the process" and is in **process context**.
+
+Upon exiting the kernel, the process resumes execution in user-space, unless a higher priority process has become runnable in the interim, in which case the schedule is invoked to select the higher priority process.
+
+**All** access to the kernel is through system calls an exception handlers. A process can begin executing in kernel space only through one of these interfaces.
+
+
+Process Creation
+----------------
+
+General
+^^^^^^^
+The child process created by fork() is an exact copy of the current (parent) task. It differs from the parent only in its PID (which is unique), its PPID (paren'ts PID, which is set to the original process), and certain resources and statistics, such as pending signals, which are not inherited.
+
+Copy-on-write is used such that the parent and child both point to the same resources. Shared read-only. If writes occur, a duplicate of the affected data is made and each process receives a unique copy. This occurs on a per-page basis.
+
+Each process has its own page tables. The parent page tables are copied to the child's upon fork. As such, the only overhead incurred by fork is this copying of page table and the creation of a unique process descriptor (task_struct) for the child.
+
+Forking
+^^^^^^^
+The glibc libraries fork(), vfork(), and __clone() all call the clone() system call using various flags which specify which resources, if any, the parent and child process should share.
+
+The clone() system call in turn calls do_fork(). This then calls copy_process, which does most of the interesting work.
+
+- fork()/vfork() calls sys call clone()
+- clone() -> do_fork() -> copy_process()
+- copy_process -> dup_task_struct() which creates new kernel stack, thread_info, and task_struct
+  - child and parent descriptors identical at this point
+- copy_process -> stats/misc cleared from child proc descriptor. Child state set to TASK_UNINTERRUPTIBLE to prevent scheduling incomplete task
+- copy_process -> copy_flags() to update the *flags* member of task_struct. PF_SUPERPRIV cleared. *PF_FORKNOEXEC set, denoting that it is a process that has not called exec()*
+- copy_process -> alloc_pid(), assigned to pid slot of child task_struct
+- copy_process -> depending on flags passed to clone(), duplicates or shares open files, filesystem info, signal handlers, process address space, and namespace. *These resources are typically shared between threads in a given process*, otherwise they are *unique and thus copied*.
+- copy_process -> return pointer to new child. do_fork() picks up, wakes up child and child gets ran
+- child gets ran **first** before the parent, to avoid COW overhead, as child typically immediately calls exec() whereas parent may continue writing into its address space immediately
+
+**vfork()**: Has the same effect as fork(), except that the page *table* entries of the parent process are not copied. Instead, the child executes as the sole thread in the parent's address space, and the *parent is blocked until the child calls exec()* or exits. Messy! This was a legacy improvement back when fork() didn't do COW on pages. These days it is not useful unless for some reason making a copy of the parent process page tables during regular clone() has a big overhead. In the future, copy-on-write may be implemented for page tables as well, making vfork() fully deprecated.
+
+Threads in Linux
+^^^^^^^^^^^^^^^^
+To the linux kernel, there is no concept of a thread. All threads are implemented as standard processes.
+
+Each process gets its own unique task_struct. The kernel treats each as normal. The difference is that each thread may point to the same shared resources, such as address space, as other threads.
+
+Threads are created the same as normal tasks, with the exception that clone() is called with flags corresponding tot he specific resources being shared:
+
+  clone(CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SIGHAND, 0);
+
+The above code will create a child process which shares its address space, filesystem resources, file descriptors, and its signal handlers with its parent.
+
+A normal fork() call to clone would simply be:
+
+  clone(SIGCHLD, 0);
+
+Kernel Threads
+^^^^^^^^^^^^^^
+The kernel has threads too! It is often useful for the kernel to perform some operations in the background. Kernel threads are standard processes which exist  solely in kernel-space. The significant difference between kernel threads and normal processes is that kernel threads do not have an address space (their mm pointer, which points at their address space, is NULL). They do not context switch to user space. They are, however, schedulable and preemptable.
+
+Most notably, the kernel delegates the *flush* tasks and the *ksoftirq* task to kernel threads. All the items in [brackets] that you see in ps -ef are kernel threads.
+
+A kernel thread may only be created by another kernel thread. The kernel handles this automatically by forking all new kernel threads off of the *kthreadd* process. A kernel process can be created and made runnable by calling kthread_create() followed by wake_up_process(), or by calling kthread_run() which does both. It will continue to exist until it calls do_exit() or another part of the kernel calls kthread_stop(), passing in the address of the task_struct structure returned by kthread_create().
+
+Process Termination
+^^^^^^^^^^^^^^^^^^^
+Generally a process terminates itself, when it calls the exit() system call. The exit() call may also be implied, for example if the main() function of the process ends and then C compiler places a call to exit() afterwards automatically.
+
+An involuntary termination can happen when the process receives a signal or exception it cannot handle or ignore. Regardless of how a process terminates, teh bulk of the work is handled by do_exit().
+
+- PF_EXITING flag in the flags member of the task_struct is set
+- del_timer_sync() to remove any kernel timers, acct_update_integrals() to write out remaining proc accounting if BSD process accounting is enabled
+- exit_mm() to release teh mm_struct help by the process. If no other proc sharing that mem space, kernel destroys it
+- exit_sem() : if the proc is queued waiting for a semaphore, it is dequeued
+- exit_files() , exit_fs() to decrement the usage count of objects related to file descriptors and filesystem data
+- sets tasks exit code, stores in exit_code member of task_struct. Stored for optional retrieval by the parent
+- exit_notify() called to send signals to the task's parent, reparents any of the task's children to another thread in their thread group or the init process, and sets the task's exit state, stored in exit_state in the task_struct to *EXIT_ZOMBIE*
+- do_exit() then calls schedule() to switch to a new process. Since the process is no longer schedulable, do_exit() never returns
+
+At this point, all objects associated with the task are freed, the task is not runnable (and no longer has address space to run), and is in the EXIT_ZOMBIE exit state. The only memory it occupies is its kernel stack - the thread_info and task_struct structures. The task exists solely to provide information to its parent.
+
+The parent will typically call wait() right after the fork(), and may choose to wait for wait() to return with the PID of the exited child. Additionally, a pointer is returned which holds the exit code of the terminated child.
+
+release_task() is then called (by whom? triggered by wait()?) which cleans up the exited PID from task lists, releases any remaining resources, and frees pages containing the process's kernel stack and thread_info structure, and deallocate the slab cache containing the task_struct.
+
+ptrace
+^^^^^^
+The kernel has a feature where tasks can be *ptraced*. What this does is allow a debugger to temporarily **re-parent** a task to itself. A separate list is kept of the original parents of ptraced tasks such that when the debugger exits, the task can have its PPID set back to the original value.
