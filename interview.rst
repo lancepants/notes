@@ -472,11 +472,49 @@ General
 - re-implement grep in python
 - make a url shortener in python
 
-Quickies
---------
+Cheat Sheet
+-----------
 Make immutable, can't delete this file:
     chattr +i filename
 
 Special file being a douche to rm? eg: $!filename, -filename, 'filename-
     ls -i    #list by inode
     find . -inum 1234 -exec rm {} \;
+
+Low CPU usage, but slow performance?
+    tasks in sleep waiting for IO do not count against cpu time. Usually uninterruptible sleep.
+High CPU usage, but no high cpu task showing up in top?
+    Could be short-lived processes crash-looping. Troubleshoot with atop, or bgregg execsnoop, or systemtap
+
+How does strace work?
+    Uses the ptrace() system call to temporarily re-parent a target process to itself.
+    When a process is ptraced, the tracer can ask for the child to stop whenever various events happen, such as making a system call. When thsi happens, the kernel will stop the child with SIGTRAP
+    Since the tracer is now the child's parents, it can watch for the SIGTRAP using the standard unix waitpid() system call
+
+RAID levels:
+    XOR Table
+    0 : 0 = 0
+    1 : 0 = 1
+    0 : 1 = 1
+    1 : 1 = 0
+    
+    Raid breaks up data into stripes (across disks), and further into segments (per disk). If you choose a 256KB stripe size(width) and have 4 disks (raid0) or 5 disks (raid5, 4d+1p), your segment size is 256/4 = 64KB. Optimally, you're looking to have a segment size that is larger than your average IO request such that, say, 4 IO requests can all be done in one stripe without any segments having to cross over across multiple disks. This saves iops.
+
+    RAID4 - like raid5 but doesn't stagger parity disk. Slow because all writes have to wait for single parity disk.
+    RAID5 - req's 3 disks. Can support one disk loss no matter how many disks in array. XORs each bit of data on disk1 against disk2. If disk1 bit is 1 and parity bit is 0, then failed disk2 must have had bit 1 as well.
+    RAID6 - same as raid5 but two parity bits. Req's 4 disks. Can handle two concurrent disk losses.
+
+Process states:
+    TASK_RUNNING - running or on run-queue waiting to run
+    TASK_INTERRUPTIBLE - sleeping (blocked). Waiting for kernel to wake it up, or for a signal
+    TASK_UNINTERRUPTIBLE - sleeping (blocked), but does not wake up for a signal. Typical: IO blocked
+    __TASK_TRACED - task is being ptraced
+    __TASK_STOPPED - sigstop, sigtstp, sigttin, or sigttou received, or any signal received while being debugged
+
+
+
+
+
+IOWait: the percentage of time the CPU is idle AND there is at least one I/O in progress. To understand this, you have to consider all other statistics counters which are taken into account - user(user space), sys(kernel space), iowait, and idle.
+
+

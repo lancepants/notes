@@ -222,3 +222,19 @@ release_task() is then called (by whom? triggered by wait()?) which cleans up th
 ptrace
 ^^^^^^
 The kernel has a feature where tasks can be *ptraced*. What this does is allow a debugger to temporarily **re-parent** a task to itself. A separate list is kept of the original parents of ptraced tasks such that when the debugger exits, the task can have its PPID set back to the original value.
+
+Process Scheduling
+------------------
+The linux kernel is a multitasking operating system which uses *preemptive multitasking* (in contrast with cooperative multitasking). The scheduler decides when a process is to cease running and a new process is to begin running.
+
+The act of involuntarily suspending a running task is called *preemption*. The time that a process runs before it is preempted is usually predetermined, and is called the *timeslice* of the process. The timeslice, in effect, gives each runnable process a *slice* of the processor's time. On most OS's, a task's timeslice is dynamically calculated as a function of process behaviour and configurable system policies.
+
+<input more about CFQ and proportion of the processor - page 46>
+
+Sleeping and Waking Up
+^^^^^^^^^^^^^^^^^^^^^^
+Sleeping (blocked) tasks are in a special nonrunnable state. This is important because without this special state, the scheduler would select tasks that did not want to run, or worse, sleeping would have to be implemented as a busy loop.
+
+A task always sleepbecause it is waiting for some event. The event can be a specified amount of time, more data from a file I/O, or another hardware event. A task can also involuntarily go to sleep when it tries to obtain a contended semaphore.
+
+
