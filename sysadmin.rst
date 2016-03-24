@@ -60,3 +60,11 @@ Quickies
 
     lsblk
 
+- tcpdump quickie
+
+    tcpdump -e -vvv -i any "host 1.2.3.4 and dst portrange 1-1023"
+    tcpdump -n "dst host 10.10.10.123 and (dst port 80 or dst port 443)"
+    tcpdump -n "broadcast or multicast"
+    tcpdump -s 500   # capture 500B of data rather than default 68B. Use 0 for capture all data
+
+
