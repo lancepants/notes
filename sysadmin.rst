@@ -56,9 +56,10 @@ Quickies
 
   cat something | awk '{print $NF}'
 
-- See all detected block devices (much better than ls /dev/xda<tab><tab>)
+- See all detected block devices (much better than ls /dev/xda<tab><tab>), list hardware nicely
 
-    lsblk
+  lsblk
+  lshw
 
 - tcpdump quickie
 
