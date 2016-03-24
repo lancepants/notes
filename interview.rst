@@ -30,12 +30,15 @@ Study more of:
 Questions
 ---------
 - What is an initrd and why is it needed?
-initrd stands for Initial RAM Disk. PXE/some_bootloader extracts and executes the kernel, and then the kernel can extract and mount its associated initrd. initrd provides a virtual root filesystem which contains several executables and modules that permit the real root filesystem to be mounted, or to do whatever else you'd like at that point in the boot process.
+initrd stands for Initial RAM Disk. PXE/some_bootloader extracts and executes the kernel, and then the kernel can extract and mount its associated initrd. initrd provides a virtual root filesystem which contains several executables and modules that permit the real root filesystem to be mounted such that needed kernel modules from the disk can be accessed, or to do whatever else you'd like at that point in the boot process.
 
-Nearly all of initrd's use cases involve needing to load some needed module into the kernel in order to support a non-standard root filesystem, LVM, network drive, or RAID controller prior to full boot. You may also choose to rebuild your kernel to include necessary modules and get rid of the initrd; however, in the instances of needing to mount a network drive, run some sort of process that doesn't need to boot fully into linux, or do some other "staging" type thing, an initrd environment is useful.
+Nearly all of initrd's use cases involve needing to load some module into the kernel in order to access a non-standard root filesystem (where more modules reside), LVM, network drive, or RAID controller prior to full boot. You may also choose to rebuild your kernel to include necessary modules and get rid of the initrd; however, in the instances of needing to mount a network drive, run some sort of process that doesn't need to boot fully into linux, or do some other "staging" type thing, an initrd environment is useful.
 
 - Files, inodes, filesystems...how do they work? What are file descriptors? 
 **Filesystems, inodes, file descriptors**: Described in :ref:`filesystems`
+A file descriptor is an index into a per-process file descriptor table maintained by the kernel, that in turn indexes into a system-wide table of files opened by all processes, called the *file table*. This file table records the *mode* (r, w, rw, append...) with which the file (or other resource) has been opened, as well as indexes into a third table called teh *inode table* that describes teh actual underlying files.
+
+To perform input or output, the process passes the file descriptor to the kernel through a system call (read(), write(), etc), and the kernel will access the file *on behalf of the process*. The process does not have direct access to the file or inode tables.
 
 - What are semaphores? What is a mutex? What's the difference between the two?
 A semaphore is best described as a signaling mechanism, but could also be described as a type of lock. A semaphore is an object that contains a (natural) number, on which two modifying operations are defined. One operation, V, adds 1 to the number. The other operation, P, removes 1. Because the natural number 0 cannot be decreased, calling P on a semaphore containing 0 will block the execution of the calling process/thread until some other thread comes along and calls a V on that semaphore. You may create a semaphore with more than one "slot" available (ie: s(6)). As such, semaphores can be used to restrict acess to a certain resource to a maximum (but variable) number of processes.
@@ -486,12 +489,12 @@ Low CPU usage, but slow performance?
 High CPU usage, but no high cpu task showing up in top?
     Could be short-lived processes crash-looping. Troubleshoot with atop, or bgregg execsnoop, or systemtap
 
-How does strace work?
+How does **strace** work?
     Uses the ptrace() system call to temporarily re-parent a target process to itself.
     When a process is ptraced, the tracer can ask for the child to stop whenever various events happen, such as making a system call. When thsi happens, the kernel will stop the child with SIGTRAP
     Since the tracer is now the child's parents, it can watch for the SIGTRAP using the standard unix waitpid() system call
 
-RAID levels:
+**RAID levels**:
     XOR Table
     0 : 0 = 0
     1 : 0 = 1
@@ -501,16 +504,32 @@ RAID levels:
     Raid breaks up data into stripes (across disks), and further into segments (per disk). If you choose a 256KB stripe size(width) and have 4 disks (raid0) or 5 disks (raid5, 4d+1p), your segment size is 256/4 = 64KB. Optimally, you're looking to have a segment size that is larger than your average IO request such that, say, 4 IO requests can all be done in one stripe without any segments having to cross over across multiple disks. This saves iops.
 
     RAID4 - like raid5 but doesn't stagger parity disk. Slow because all writes have to wait for single parity disk.
-    RAID5 - req's 3 disks. Can support one disk loss no matter how many disks in array. XORs each bit of data on disk1 against disk2. If disk1 bit is 1 and parity bit is 0, then failed disk2 must have had bit 1 as well.
-    RAID6 - same as raid5 but two parity bits. Req's 4 disks. Can handle two concurrent disk losses.
+    RAID5 - req's 3 disks. Can support one disk loss no matter how many disks in array. Distributes parity writes. XORs each bit of data on disk1 against disk2. If disk1 bit is 1 and parity bit is 0, then failed disk2 must have had bit 1 as well.
+    RAID6 - same as raid5 but two parity bits. Req's 4 disks. Can handle two concurrent disk losses. First parity write is a simple XOR, second parity write is based on galois fields
 
-Process states:
+**Process states**:
     TASK_RUNNING - running or on run-queue waiting to run
     TASK_INTERRUPTIBLE - sleeping (blocked). Waiting for kernel to wake it up, or for a signal
     TASK_UNINTERRUPTIBLE - sleeping (blocked), but does not wake up for a signal. Typical: IO blocked
     __TASK_TRACED - task is being ptraced
     __TASK_STOPPED - sigstop, sigtstp, sigttin, or sigttou received, or any signal received while being debugged
 
+
+**Context Switch**: The process of storing execution state of a process or thread so that execution can be resumed from the same point at a later time.
+    High cost context switching may include: swapping tasks which do not share memory, dirtying/filling cpu cache for original process once it's swapped back in. Or, swapping tasks which do share memory, but new task ends up on a different processor core, such that it doesn't have access to the same cache memory without a NUMA hop, or a trip to main memory
+
+
+**SIGNALS** : Signals are software interrupts. Kill sends a SIGTERM by default. The kernel delivers signals to target processes or process groups on behalf of an originating process, or on behalf of itself. If the originating process has the permissions to send a signal to another, the kernel forwards it on.
+
+Note that processes can ignore, block, or catch all signals *except SIGSTOP and SIGKILL*. If a process catches a signal, it means that *it includes code that will take appropriate action when the signal is received*. If the signal is not caught, the kernel will take the appropriate action for the signal.
+
+* SIGHUP hangup. Send this to a terminal and it will likely log you out. Other applications may instead use this signal as an indication to reload their configuration without terminating themselves.
+* SIGINT is sent when you ctrl-c something. It is intended to provide a mechanism for an orderly, graceful shutdown of the foreground process. Interactive shells (mysql, other) may take it to mean "terminate current query" rather than the whole process.
+* SIGQUIT signals a process to terminate and do a core dump
+* SIGSTOP suspends a processes execution. If you are experiencing some sort of intermittent socket/buffer full or backflow buildup related bug, SIGSTOP is a good way to reproduce the issue. File handles will be kept open.
+* SIGKILL is the ol' kill -9
+
+"All People Seem To Need Data Processing" Applic Presenta Sessio Transpo Networ Data Phys
 
 
 
