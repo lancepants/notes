@@ -316,3 +316,7 @@ Usually the EAX register holds a return value. EBP is the stack pointer, pointin
 
 In assembly, these registers are referred to through names like %eax, %esp, %rdi, %edi, etc.
 
+
+Data Structures
+---------------
+Check out pages 86 & 87 of robert love's Linux Kernel Programming for some good linked-list diagrams.

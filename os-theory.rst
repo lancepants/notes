@@ -210,7 +210,7 @@ An involuntary termination can happen when the process receives a signal or exce
 - exit_sem() : if the proc is queued waiting for a semaphore, it is dequeued
 - exit_files() , exit_fs() to decrement the usage count of objects related to file descriptors and filesystem data
 - sets tasks exit code, stores in exit_code member of task_struct. Stored for optional retrieval by the parent
-- exit_notify() called to send signals to the task's parent, reparents any of the task's children to another thread in their thread group or the init process, and sets the task's exit state, stored in exit_state in the task_struct to *EXIT_ZOMBIE*
+- exit_notify() called to send signals to the task's parent, reparents any of the task's children to another thread in their thread group or the init process, and sets the task's exit state, stored in *exit_state in the task_struct* to *EXIT_ZOMBIE*
 - do_exit() then calls schedule() to switch to a new process. Since the process is no longer schedulable, do_exit() never returns
 
 At this point, all objects associated with the task are freed, the task is not runnable (and no longer has address space to run), and is in the EXIT_ZOMBIE exit state. The only memory it occupies is its kernel stack - the thread_info and task_struct structures. The task exists solely to provide information to its parent.
@@ -227,7 +227,9 @@ Process Scheduling
 ------------------
 The linux kernel is a multitasking operating system which uses *preemptive multitasking* (in contrast with cooperative multitasking). The scheduler decides when a process is to cease running and a new process is to begin running.
 
-The act of involuntarily suspending a running task is called *preemption*. The time that a process runs before it is preempted is usually predetermined, and is called the *timeslice* of the process. The timeslice, in effect, gives each runnable process a *slice* of the processor's time. On most OS's, a task's timeslice is dynamically calculated as a function of process behaviour and configurable system policies.
+The act of involuntarily suspending a running task is called *preemption*. The time that a process runs before it is preempted is usually predetermined, and is called the *timeslice* of the process. The timeslice, in effect, gives each runnable process a *slice* of the processor's time.
+
+Each process runs for a "timeslice" that is proportional to its weight divided by the weight of all other runnable tasks.
 
 <input more about CFQ and proportion of the processor - page 46>
 
@@ -235,6 +237,87 @@ Sleeping and Waking Up
 ^^^^^^^^^^^^^^^^^^^^^^
 Sleeping (blocked) tasks are in a special nonrunnable state. This is important because without this special state, the scheduler would select tasks that did not want to run, or worse, sleeping would have to be implemented as a busy loop.
 
-A task always sleepbecause it is waiting for some event. The event can be a specified amount of time, more data from a file I/O, or another hardware event. A task can also involuntarily go to sleep when it tries to obtain a contended semaphore.
+A task always sleeps because it is waiting for some event. The event can be a specified amount of time, more data from a file I/O, or another hardware event. A task can also involuntarily go to sleep when it tries to obtain a contended semaphore.
+
+Processes put themselves on a wake queue and mark themselves not runnable. When the event associated with the wait queue occurs, the processes on the queue are awakened.
+
+# __add_wait_queue() adds task to a wait queue, sets the task's state to TASK_INTERRUPTIBLE, can calls schedule(). schedule() calls deactivate_task() which removes the task from the runqueue
+# (task not runnable) : even the task is waiting for occurs, and try_to_wake_up() sets the task to TASK_RUNNING, calls activate_task() to add the task to a runqueue, and calls schedule(). __remove_wait_queue() removes the task from the wait queue
+# (task not runnable) OPTION 2 : task receives a signal. task state set to TASK_RUNNING and task executes signal handler
+# task now running
+
+
+Preemption and Context Switching
+--------------------------------
+Context switching, the switching from one runnable task to another, is handled by the *context_switch()* function. It is called by *schedule()* when a new process has been selected to run. It does two basic jobs:
+
+- Calls *switch_mm()* to switch the virtual memory mapping from the previous process's to that of the new process
+- Calls *switch_to()* to switch the processor state from the previous process's to teh current's. This involves saving and restoring stack information and the processor registers and any other architecture-specific state that must be managed and restored on a per-process basis
+
+pg.62
+The kernel needs to know when to actually call schedule(). This is done by setting the need_resched flag of a given process (stored in thread_info). The kernel, upon returning to user space or an interrupt, will check for the need_resched flag of each process. If it is set, the kernel invokes the scheduler before continuing.
+
+User Preemption
+^^^^^^^^^^^^^^^
+User preemption occurs when the kernel is about to return to user space, need_resched is set, and therefore, the scheduler is invoked. If the kernel is returning to user space, it knows that it is in a safe quiescent state and as such it is safe to pick a new task to execute (or continue executing current task).
+
+User preemption can occur:
+
+- When returning to user-space from a system call
+- When returning to user-space from an interrupt handler
+
+Kernel Preemption
+^^^^^^^^^^^^^^^^^
+The kernel can preempt a task running in the kernel so long as it does not hold a lock. Because the kernel is SMP-safe, if a lock is not held, teh current code is reentrant and capable of being preempted. A preempt_count counter exists in each process's thread_info. This counter begins at zero, and is incremented for each lock that is acquired and decrements for each lock that is released. When the counter is zero, the kernel is preemptible.
+
+Upon return from interrupt, if returning to kernel-space, the kernel checks the values of need_resched and preempt_count. If need_resched is set and preempt_count is zero, then a more important task is runnable, and it is safe to preempt (run schedule()). Otherwise, it is not safe to preempt and the interrupt returns as usual to the currently executing task.
+
+Additionally, when all locks that the current task is holding are released and preempt_count returns to zero, the unlock code checks whether need_resched is set. If so, the scheduler is invoked.
+
+Kernel preemption can occur:
+
+- When an interrupt handler exits, before returning to kernel-space
+- When kernel code becomes preemptible again
+- If a task in the kernel explicitly calls schedule()
+- If a task in the kernel blocks(sleeps) (which results in a call to schedule())
+
+CPU Affinity
+^^^^^^^^^^^^
+The linux scheduler provides a soft attempt to keep processes rescheduled to the same processor. It also provides the option of hard affinity, where a process must be scheduled on a certain processor. This is done by setting a bitmask in *cpus_allowed* inside each task's task_struct to whichever processor(s) you'd like.
+
+You can set this via the sched_affinity() system call. sched_getaffinity() will get the current settings.
+
+
+System Calls
+------------
+
+System calls provide a layer between hardware and user-space processes, and serve three main use cases.
+
+First, it provides an abstracted hardware interface for user-space. When readin gor writing from a file, for example, applications are not concerned with the type of disk, media, or even the type of filesystem on whihc the file resides.
+
+Second, system calls ensure system security and stability. With the kernel acting as a middle-man between system resources and user-space, the kernel can arbitrate access based on permissions, users, whether an application is correctly using hardware, prevent processes from stealing other processes resources, and other features.
+
+Third, a single common layer between user-space and the rest of the system allows for the virtualized system provided to processes. If applications were free to access system resources without the kernel's knowledge, it would be nearly impossible to implement multitasking and virtual memory (and with security and stability).
+
+In linux, system calls are the only means user-space has of interfacing with the kernel; they are the only legal entry point into the kernel other than exceptions or traps. Indeed, other interfaces, such as device files or /proc, *are ultimately accessed via system calls*. 
+
+    application calls printf() ---> printf() in the C library ---> write() system call
+
+In linux, each system call is assigned a *syscall number*. This is a unique number that is used to reference a specific system call. When a user-space process executes a system call, the syscall number identifies which syscall was executed - the process does not refer to the syscall by name (except in the source code itself). This number is important; when assigned, it cannot change, or compiled applications will break.
+
+
+System Call Handler
+^^^^^^^^^^^^^^^^^^^
+
+A user-space application cannot execute kernel code directly. They cannot simply make a function call to a method existing in kernel-space, because the kernel exists in a protected memory space. Instead, user-space applications must somehow signal to the kernel that they want to execute a system call and have hte system switch to kernel mode, where the system call can be executed in kernel-space by the kernel on behalf of the application.
+
+To do this, a process will throw a software interrupt, and user-space will stick whatever system call number is wanted into the *eax* register and then cause a trap into the kernel. The system call handler will then read the value from eax. This number is validated against NR_syscalls, and if the number is less than NR_syscalls, the specified system call is invoked.
+
+In addition to system call number, most syscalls need one or more parameters passed to them. This is typically done, as is the case for the syscall number, by user-space storing these parameters in registers (ebx, ecx, edx, esi, edi). The return value is sent to user-space also via register (typically in eax).
+
+
+Kernel Data Structures
+----------------------
+Start pg 86.
 
 

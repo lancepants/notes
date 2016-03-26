@@ -531,6 +531,30 @@ Note that processes can ignore, block, or catch all signals *except SIGSTOP and 
 
 "All People Seem To Need Data Processing" Applic Presenta Sessio Transpo Networ Data Phys
 
+**QUICKIES**
+Find out **what module a device is using**
+
+  lspci | grep Eth    # 84:00.0 Ethernet controller: Solarfla ....
+  find /sys/ -name '*84:00*   # /sys/bus/pci/drivers/sfc/0000:84:00.0  ,  so, module "sfc"
+  (alternately) lspci -nk
+  (alternately) readlink /sys/class/net/<eth-device>/device/driver  # symlinks to loaded mod
+
+
+Print the **last column in each line** of output:
+
+  cat something | awk '{print $NF}'
+
+**See detected block devices** (much better than ls /dev/xda<tab><tab>), list hardware nicely
+
+  lsblk
+  lshw
+
+**tcpdump** quickie
+
+    tcpdump -e -vvv -i any "host 1.2.3.4 and dst portrange 1-1023"
+    tcpdump -n "dst host 10.10.10.123 and (dst port 80 or dst port 443)"
+    tcpdump -n "broadcast or multicast"
+    tcpdump -s 500   # capture 500B of data rather than default 68B. Use 0 for capture all data
 
 
 
