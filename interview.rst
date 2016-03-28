@@ -592,7 +592,7 @@ Print the **last column in each line** of output:
 - retrans/s: num of retransmits/sec
 
 **/proc**
-    cat /proc/PID/maps  # see mapped memory for a PID
+    cat /proc/PID/maps  # see mapped memory for a PID (text, data, bss...repeated). *pmap -x PID* is more readable!
     cat /proc/PID/wchan  # kernel function where process is sleeping. Alt: ps -flp 1234 , shows proc state too
     cat /proc/PID/status  # run a couple times and watch ctxt_switches. If not moving, proc is stuck
     cat /proc/PID/sched  # shows more scheduling/ctxt_switch info
@@ -618,6 +618,27 @@ PDNTSPA!
 - Interwebs trouble? tcpdump/wireshark traffic outbound, ensure crappy hardware is not adding extra layers onto packets, exceeding 1500Bytes
 
 **IPv6**
+- 128bits. 8 groups of 16 bits. 4 bits = one hex value
+- fe80:: link local, ::1/128 localhost, fc00::/7 Unique Local Addr (avoid), 2xxx|3xxx::/7 current public release, FFxx: multicast
+- Shrink consec 0:0:0's to :: only once. Every host joins FF02::1 mcast group. FF02::1:FF is general mcast group prefix
+- link local addrs used solely for ipv6 orchestration (neighbour discovery, dhcpv6...). *will not route*
+- EUI64 Addressing: take 48-bit MAC, inject FFEE in middle, flip 7th bit (7th bit notes: is this IANA assigned mac? or administrator assigned? stupid rule). Only works with /64's
+- Feel free to use fe80::1 or similar for router gateways...ease of use
+**NeighbourDiscoveryProtocol**
+- *ARP and Broadcasts REMOVED in v6*. NDP is replacement. Comms via multicast
+- gateway not in neighbour cache? send *Neighbour Soliciation (NS)* to target multicast address group IP (determined bymulticast prefix + last 24bits in dest addr. ie: dest machine auto-joins *FF01::1:FFlast-24-bits group* upon int up)
+- NS contains your link local addr. Dest responds directly to your link local with a *Neighbour Advertisement (NR)* containing its mac addr, etc. Added to neighb cache. STALE after 30s
+**DuplicateAddressDetection(DAD)**
+- Occurs on IP assignment to interface. *Send NS* to target mcast group to see if anything else responds that has the IP you want. If NA is received, DAD fails
+- If all good, *send an NA to FF02::1* (ie: everyone) that it now has desired ipv6 addr. Also send msg to FF02:16 "all routers" mcast group stating it is joining FF02::1:FFlast-24-bits mcast group
+**Routing/SLAAC**
+- Router to router: *All routers join FF02::2, FF02::16*. Routers send out *Router Advertisements (RA)* to all nodes in FF02::2, stating which subnets they can route. RA every 200s. Device notifies FF02::16 when it joins an mcast group.
+- If a device doesn't know its net prefix+gw, it sends *Router Solicitation (RS)* to FF02::2. Triggers an immediate RA response on FF02::1 (ie: everyone)
+- RA's sent to FF02::1 (everyone). RA contains ICMPv6 Option Prefix containing network prefix (ie: 2001:BEEF::/64)
+- Device reads RA, sets its network prefix + EUI-64 addr, and *sets its gateway to the source addr of the RA*
+- Device can query router for extra options (DNS). RA optionally has *managed flag* to disable SLAAC, get IP from DHCPv6 instead.
+
+
 
 
 **IOWait**: the percentage of time the CPU is idle AND there is at least one I/O in progress.

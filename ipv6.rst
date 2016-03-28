@@ -98,7 +98,7 @@ Duplicate Address Detection
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 - Let's say we are trying to assign address 3333::3 to an interface.
 - The process above, where a neighbor solicitation is sent out to the solicited node multicast address group, occurs automatically prior to binding a new ipv6 address to an interface. So, send out a neighbour solicitation to multicast address group ff02::1:ff00:3 , which is where any device that might already have 3333::3 as its address would be listening. This solicitation has source address :: because we don't want to use a source address that might already be in use
-- If no neighbor advertisement is received from a device that already has that address, the device will send out its own neighbor advertisement to FF02::1 (ie: everyone) that it now has that ipv6 address. It also sends a message to ff02:16 stating that it's joining the ff02::1:ff00:3 group.
+- If no neighbor advertisement is received from a device that already has that address, the device will send out its own neighbor advertisement to FF02::1 (ie: everyone) that it now has that ipv6 address. It also sends a message to ff02::16 stating that it's joining the ff02::1:ff00:3 group.
 - If trying to assign a duplicate address, the neighbor solicitation happens (source address ::, destination group ff02::1:ff00:3 for example, and local source address is the IP you're trying to set), and then a device that already has the address responds with a neighbor advertisement to ff02::1 with its source address 3333::3 and its info, etc. Your device then should fail Duplicate Address Detection (DAD) and not assign the address.
 
 
@@ -171,5 +171,5 @@ GOTCHAS
 -------
 - Tools like ip need the -6 argument to do shit. eg: ip -6 r
 - With ping6 on linux you need to specify the interface you'd like to ping from (when pinging link-local addresses anyways). Eg: ping6 -I 172-br0 fe80::1
-- No cisco/have a linux or unix based router? "radvd" is the thing to use. Check it out
+- No cisco, or have a linux or unix based router? "radvd" is the thing to use. Check it out
 - On your linux/unix router, after you change your link local address (to something easier, like fe80::1) and remove your old one, restart radvd or it won't hand out adverts/gateway properly.

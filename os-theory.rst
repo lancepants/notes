@@ -8,7 +8,7 @@ More on each of these later.
 
 System Calls
 ^^^^^^^^^^^^
-An application typically calls functions in a library - for example, the *C library* - that in turn rely on the system call interface to instruct the kernel to carry out tasks on the application's behalf. When an application executes a system call, we say that the *kernel is executing on behalf of hte application*. Furthermore, the application is said to be *executing a system call in kernel-space*, and the kernel is running in *process context*.
+An application typically calls functions in a library - for example, the *C library* - that in turn rely on the system call interface to instruct the kernel to carry out tasks on the application's behalf. When an application executes a system call, we say that the *kernel is executing on behalf of the application*. Furthermore, the application is said to be *executing a system call in kernel-space*, and the kernel is running in *process context*.
 
 Interrupts
 ^^^^^^^^^^
@@ -202,11 +202,11 @@ Process Termination
 ^^^^^^^^^^^^^^^^^^^
 Generally a process terminates itself, when it calls the exit() system call. The exit() call may also be implied, for example if the main() function of the process ends and then C compiler places a call to exit() afterwards automatically.
 
-An involuntary termination can happen when the process receives a signal or exception it cannot handle or ignore. Regardless of how a process terminates, teh bulk of the work is handled by do_exit().
+An involuntary termination can happen when the process receives a signal or exception it cannot handle or ignore. Regardless of how a process terminates, the bulk of the work is handled by do_exit().
 
 - PF_EXITING flag in the flags member of the task_struct is set
 - del_timer_sync() to remove any kernel timers, acct_update_integrals() to write out remaining proc accounting if BSD process accounting is enabled
-- exit_mm() to release teh mm_struct help by the process. If no other proc sharing that mem space, kernel destroys it
+- exit_mm() to release the mm_struct help by the process. If no other proc sharing that mem space, kernel destroys it
 - exit_sem() : if the proc is queued waiting for a semaphore, it is dequeued
 - exit_files() , exit_fs() to decrement the usage count of objects related to file descriptors and filesystem data
 - sets tasks exit code, stores in exit_code member of task_struct. Stored for optional retrieval by the parent
@@ -268,7 +268,7 @@ User preemption can occur:
 
 Kernel Preemption
 ^^^^^^^^^^^^^^^^^
-The kernel can preempt a task running in the kernel so long as it does not hold a lock. Because the kernel is SMP-safe, if a lock is not held, teh current code is reentrant and capable of being preempted. A preempt_count counter exists in each process's thread_info. This counter begins at zero, and is incremented for each lock that is acquired and decrements for each lock that is released. When the counter is zero, the kernel is preemptible.
+The kernel can preempt a task running in the kernel so long as it does not hold a lock. Because the kernel is SMP-safe, if a lock is not held, the current code is reentrant and capable of being preempted. A preempt_count counter exists in each process's thread_info. This counter begins at zero, and is incremented for each lock that is acquired and decrements for each lock that is released. When the counter is zero, the kernel is preemptible.
 
 Upon return from interrupt, if returning to kernel-space, the kernel checks the values of need_resched and preempt_count. If need_resched is set and preempt_count is zero, then a more important task is runnable, and it is safe to preempt (run schedule()). Otherwise, it is not safe to preempt and the interrupt returns as usual to the currently executing task.
 
@@ -309,7 +309,7 @@ In linux, each system call is assigned a *syscall number*. This is a unique numb
 System Call Handler
 ^^^^^^^^^^^^^^^^^^^
 
-A user-space application cannot execute kernel code directly. They cannot simply make a function call to a method existing in kernel-space, because the kernel exists in a protected memory space. Instead, user-space applications must somehow signal to the kernel that they want to execute a system call and have hte system switch to kernel mode, where the system call can be executed in kernel-space by the kernel on behalf of the application.
+A user-space application cannot execute kernel code directly. They cannot simply make a function call to a method existing in kernel-space, because the kernel exists in a protected memory space. Instead, user-space applications must somehow signal to the kernel that they want to execute a system call and have the system switch to kernel mode, where the system call can be executed in kernel-space by the kernel on behalf of the application.
 
 To do this, a process will throw a software interrupt, and user-space will stick whatever system call number is wanted into the *eax* register and then cause a trap into the kernel. The system call handler will then read the value from eax. This number is validated against NR_syscalls, and if the number is less than NR_syscalls, the specified system call is invoked.
 
@@ -411,7 +411,7 @@ ZONE_NORMAL : Normally addressable pages : 16 -> *
 Kernel Memory Allocation
 ^^^^^^^^^^^^^^^^^^^^^^^^
 **kmalloc()** : allocates a *physically and virtually contiguous* chunk of memory. *kfree()* frees that memory.
-**vmalloc()** : allocates a virtually contiguous chunk of memory, with no guarantee that they are physically contiguous. This is similar to how the user-space function malloc() returns pages which are contiguous within teh virtual address space of the processor.
+**vmalloc()** : allocates a virtually contiguous chunk of memory, with no guarantee that they are physically contiguous. This is similar to how the user-space function malloc() returns pages which are contiguous within the virtual address space of the processor.
 
 Typically the only things that need physically contiguous memory are hardware devices; however, the kmalloc() function is still most commonly used within the kernel (as opposed to vmalloc). This is because it's faster. vmalloc() needs to set up a page table with entries to map virtual pages to physical ones, and this page table needs to be read every time memory is accessed. Areas in the kernel where vmalloc() is preferrable is when a module or something needs to obtain large regions of memory.
 
@@ -427,6 +427,143 @@ These caches are then divided into *slabs*. The slabs are composed of one or mor
 
 Each slab contains some number of *objects*, which are the data structures themselves. Each slab is in one of three states: full, partial, or empty. When some part of the kernel requests a new object, the request is satisfied first by a partially full slab, and if none are available, then an empty slab. If there exists no empty slab, then one is created.
 
-So, an inode cache is likely going to have a ton of slabs, because it will have a ton of objects. When the kernel requests a new inode structure, the kernel retrusn a pointer to an already allocated, but unused structure from a partial slab (or an empty one if no partial avail). When the kernel is done using hte inode object, the slab allocator marks the object as free.
+So, an inode cache is likely going to have a ton of slabs, because it will have a ton of objects. When the kernel requests a new inode structure, the kernel retrusn a pointer to an already allocated, but unused structure from a partial slab (or an empty one if no partial avail). When the kernel is done using the inode object, the slab allocator marks the object as free.
 
 These caches are represented by a kmem_cache structure, which contains three lists - slabs_full, slabs_partial, and slabs_empty. These lists contain *struct slab* elements which list allocated objects within the slab, first free object, etc.
+
+The Virtual Filesystem
+----------------------
+
+VFS - the glue that lets generic syscalls like open(), read(), write() to work regardless of filesystem or underlying medium.
+
+If VFS wants to operate on a file, dentry, inode, or superblock objects, it must look in each respective _operations table, which maps operations to filesystem functions such that the filesystem can handle each standard request.
+
+write()    --->  sys_write()  ---> filesystem's write method --->  (=)
+user-space          VFS                  filesystem                Physical media
+
+In order for a filesystem to work with VFS, it must conform to certain unix ideas. For example, file information is stored as an inode in a seaparate block on the disk, directories are files, control information is stored centrally in a superblock, and so on. The unix file concepts are *physically mapped* on to the storage medium.
+
+The VFS is object-oriented. Four primary VFS object types:
+
+*superblock* object : represents a specific mounted filesystem
+*inode* object : represents a specific file
+*dentry* object : represents a directory entry, which is a single component of a path
+*file* object : represents an open file as associated with a process
+
+Each of these has an *..._operations* object, which contains the methods which the kernel can invoke on each file type. Some examples:
+superblock_operations : write_inode(), sync_fs()
+inode_operations : create(), link()
+dentry_operations : d_compare(), d_delete()
+file_operations : read(), write()
+
+These operations objects are structures of pointers to various functions that operate on the object. *A filesystem can fill in various operations with pointers to its own filesystem-specific methods.*
+
+Superblock
+^^^^^^^^^^
+When you format a disk, it saves a superblock to a special sector on disk. If it's not a physical filesystem (ie: sysfs), it generates this struct on the fly. When a filesystem is loaded, the kernel runs get_sb() which reads the superblock from disk and populates the *struct file_system_type*.
+
+This *struct super_block* contains lots of details, including device identifier, block size, max file size, fs type, methods, mount flags, inodes list, dirty inodes, dirty flag, quota options, various semaphores, superblock operations, and lots more (pg.266). Some of these values are filled in when an fs is mounted.
+
+The most important item is s_op (superblock operations), which is a pointer to the superblock operations table. This table describes what functions that VFS can invoke on a superblock. This table is represented by *struct super_operations* and contains numerous fields, each of which are pointers to a function that operates on a superblock object. These include alloc_inode, destroy_inode, dirty_inode...sync_fs, freeze_fs...statfs, unmount_begin, show_options, show_stats, quota_read etc. etc.
+
+When a filesystem needs to perform an operation on its superblock, it follows the pointers from its superblock object to the desired method.
+    sb->s_op->write_super(sb)   # sb is the superblock object
+    sb.write_super()  # doesn't work, C is not object-oriented enough
+
+The Inode Object
+^^^^^^^^^^^^^^^^
+The inode object contains all the info needed by the kernel to operate on a file. For Unix-style filesystems, this information is simply read from the on-disk inode. Other fs's have to read their data in (usually stored per-file, in each file) and construct their own inode objects for linux to use.
+
+Inode objects are represented by *struct inode*, which contains the following and much more:
+inode number, num hard links, UID, GID, file size(bytes), atime/mtime/ctime, access perms, spinlock, inode semaphore, inode operations table, default inode ops, associated superblock, file lock list, one (or none) of pipe/blkdev/chardev, inotify & dnotify watches, etc. etc.
+
+An inode represents each file on a filesystem, but the *inode object is constructed in memory only as files are accessed*. This includes special files, such as device files or pipes.
+
+Some of these struct entries might not be supported by some filesystem. If this is the case, it can do whatever it wishes. It can store zero for atime or make atime equal to mtime, update atime in memory but never flush to disk, or whatever else the FS implementer decides.
+
+Like the superblock ops, the inode_operations are important as they describe the filesystem's implemented functions that VFS can invoke on an inode. These ops include link, unlink, symlink, mkdir, rmdir, mknod, rename, readlink, setattr, getattr, setxattr...removexattr...
+
+Dentries
+^^^^^^^^
+A dentry does not represent a directory object - a directory is a file and it is represented by a file object and associated inode. 
+
+The point of dentry's are such that VFS can do path name lookups efficiently. Resolving a path and walking its components is time-consuming and heavy on string operations. The dentry object makes the whole process easier.
+
+For /bin/vi, /, bin, and vi are all dentry objects. The VFS constructs dentry objects on the fly, as needed. These objects are then stored in the dentry cache such that the work doesn't have to be repeated.
+
+*struct dentry* includes spinlock, mounted, parent, name, child, subdirs, alias, time, etc. It also has an associated _operations table.
+
+The dentry object doesn't correspond to any on-disk data structure.
+
+
+File Object
+^^^^^^^^^^^
+The file object is used to represent a file opened by a process, it is an in-memory representation of an open file. This object is created upon an open() system call and destroyed as a response to close(). All these file related calls are actually methods defined in the file operations table.
+
+Because multiple procs can open and manipulate a file at the same time, there may be multiple file objects for the same on-disk file.
+
+The file object points back to the dentry which in turn points back to the inode that actually represents the open file. 
+The file object is represented by *struct file* and contains some of: path (to dentry), file ops table, spinlock, count, flags specified on open, file access mode, file offset(pos), owner, creds, page cache mapping, etc.
+
+Similar to the dentry object, the file object does not actually correspond to any on-disk data, only the inode has that representation. If a file is dirty, it points to the dentry which then points to the inode dirty entry.
+
+Some *struct file_operations* include seek, read, write, poll, ioctl, mmap, open, flush, release, fsync, lock, etc.
+
+Relation to task_struct
+^^^^^^^^^^^^^^^^^^^^^^^
+A process descriptor task_struct has a *files*, *fs*, and *mnt_namespace* entry.
+
+*files* points to an instance of *struct files_struct*, also called a "files table". This is a structure which contains all per-process information about what files are open, list of close-on-exec file descriptors, per-file lock, and more. An array entry in here called *fd_array* stores a list of up to 64 open files. If that's not enough, there's an *fdt* entry which points to more files_struct's which are dynamically allocated by the OS. 64 is not very many, and as such can be modified with NR_OPEN_DEFAULT for programs that open a lot of files.
+
+*fs* points to an instance of *struct fs_struct*, which contains filesystem info related to a process. root dir and current working dir are the two important bits
+
+*mnt_namespace* points to an instance of *struct mnt_namespace*, which allows a process to have a unique view of the mounted filesystems on the system - not just a changed root directory, but an entire unique filesystem heirarchy. This includes usage count, root dir, list of mount points, etc.
+
+Since multple different processes can point to the same files_struct, fs_struct, and mnt_namespace, each of these has a count field that tells how many procs reference them. On a typical clone(), a new proc gets its own files_struct and fs_struct, and inherits its parent namespace mnt_namespace. Swapping around clone() values can cause processes to share fd's or run in their own namespaces.
+
+Process Address Space
+---------------------
+Each process in linux is given a flat 32 or 64 bit address space. A memory address in one process's address space is completely unrelated to an address in another process's address space. Both processes can have different data at the same address in their respective address spaces. Alternatively, they may share address space (such is the case with threads).
+
+A memory address is a given value within the address space, such as 4021f000. This particular value identifies a specific byte in a process's 32-bit address space.
+
+The interesting part of an address space are the intervals of memory addresses, such as 08048000-0804c000, that the process has permission to access. These intervals of legal addresses are called *memory areas* or Virtual Memory Areas (VMA). The process, through the kernel, can dynamically add and remove memory areas to its address space.
+
+VMA's have associated permissions, such as readable, writable, an executable, and the associated process must respect these permissions. If it doesn't, the kernel kills the process with a segfault message.
+
+Memory areas can contain:
+- a memory map of the executable file's code, called *text section*
+- a memory map of the executable file's initialized global vars, called the *data section*
+- a memory map of the zero page (a page consisting of all zeros) containing uninitialized global vars, called the *bss_section*
+blah
+
+The Memory Descriptor
+^^^^^^^^^^^^^^^^^^^^^
+The kernel represents a process's address space with a data structure called the *memory descriptor*, which is a *struct mm_struct*. This struct is referenced by a process descriptors *mm* field.
+
+There area a couple important bits of this struct, such as an mm_user entry, which counts the number of tasks which point to this memory descriptor, and an mm_count entry, which stays at 1 so long as one or more users are referencing the descriptor, and falls to 0 when there is no longer anyone referencing the descriptor. When that happens, the kernel can free the struct.
+The *mmap* and *mm_rb* fields are also important, as they are different data structures which contain the same thing: all the memory areas in this address space. The reason there are two data structures representing the same thing is that the mm_rb is a type of binary search tree, efficient at locating a certain element O(log n). The other, being a linked list, allows for simple and efficient traversing of all elements in the list. The kernel is not actually duplicating the data, it's just overlaying a list on an rb tree (this is called a threaded tree).
+Aside from these, there are a number of ..._start ..._end fields which describe start and end addresses of the code, data, heap, and stack of the process.
+
+
+Allocating a descriptor: The *copy_mm()* function copies a parent's memory descriptor to its child during fork(). The mm_struct is allocated from the mm_cachep slab cache via allocate_mm(). Normally, each process receives a unique mm_struct and thus a unique process address space.
+Otherwise, processes may elect to share their addr space with their children by means of the *CLONE_VM flag to clone()*. In this case, allocate_mm() is not called, and the process's mm field is set to point to the mem descriptor of its parent.
+
+
+Virtual Memory Areas
+^^^^^^^^^^^^^^^^^^^^
+These describe a contiguous interval of memory in a given address space. VMAs are represented by *struct vm_area_struct*. 
+
+The *vm_mm* field represents the associated mm_struct memory descriptor.
+
+Memory areas in real life can be seen via /proc/PID/maps, or *pmap PID* for a more readable version. You'll see a common repeating theme of the first three rows being text section, data section, bss zero section of some_library or your_app, and that pattern repeats until the end where the stack is printed. *pmap* also shows you a summary of total mapped space, writable/private of that space, and shared of that space (might need pmap -x).
+
+Page Tables
+-----------
+The kernel maps virtual memory addresses to physical ones via page tables. These work by splitting the virtual addrs into chunks, whcih are used as an index into a table. The table points to either another table, or the associated physical page. There are three levels of tables in linux.
+
+struct mm_struct --> PGD table --> PMD table --> PTE table --> struct page --> physical page
+
+
+
+
