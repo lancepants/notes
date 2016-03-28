@@ -252,7 +252,7 @@ Preemption and Context Switching
 Context switching, the switching from one runnable task to another, is handled by the *context_switch()* function. It is called by *schedule()* when a new process has been selected to run. It does two basic jobs:
 
 - Calls *switch_mm()* to switch the virtual memory mapping from the previous process's to that of the new process
-- Calls *switch_to()* to switch the processor state from the previous process's to teh current's. This involves saving and restoring stack information and the processor registers and any other architecture-specific state that must be managed and restored on a per-process basis
+- Calls *switch_to()* to switch the processor state from the previous process's to the current's. This involves saving and restoring stack information and the processor registers and any other architecture-specific state that must be managed and restored on a per-process basis
 
 pg.62
 The kernel needs to know when to actually call schedule(). This is done by setting the need_resched flag of a given process (stored in thread_info). The kernel, upon returning to user space or an interrupt, will check for the need_resched flag of each process. If it is set, the kernel invokes the scheduler before continuing.
@@ -320,4 +320,113 @@ Kernel Data Structures
 ----------------------
 Start pg 86.
 
+Interrupts and Interrupt Handlers
+---------------------------------
 
+Interrupts enable hardware to signal to the processor. Without the ability to signal, the kernel would have to periodically poll the status of all the hardware, seeing if there is work to do, or worse it would have to sit and wait for each request to/from hardware to process without being able to do other stuff in the meantime.
+
+An interrupt is physically produced by electronic signals originating from hardware devices an directed into input pins on an interrupt controller, a simple chip that multiplexes multiple interrupt lines (IRQs) and stores them in an area that the CPU can access via an I/O port. When interrupts are available, the interrupt controller will *send a signal to the INTR pin of the CPU*, and it will clear the INTR line upon receipt of ack from the CPU on the designated IO port. When the processor detects this signal, it interrupts its current execution to handle the interrupt. The processor can then notify the OS.
+
+The OS handles these requests by running an *interrupt handler* or *interrupt service routine* (ISR). Each device that generates interrupts has an associated interrupt handler. The interrupt handler for a device *is part of the device's driver*. The driver registers its interrupt handler with the kernel via the *request_irq()* function, which contains an irq number (found via probing or some dynamic means) as well as a pointer to the interrupt request handler function. This mapping is stored in a kernel data structure called the *Interrupt Descriptor Table*.
+
+Interrupt handlers (within drivers) are normal C functions. They do have to match a specific prototype which enables the kernel to pass the handler info in a standard way, but otherwise they are ordinary functions. What differentiates interrupt handlers from other kernel functions is that the kernel invokes them in response to interrupts and that they run in a special context called *interrupt context* (also occaisionally called atomic context, because code executing in this context is unable to block).
+
+It is imperative that interrupt handlers run quickly in order to resume execution of the interrupted code as soon as possible. This is difficult considering the speed of network devices these days, which must respond to hardware, copy packets from hardware to main memory, process them, and push them down to the appropriate protocol stack or application. At the very least, it should respond to the hardware that its interrupt has been handled.
+
+Top Halves and Bottom Halves
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Due to the interrupt handler needing to execute quickly AND perform a large amount of work, the processing of interrupts is split into two halves. The interrupt handler is the *top half*, and is responsible for the time-critical work such as acknowledging receipt of the interrupt or resetting the hardware. Work that can be performed later is deferred until the *bottom half*. The bottom half runs in the future, at a more convenient time, with all interrupts enabled (ie: outside of interrupt context).
+
+Eg: Your network card needs to notify the kernel immediately that it has packets in order to optimize throughput and latency. It sends an interrupt, the kernel picks it up and runs an interrupt handler, which acknowledges the hardware, copies the new networking packets into main memory, and readies the network card for more packets. These jobs are the important, time-critical, and hardware-specific work - get data out of the smaller memory banks of the network card and put it in main memory. The rest of the processing of the packets occurs later, in the bottom half.
+
+Bottom Halves
+^^^^^^^^^^^^^
+
+When an interrupt handler is finished, it will typically raise a softirq or schedule a tasklet. A driver registers against or opens a softirq/tasklet to let the kernel know that it should be used for certain softirq events.
+
+**ksoftirqd/#**: These are per-processor kernel threads which handle softirq/tasklet requests. They are niced at the lowest possible value, 19, in order to avoid starving user-space applications in the event of excessive softirq requests.
+
+
+Locking
+-------
+
+**Spin lock**: Tries to acquire lock on a resource. If it's contended, the task attempting to acquire the lock ends up in a busy loop, repeatedly checking for the lock to be released. Once uncontended, acquires lock.
+**Semaphore**: Tries to acquire lock on a resource. If it's contended, the task attempting to acquire the lock gets put to sleep by the semaphore function, and the task gets added to the semaphore's wait_queue. When the next task decrements the semaphore, the sleeping task is awakened to acquire a spot on the semaphore
+**Mutex**: Like a semaphore, it puts tasks that try to acquire a contended resource to sleep. Unlike a semaphore, it limits access to a shared resource to one task at a time.
+
+Due to the overhead of the semaphore sleep/wake cycle, it should not be used to lock resources which you expect to have a high rate of lock/unlock. Spin locks in this case are better, as you expect the resource locking/unlocking to occur very quickly.
+
+A mutex is simpler, newer, and more efficient than a semaphore, and provides better protections. Whoever locked a mutex must unlock it. A process cannot exit while holding a mutex. A mutex cannot be acquired by an interrupt handler or bottom half.
+
+Only a spin lock can be used in interrupt context, and only a mutex can be held while a task sleeps.
+
+
+Signals
+-------
+man 7 signal
+
+A signal is either generated by the kernel internally (for example, *SIGSEGV* when an invalid memory address is accessed), or by a program using the *kill* syscall (or several related ones).
+
+If the signal comes from one of the syscalls, then the kernel confirms that the calling process has sufficient priviledges to send the signal. If the sending process has sufficient priviledges, and it is one of SIGKILL or SIGSTOP, then the kernel unconditionally acts on it, without any input from the target program.
+
+Otherwise, the kernel needs to figure out what to do with the signal. There is an associated action with each signal, and a target application can set these actions up when it starts up using *sigaction()*, *signal()*, and others. If it does not, then there are a bunch of default actions. These include things for the kernel to perform on the target, like "ignore it completely", "kill the process", "kill the process with a core dump", "stop the process", etc.
+
+Programs can also request that instead of the kernel taking some action itself, that it instead deliver the signal to the program either synchronously (with *sigwait()* et al, or *signalfd()*) or asynchronously (by interrupting whatever the process is doing, and calling a specified function).
+
+Receiving Signals: various signal related fields are set in the target process's task_struct. Before a process resumes execution in user mode, the kernel checks for pending non-blocked signals for that process and executes *do_signal()* repeatedly until no more non-blocked pending signals are left. If the signal is not ignored, or the defautl action is not performed, then the signal must be *caught* by the target process. To do this, *handle_signal()* is invoked by do_signal(), which executes the process's registered signal handler.
+
+Signal handlers reside & run in user mode code segments. When handle_signal() is invoked in kernel mode, the target process first executes a signal handler in user mode before resuming "normal" execution.
+
+
+Memory Management
+-----------------
+
+Pages
+^^^^^
+The kernel treats physical pages as the basic unit of memory management. Although the processor's smallest addressable unit is a byte or a word, the memory management unit (*MMU*, the **hardware** that manages memory and performs *virtual to physical address translations*) typically deals in pages. Therefore, the MMU maintains the system's page tables with page-sized granularity. In terms of virtual memory, pages are the smallest unit that matters.
+
+Most 32-bit architectures have 4KB pages, whereas most 64-bit archs have 8KB pages. This implies that on a machine with 4KB pages and 1GB of memory, physical memory is divided into 262,144 distinct pages. The kernel represents *every* physical page on the system with a *struct page* structure. This may seem like a lot, but of an 8KB page, only 40 bytes or so are used by this struct. This works out to just 5MB per 1GB of memory.
+
+It is important to understand that the **page structure is associated with physical pages, not virtual pages.** The data structure's goal is to describe physical memory, not the data contained therein.
+
+This page structure includes a *flags* field, which stores the status of the page. Such flags include whether the page is *dirty* (has been modified but not written back to main memory yet), or whether it is locked in memory. There are a lot more flags values, defined in linux/page-flags.h.
+
+The *_count* field stores the usage count of the page - that is, how many references there are to this page. When this count reaches *negative one*, no one is using the page, and it becomes *available for use in a new allocation.* Kernel code should not check this field directly, rather it should use the page_count() function (returns 0 if page is free, nonzero with page countif not).
+
+A page cache may be used by the page cache (in which case the *mapping* field points to the address_space object associated with this page), as private data (pointed at by *private*), or as a mapping in a process's page table.
+
+The kernel uses this structure to keep track of all the pages in the system, because the kernel needs to know whether a page is free. If a page is not free, the kernel needs to know who owns the page. Possible owners include user-space processes, dynamically allocated kernel data, static kernel code, the page cache, and so on.
+
+Zones
+^^^^^
+Certain architectures are unable to fully address all available memory. Additionally, certain hardware are unable to perform DMA (direct memory access) to all available pages past a certain range. To deal with this, linux divides pages into different zones.
+
+Here's x86-64. It's able to fully map and handle 64 bits of memory:
+
+ZONE_DMA : DMA-able pages : <16MB
+ZONE_NORMAL : Normally addressable pages : 16 -> *
+
+
+Kernel Memory Allocation
+^^^^^^^^^^^^^^^^^^^^^^^^
+**kmalloc()** : allocates a *physically and virtually contiguous* chunk of memory. *kfree()* frees that memory.
+**vmalloc()** : allocates a virtually contiguous chunk of memory, with no guarantee that they are physically contiguous. This is similar to how the user-space function malloc() returns pages which are contiguous within teh virtual address space of the processor.
+
+Typically the only things that need physically contiguous memory are hardware devices; however, the kmalloc() function is still most commonly used within the kernel (as opposed to vmalloc). This is because it's faster. vmalloc() needs to set up a page table with entries to map virtual pages to physical ones, and this page table needs to be read every time memory is accessed. Areas in the kernel where vmalloc() is preferrable is when a module or something needs to obtain large regions of memory.
+
+Slabs
+^^^^^
+Some data structures tend to be allocated and freed very often. This can result in memory fragmentation, and incurs the overhead of repeatedly allocating and deallocating memory. To get around this, "free lists" were used which contained already-allocated data structure space where if code needed a new instance of some data structure, it could just pull a matching structure off the free list and use that space. It would then return the space to the free list after it was done.
+
+This works, but there was no way for the kernel to know about all free lists and whether it was needed to shrink those free lists in order to free up memory when it was running low. As such, the slab layer was created. The linux kernel offers a generic *data-structure caching layer* called the *slab layer* (also called the *slab allocator*).
+
+This works by dividing different objects into groups called *caches*, each of which stores a different type of object. There is one cache per object type. For example, one cache is for process descriptors (a free list of task_struct structures), whereas another cache is for inode objects (struct inode).
+
+These caches are then divided into *slabs*. The slabs are composed of one or more physically contiguous pages (typically, slabs are composed of a single page). Each cache may have multiple slabs.
+
+Each slab contains some number of *objects*, which are the data structures themselves. Each slab is in one of three states: full, partial, or empty. When some part of the kernel requests a new object, the request is satisfied first by a partially full slab, and if none are available, then an empty slab. If there exists no empty slab, then one is created.
+
+So, an inode cache is likely going to have a ton of slabs, because it will have a ton of objects. When the kernel requests a new inode structure, the kernel retrusn a pointer to an already allocated, but unused structure from a partial slab (or an empty one if no partial avail). When the kernel is done using hte inode object, the slab allocator marks the object as free.
+
+These caches are represented by a kmem_cache structure, which contains three lists - slabs_full, slabs_partial, and slabs_empty. These lists contain *struct slab* elements which list allocated objects within the slab, first free object, etc.

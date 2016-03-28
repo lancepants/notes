@@ -491,8 +491,8 @@ High CPU usage, but no high cpu task showing up in top?
 
 How does **strace** work?
     Uses the ptrace() system call to temporarily re-parent a target process to itself.
-    When a process is ptraced, the tracer can ask for the child to stop whenever various events happen, such as making a system call. When thsi happens, the kernel will stop the child with SIGTRAP
-    Since the tracer is now the child's parents, it can watch for the SIGTRAP using the standard unix waitpid() system call
+    When a process is ptraced, the tracer can ask for the child to stop whenever various events happen, such as making a system call. When this happens, the kernel will stop the child with SIGTRAP. This is why strace is bad for perf.
+    Since the tracer is now the child's parents, it can watch for the SIGTRAP using the standard unix waitpid() system call, do stuff, then mark child runnable again
 
 **RAID levels**:
     XOR Table
@@ -515,13 +515,18 @@ How does **strace** work?
     __TASK_STOPPED - sigstop, sigtstp, sigttin, or sigttou received, or any signal received while being debugged
 
 
-**Context Switch**: The process of storing execution state of a process or thread so that execution can be resumed from the same point at a later time.
+**Context Switch**: Switch from one runnable task to another. Store execution state of a task so that execution can be resumed from the same point at a later time (switch_mm(), switch_to()).
     High cost context switching may include: swapping tasks which do not share memory, dirtying/filling cpu cache for original process once it's swapped back in. Or, swapping tasks which do share memory, but new task ends up on a different processor core, such that it doesn't have access to the same cache memory without a NUMA hop, or a trip to main memory
 
 
-**SIGNALS** : Signals are software interrupts. Kill sends a SIGTERM by default. The kernel delivers signals to target processes or process groups on behalf of an originating process, or on behalf of itself. If the originating process has the permissions to send a signal to another, the kernel forwards it on.
+**SIGNALS** : software interrupts. 
+Kill sends SIGTERM default. 
+- Process send signal via syscall (raise, kill, killpg...). Permissions checked. Signal written to target task_struct
+- Signals checked upon task re-entry to userspace. do_signal() ran until all signals clear
+- do_signal uses actions table (has default actions per signal)
+- proc can set actions, and pointer to its own signal handler func, via sigaction()
 
-Note that processes can ignore, block, or catch all signals *except SIGSTOP and SIGKILL*. If a process catches a signal, it means that *it includes code that will take appropriate action when the signal is received*. If the signal is not caught, the kernel will take the appropriate action for the signal.
+*SIGSTOP and SIGKILL* cannot be blocked.
 
 * SIGHUP hangup. Send this to a terminal and it will likely log you out. Other applications may instead use this signal as an indication to reload their configuration without terminating themselves.
 * SIGINT is sent when you ctrl-c something. It is intended to provide a mechanism for an orderly, graceful shutdown of the foreground process. Interactive shells (mysql, other) may take it to mean "terminate current query" rather than the whole process.
@@ -531,8 +536,7 @@ Note that processes can ignore, block, or catch all signals *except SIGSTOP and 
 
 "All People Seem To Need Data Processing" Applic Presenta Sessio Transpo Networ Data Phys
 
-**QUICKIES**
-Find out **what module a device is using**
+**what module a device is using**
 
   lspci | grep Eth    # 84:00.0 Ethernet controller: Solarfla ....
   find /sys/ -name '*84:00*   # /sys/bus/pci/drivers/sfc/0000:84:00.0  ,  so, module "sfc"
@@ -549,14 +553,45 @@ Print the **last column in each line** of output:
   lsblk
   lshw
 
-**tcpdump** quickie
+**tcpdump**  # perf warning: large dumps dirty system cache, i/o implications (disk&network)
 
     tcpdump -e -vvv -i any "host 1.2.3.4 and dst portrange 1-1023"
-    tcpdump -n "dst host 10.10.10.123 and (dst port 80 or dst port 443)"
+    tcpdump -c 1000 -n "dst host 10.10.10.123 and (dst port 80 or dst port 443)"  # stop after 1000 packets
     tcpdump -n "broadcast or multicast"
-    tcpdump -s 500   # capture 500B of data rather than default 68B. Use 0 for capture all data
+    tcpdump -s 500   # capture 500B of packet data rather than default 68B. Use 0 for capture all data
+
+**tshark**  # html, AMQP, SMPP, other dissectors
+
+    # filter just packets that have HTTP GET, then print out for each packet the request method and URI
+    tshark -i any -Y 'http.request.method == "GET"' -T fields -e http.request.method -e http.request.uri -e ip.dst
+
+**strace**  # high perf overhead. Not so good at finding latency problems. limited to syscall interface
+
+    strace -c -p 1234  # returns summary of syscalls, time, etc
+    strace -f -P /tmp -p 1234  # return calls where /tmp is accessed, follow children
+    strace -eopen,stat,connect,accept -p 1234  # only print those syscalls
 
 
+60s:
+**dmesg / syslog / cat /etc/[os-issue|release]**
+**top** : just a glance. Press 1 to view all cpus.
+**vmstat** 
+- r: num of procs running and waiting for a turn. if gt num procs, saturation is occurring!
+- free: too many digits to count? you have enough free. Use free -m
+- si,so : swapins, swapouts. Non-zero = you're out of memory
+- us,sy,id,wa,st : averages across all cpus.
+**iostat -xz 1**
+- -x(tended output), -z(omit inactive)
+- r/s, w/s, rkB/s, wkB/s
+- await : avg wait time for the I/O in ms. This is the wait the application suffers.
+- avgqu-sz : avg num requests issued to device. gt 1 might be saturation (depending on num of backend disks)
+- %util : percent time each second device was doing wrk. 60%-100% might mean poor performance/saturation, but not necessarily. Correlate with await.
+**free -m** -m(egabytes): 
+**sar -n DEV 1** -n(etwork) stats, per DEVice
+**sar -n TCP,ETCP 1** -n(etwork) stats, TCP
+- active/s: num of locally-initiated conns/sec (eg:via connect())
+- passive/s: num of remote-initiated conns/sec (eg:via accept())
+- retrans/s: num of retransmits/sec
 
 IOWait: the percentage of time the CPU is idle AND there is at least one I/O in progress. To understand this, you have to consider all other statistics counters which are taken into account - user(user space), sys(kernel space), iowait, and idle.
 
