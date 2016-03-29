@@ -109,6 +109,7 @@ Also reference: :ref:`networking-mtu`
 
 - Which system call returns inode information? (study all common system calls and know them)
 **Kernel - System Calls**: :ref:`kernel-systemcalls`
+stat(). Used by stat binary
 
 
 - What are signals? What signal does the "kill" command send by default? What happens if the signal is not caught by the target process?
@@ -514,6 +515,13 @@ How does **strace** work?
     __TASK_TRACED - task is being ptraced
     __TASK_STOPPED - sigstop, sigtstp, sigttin, or sigttou received, or any signal received while being debugged
 
+    "PS" Process States  # 'ps' will read additional fields in the task_struct in order to come up with its own states: 
+     R  running or runnable (on run queue)
+     D  uninterruptible sleep (usually IO)
+     S  interruptible sleep (waiting for an event to complete)
+     Z  defunct/zombie, terminated but not reaped by its parent
+     T  stopped, either by a job control signal or because
+        it is being traced (interruptible sleep)
 
 **Context Switch**: Switch from one runnable task to another. Store execution state of a task so that execution can be resumed from the same point at a later time (switch_mm(), switch_to()).
     High cost context switching may include: swapping tasks which do not share memory, dirtying/filling cpu cache for original process once it's swapped back in. Or, swapping tasks which do share memory, but new task ends up on a different processor core, such that it doesn't have access to the same cache memory without a NUMA hop, or a trip to main memory
@@ -540,6 +548,7 @@ Kill sends SIGTERM default.
   find /sys/ -name '*84:00*   # /sys/bus/pci/drivers/sfc/0000:84:00.0  ,  so, module "sfc"
   (alternately) lspci -nk
   (alternately) readlink /sys/class/net/<eth-device>/device/driver  # symlinks to loaded mod
+  (alternately) lshw   # driver=something under each entry.
 
 
 Print the **last column in each line** of output:
@@ -626,8 +635,8 @@ PDNTSPA!
 - Feel free to use fe80::1 or similar for router gateways...ease of use
 **NeighbourDiscoveryProtocol**
 - *ARP and Broadcasts REMOVED in v6*. NDP is replacement. Comms via multicast
-- gateway not in neighbour cache? send *Neighbour Soliciation (NS)* to target multicast address group IP (determined bymulticast prefix + last 24bits in dest addr. ie: dest machine auto-joins *FF01::1:FFlast-24-bits group* upon int up)
-- NS contains your link local addr. Dest responds directly to your link local with a *Neighbour Advertisement (NR)* containing its mac addr, etc. Added to neighb cache. STALE after 30s
+- gateway not in neighbour cache? send *Neighbour Soliciation (NS)* to target multicast address group IP (determined by multicast prefix + last 24bits in dest addr. ie: dest machine auto-joins *FF01::1:FFlast-24-bits group* upon int up)
+- NS contains your link local addr. Dest responds directly to your link local with a *Neighbour Advertisement (NA)* containing its mac addr, etc. Added to neighb cache. STALE after 30s
 **DuplicateAddressDetection(DAD)**
 - Occurs on IP assignment to interface. *Send NS* to target mcast group to see if anything else responds that has the IP you want. If NA is received, DAD fails
 - If all good, *send an NA to FF02::1* (ie: everyone) that it now has desired ipv6 addr. Also send msg to FF02:16 "all routers" mcast group stating it is joining FF02::1:FFlast-24-bits mcast group
@@ -639,6 +648,9 @@ PDNTSPA!
 - Device can query router for extra options (DNS). RA optionally has *managed flag* to disable SLAAC, get IP from DHCPv6 instead.
 
 
+
+
+read(), write(), open(), close(), lseek() : mv read/write ptr, unlink() : rm a file, chmod(), stat()
 
 
 **IOWait**: the percentage of time the CPU is idle AND there is at least one I/O in progress.
