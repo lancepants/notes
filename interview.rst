@@ -477,7 +477,7 @@ General
 
 Cheat Sheet
 -----------
-Make immutable, can't delete this file:
+**Make immutable**, can't delete this file:
     chattr +i filename
 
 Special file being a douche to rm? eg: $!filename, -filename, 'filename-
@@ -533,8 +533,6 @@ Kill sends SIGTERM default.
 * SIGQUIT signals a process to terminate and do a core dump
 * SIGSTOP suspends a processes execution. If you are experiencing some sort of intermittent socket/buffer full or backflow buildup related bug, SIGSTOP is a good way to reproduce the issue. File handles will be kept open.
 * SIGKILL is the ol' kill -9
-
-"All People Seem To Need Data Processing" Applic Presenta Sessio Transpo Networ Data Phys
 
 **what module a device is using**
 
@@ -593,6 +591,41 @@ Print the **last column in each line** of output:
 - passive/s: num of remote-initiated conns/sec (eg:via accept())
 - retrans/s: num of retransmits/sec
 
-IOWait: the percentage of time the CPU is idle AND there is at least one I/O in progress. To understand this, you have to consider all other statistics counters which are taken into account - user(user space), sys(kernel space), iowait, and idle.
+**/proc**
+    cat /proc/PID/maps  # see mapped memory for a PID
+    cat /proc/PID/wchan  # kernel function where process is sleeping. Alt: ps -flp 1234 , shows proc state too
+    cat /proc/PID/status  # run a couple times and watch ctxt_switches. If not moving, proc is stuck
+    cat /proc/PID/sched  # shows more scheduling/ctxt_switch info
+    cat /proc/PID/stack  # kernel stack for pid
+
+
+PDNTSPA!
+"All People Seem To Need Data Processing" Applic Presenta Sessio Transpo Networ Data Phys
+**TCP**
+- HEADER: sport, dport, seq#, ack#, offset, reserv, flags (9 bits), wsize, chksum, urg ptr, options, padding
+- TCP SEGMENT: Header section and data section
+- FLAGS: RST(reset conn), FIN(no more data from sender), SYN, ACK...
+- SYN, seq#1234 ----> SYN-ACK, ack#1235, syn#5432 ----> ACK, seq#5432, ack#5433
+- After handshake, seq#'s represent *each byte of data*, not each tcp segment. If seq# counter rollover, tcp timestamp used as fallback
+- *Recv Window*: amnt of data a computer can receive without ack'ing the sender. Original val: 64KB. TCP window scaling bit shifts this!
+- "Bandwidth Delay Product" :: (bits/sec) * RTTms = BDP. If more than 64KB of data is "in flight", then a bit shift is in order to raise window size
+
+**MTU**
+- Path MTU Discovery
+  - ipv4: set *DF* (don't fragment) in ip header. If ICMP *fragmentation needed* response from device along path, set to its MTU and retry.
+  - ipv6: does not support fragmentation. Send pmtud, if ICMPv6 *packet too big* response, set to its MTU and retry.
+- Blanket icmp firewall deny? bad! pmtud fail. Hacky workaround: modify maximum segment size (MSS) smaller until traffic goes through. This affects amnt of data put in each packet
+- Interwebs trouble? tcpdump/wireshark traffic outbound, ensure crappy hardware is not adding extra layers onto packets, exceeding 1500Bytes
+
+**IPv6**
+
+
+**IOWait**: the percentage of time the CPU is idle AND there is at least one I/O in progress.
+- Can sometimes be misleading
+- Each CPU can be in one of four states: user, sys, idle, iowait. When a clock interrupt occurs on a cpu, the kernel checks the cpu to see if it is idle or not. If it's not idle, then the kernel determines if the instruction being executed at that point is in user space or in kernel space. If user, increment 'user' counter by one. If kernel, increment 'kernel' counter.
+- If the CPU is idle, the kernel then determines if there is at least one I/O currently in progress to either a local disk or a remotely mounted disk (such as NFS) which has been *initiated from that CPU*. If so, then the IOWait counter is incremented by one. If not, then the idle counter is incremented by one.
+- When a perf tool such as vmstat is invoked, it reads the current value of those four counters. It then sleeps for some number of seconds, and re-reads all the counters. It subtracts the newer counter value with the older to get the delta value (difference). Since vmstat knows that the counters are incremented at each clock tick (eg: 10ms), it then divides the delta value of each counter by the number of clock ticks that passed in its polling period. These values are then multiplied by 100 to get the percent value of each.
+- Problem: If there are two programs running on a CPU, and one is doing very slow IO to a disk that is taking a second to respond, and the other is doing all its work computationally in user or sys, the slow IO to disk is going to get drowned out as the CPU is never idle (it will continually be sleeping the IO task and running the runnable cpu intensive task). If the CPU is not idle, then iowait doesn't get checked/incremented
+- Problem: tools which give an all-cpu-average load can be misleading.
 
 
