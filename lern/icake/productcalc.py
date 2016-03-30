@@ -27,9 +27,9 @@ def get_products_brute(intlist):
   products = []
   for n in intlist:
     product = 1
-    othernums = intlist[:]
-    othernums.remove(n)
-    for inner_n in othernums:
+    inner_nums = intlist[:]
+    inner_nums.remove(n)
+    for inner_n in inner_nums:
       product = product * inner_n
     products.append(product)
   print(products)
