@@ -36,9 +36,11 @@ Write something that's efficient even when we can't put a
 nice upper bound on the numbers representing our time 
 ranges.
 
-- build a list of len(max(tuplist)), fill with range vals
+- make a list of all the busy times. Exclude end_times
+so they are not treated as busy
 - check if diff > 1 exists between elements
-- 
+- does a diff >= 2 get caught?
+- do out-of-order times get caught?
 '''
 
 def condense_meeting_times(tuplist):
@@ -51,6 +53,7 @@ def condense_meeting_times(tuplist):
     end_time = tup[1]
     for n in range(start_time, end_time):
       busy_times.append(n)
+  # set() will actually order the numbers for us...
   busy_times = list(set(busy_times))
 
   # Now go through list of busy times. If there is a
@@ -76,3 +79,4 @@ def condense_meeting_times(tuplist):
 
 if __name__ == '__main__':
   condense_meeting_times([(0, 1), (3, 5), (4, 8), (10, 12), (9, 10)])  # [(0, 1), (3, 8), (9, 12)]
+  condense_meeting_times([(3, 5), (4, 8), (20, 22), (9, 10)])  # [(3, 8), (9, 10), (20, 22)]
