@@ -27,13 +27,56 @@ assume they'll all be in the range 0..1100..110.
 If there is more than one mode, return any of the modes.
 '''
 
+
 class TempTracker():
-  pass
+  def __init__(self):
+    self.temps = []
 
+  def insert(self, newtemps):
+    for n in newtemps:
+      self.temps.append(n)
 
-def main():
-  pass
+  def get_max(self):
+    # max is O(n)
+    return max(self.temps)
+
+  def get_min(self):
+    # min is O(n)
+    return min(self.temps)
+
+  def get_mean(self):
+    total = 0
+    for n in self.temps:
+      total += n
+    # Result of division in python is already a float
+    avg = total/len(self.temps)
+    return avg
+
+  def get_mode(self):
+    d = {k:0 for k in set(self.temps)}
+    for n in self.temps:
+      d[n] += 1
+
+    # We can do an O(n log n) or O(n) at best, but we have to
+    # duplicate the data to a new obj to do so.
+    #sortedvals = sorted(d.items(), key=lambda x: x[1], reverse=True)
+
+    # Instead, we can do an O(n) walk through and just keep track of 
+    # the highest value we've seen so far, and the key (temperature)
+    highest = 0
+    key = 0
+    for k,v in d.items():
+      if v > highest:
+        highest = v
+        key = k
+    return key
 
 
 if __name__ == '__main__':
   tempObj = TempTracker()
+  tempObj.insert([4,6,1,9,8,8,4,8])
+  print(tempObj.temps)
+  print(tempObj.get_max())
+  print(tempObj.get_min())
+  print(tempObj.get_mean())
+  print(tempObj.get_mode())
