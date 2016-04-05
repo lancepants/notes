@@ -569,6 +569,3 @@ The kernel maps virtual memory addresses to physical ones via page tables. These
 
 struct mm_struct --> PGD table --> PMD table --> PTE table --> struct page --> physical page
 
-
-
-
