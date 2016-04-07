@@ -302,6 +302,8 @@ See above, "What are signals?"
 
 Design
 ------
+Look in :ref:`design` for this stuff!
+
 Reference stackshare.io for ideas.
 
 * (googs)How would you design Gmail?
@@ -354,10 +356,10 @@ Python 3's translate method expects a translation table (ie: dict) passed to it 
   charTransTable = str.maketrans('', '', 'aeiou')
   # or
   charTransTable = str.maketrans('', '', string2)
+  # now pass the translation table to yourstring.translate()
   string1.translate(charTransTable)
 
 - implement quicksort. Determine its running time.
-
 
 - Given a numerym (first letter + length of omitted characters + last letter), how would you return all possible original words? E.G. i18n the numeronym of internationalization
 - Find the shortest path between two words (like "cat" and "dog), changing only one letter at a time.
@@ -451,7 +453,7 @@ Facebook Glassdoor
   python3 -m cProfile -o out.profile wordfreq.py short-story.txt ; python runsnake.py out.profile
   - Memory. There is a module called memory_profiler that will output, line by line, how much memory your script uses:
   pip install -U memory_profiler
-  pip instlal psutil #this is for better memory_profiler module performance
+  pip install psutil #this is for better memory_profiler module performance
   vim freqgen #add @profile decorator above the function you're interested in
   python -m memory_profiler freqgen.py short-story.txt
 
@@ -661,4 +663,22 @@ read(), write(), open(), close(), lseek() : mv read/write ptr, unlink() : rm a f
 - Problem: If there are two programs running on a CPU, and one is doing very slow IO to a disk that is taking a second to respond, and the other is doing all its work computationally in user or sys, the slow IO to disk is going to get drowned out as the CPU is never idle (it will continually be sleeping the IO task and running the runnable cpu intensive task). If the CPU is not idle, then iowait doesn't get checked/incremented
 - Problem: tools which give an all-cpu-average load can be misleading.
 
+
+
+Design Cheat Sheet
+------------------
+**Good design**: 
+- Nice abstractions. metrics/alerts/logging for ops people. Scalable. Simple. Maintenance=cost over time
+- Load profile. req/sec, size per req, conn persistence, desired resp time, read vs write ratio, cpu vs disk vs network
+**percentiles**: 
+- mean doesn't tell much. Use percentiles. p50=mean latency, 50% faster and 50% slower than #ms
+- p95, p99, p999 aka 95th, 99th, 99.9th percentile. If p99=100ms, 99 of 100 requests are served in under 100ms
+**NoSQL**: 
+- GOOD: Your app has a *document-like structure*, a *tree of one-to-many relationships*, where typically the *entire tree is loaded at once*
+- GOOD: *data locality*, all the data you want is in the same record. No need to span out a single request
+- GOOD: easy to achieve very large datasets, very high write throughput, specialized queries, unrestricted schema
+- BAD: many-to-one eg: many people in one region, many-to-many eg: many people's resume's referring to many others
+- BAD: anywhere a join relates data. This is very common. 
+- BAD: Anywhere normalization to save space makes more sense
+**RDBMS**: A relation (table) is simply a collection of tuples (rows)
 
