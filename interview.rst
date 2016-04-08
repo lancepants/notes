@@ -212,7 +212,13 @@ If a parent process doesn't handle the SIGCHLD and call wait(), you end up with 
 Read more about the user and system separation in :ref:`linux-internals`.
 
 - How can disk performance be improved?
-Caching, sequential reads/writes, block/stripe alignment.
+Caching, sequential reads/writes, block/stripe alignment, separate disk for journal, filesystem-specific settings to make RAID-aware (chunk size, num of disks)
+
+The disk firmware has all of the disk mapped out into sectors, usually 4KB on today's drives. 
+
+An application at the OS level might assume that the disk operates on 512B sectors (old), and as such may request a 512B sector at some-disk-address. When this happens, either the disk or (more likely these days) the filesystem has to translate that smaller sector request to which larger 4KB sector the data is a part of.
+
+In addition to this problem, a partitioning application may have defined the partition start-sector to be in one of these 512B spaces rather than at the start of an on-disk-mapped 4KB sector. Avoiding this issue and starting your partitions at the start of a disk's 4KB sector is called partition alignment. Alternately, you can avoid partition misalignment issues by simply throwing the filesystem directly on disk without creating a partition table, ie: "mkfs.xfs /dev/sdb"
 
 - Explain in every single step about what will happen after you type "ls (asterisk-symbol-redacted)" or "ps" in your terminal, down to machine language
 Variant of :ref:`rabbithole`
