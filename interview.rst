@@ -553,7 +553,7 @@ Kill sends SIGTERM default.
 **what module a device is using**
 
   lspci | grep Eth    # 84:00.0 Ethernet controller: Solarfla ....
-  find /sys/ -name '*84:00*   # /sys/bus/pci/drivers/sfc/0000:84:00.0  ,  so, module "sfc"
+  find /sys/ -name '*84:00*'   # /sys/bus/pci/drivers/sfc/0000:84:00.0  ,  so, module "sfc"
   (alternately) lspci -nk
   (alternately) readlink /sys/class/net/<eth-device>/device/driver  # symlinks to loaded mod
   (alternately) lshw   # driver=something under each entry.

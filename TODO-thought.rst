@@ -8,6 +8,8 @@ TODO:
 Design
 ------
 Reference stackshare.io for ideas.
+- (fb)Write about shared file systems which are read/written to from many servers.
+- (fb)Write about distributed systems and different types of consistency models and where they are used
 
 * (googs)How would you design Gmail?
 * (googs)How do you best deal with processing huge amounts of data? (if you say map reduce, learn a ton about it)
