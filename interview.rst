@@ -650,7 +650,11 @@ PDNTSPA!
 - Device can query router for extra options (DNS). RA optionally has *managed flag* to disable SLAAC, get IP from DHCPv6 instead.
 
 
-
+**Curl**
+curl -k -O "https://blah.com/foo?bar=some_file"  # -k means allow insecure. -O download file.
+curl -i -H "Content-Type: application/json" -X POST -d myfile.json https://blah.com/rest/v1/Sessions # -i(nclude) response headers
+curl -A "MyBrowser/1.2" -e http://referal.header.com -b "name=mycookie" --user name:password http://someurl.com
+# Percentiles? histograms? much more power? Use vegeta
 
 read(), write(), open(), close(), lseek() : mv read/write ptr, unlink() : rm a file, chmod(), stat()
 
@@ -669,7 +673,7 @@ Design Cheat Sheet
 ------------------
 **Good design**: 
 - Nice abstractions. metrics/alerts/logging for ops people. Scalable. Simple. Maintenance=cost over time
-- Load profile. req/sec, size per req, conn persistence, desired resp time, read vs write ratio, cpu vs disk vs network
+- Load profile. req/sec, size per req, conn persistence, desired resp time, read vs write ratio, cpu vs disk vs network vs memory, cacheable reads...
 **percentiles**: 
 - mean doesn't tell much. Use percentiles. p50=mean latency, 50% faster and 50% slower than #ms
 - p95, p99, p999 aka 95th, 99th, 99.9th percentile. If p99=100ms, 99 of 100 requests are served in under 100ms
@@ -681,4 +685,25 @@ Design Cheat Sheet
 - BAD: anywhere a join relates data. This is very common. 
 - BAD: Anywhere normalization to save space makes more sense
 **RDBMS**: A relation (table) is simply a collection of tuples (rows)
+
+
+Python Cheat Sheet
+------------------
+
+**File Ops**:
+- content = f.read() # reads entire file into memory
+  content = f.read(1024) # read 1KB of file. Move ptr forward 1KB.
+- content = f.readlines() # reads entire file into memory, one list ele per line
+- oneline = f.readline() # generator. Reads a single line, moves file ptr
+- f.pos(0,2) # set ptr to end of file
+- f.seek(0) # set ptr to defined position. 0=start of file
+- f.tell() # get current ptr pos
+- ptr's go up one char at a time. 0 = first char, 1 = second char, ...
+
+    with open('api-examples', 'r') as f:
+      for line in f.readline():
+        for c in line:
+          if c.isalpha():
+            print(c, sep='', end='')  # end='' means don't print newline
+      print('\n')
 
