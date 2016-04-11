@@ -5,6 +5,24 @@ Rabbit Hole
 
 The above question (or a variant of it) is an extremely common interview question, with a nearly bottomless answer to it. This page attempts a reasonable answer.
 
+interrupt keyboard -> intr cntrlr -> INT cpu -> kernel INT func -> kernel intr handler
+clone(), ctxt switch, parent registers cp'd to proc kernel stack
+copy_process, alloc new task_struct from slab, fill with parent vals mostly
+mm_copy, alloc new mem struct from slab, fill with parent vals (depending on clone() args)
+mark runnable, put on task_queue, call schedule()
+clone return, if ret > 0, you_are_child. execve with args
+child does dentry lookup. Uses $PATH if arg not absolute
+parent proc might look for EOF on child stdout, or some_other_fd
+
+telnet getaddrinfo() - local checked, then resolver
+socket created, destIP SOCK_DGRAM (or tcp if ipv6 resp too big)
+check routes. hopefully previous RA has filled it in
+NS for gw MAC to specific mcast addr, NA response
+resource record lookup, dns recursion happens, AAAA passed back
+
+telnet create another socket, socket fd added to proc's fd's, getaddrinfo dance happens again, conn to google.com
+
+
 Shell Interpretation
 --------------------
 - Shell interpreter takes in each item, separated by space, and saves it. In this case nothing fancy is going on, and bash might set ARG1 to google.com and ARG2 to 80

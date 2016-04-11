@@ -30,12 +30,15 @@ Study more of:
 Questions
 ---------
 - What is an initrd and why is it needed?
-initrd stands for Initial RAM Disk. PXE/some_bootloader extracts and executes the kernel, and then the kernel can extract and mount its associated initrd. initrd provides a virtual root filesystem which contains several executables and modules that permit the real root filesystem to be mounted, or to do whatever else you'd like at that point in the boot process.
+initrd stands for Initial RAM Disk. PXE/some_bootloader extracts and executes the kernel, and then the kernel can extract and mount its associated initrd. initrd provides a virtual root filesystem which contains several executables and modules that permit the real root filesystem to be mounted such that needed kernel modules from the disk can be accessed, or to do whatever else you'd like at that point in the boot process.
 
-Nearly all of initrd's use cases involve needing to load some needed module into the kernel in order to support a non-standard root filesystem, LVM, network drive, or RAID controller prior to full boot. You may also choose to rebuild your kernel to include necessary modules and get rid of the initrd; however, in the instances of needing to mount a network drive, run some sort of process that doesn't need to boot fully into linux, or do some other "staging" type thing, an initrd environment is useful.
+Nearly all of initrd's use cases involve needing to load some module into the kernel in order to access a non-standard root filesystem (where more modules reside), LVM, network drive, or RAID controller prior to full boot. You may also choose to rebuild your kernel to include necessary modules and get rid of the initrd; however, in the instances of needing to mount a network drive, run some sort of process that doesn't need to boot fully into linux, or do some other "staging" type thing, an initrd environment is useful.
 
 - Files, inodes, filesystems...how do they work? What are file descriptors? 
 **Filesystems, inodes, file descriptors**: Described in :ref:`filesystems`
+A file descriptor is an index into a per-process file descriptor table maintained by the kernel, that in turn indexes into a system-wide table of files opened by all processes, called the *file table*. This file table records the *mode* (r, w, rw, append...) with which the file (or other resource) has been opened, as well as indexes into a third table called teh *inode table* that describes teh actual underlying files.
+
+To perform input or output, the process passes the file descriptor to the kernel through a system call (read(), write(), etc), and the kernel will access the file *on behalf of the process*. The process does not have direct access to the file or inode tables.
 
 - What are semaphores? What is a mutex? What's the difference between the two?
 A semaphore is best described as a signaling mechanism, but could also be described as a type of lock. A semaphore is an object that contains a (natural) number, on which two modifying operations are defined. One operation, V, adds 1 to the number. The other operation, P, removes 1. Because the natural number 0 cannot be decreased, calling P on a semaphore containing 0 will block the execution of the calling process/thread until some other thread comes along and calls a V on that semaphore. You may create a semaphore with more than one "slot" available (ie: s(6)). As such, semaphores can be used to restrict acess to a certain resource to a maximum (but variable) number of processes.
@@ -106,6 +109,7 @@ Also reference: :ref:`networking-mtu`
 
 - Which system call returns inode information? (study all common system calls and know them)
 **Kernel - System Calls**: :ref:`kernel-systemcalls`
+stat(). Used by stat binary
 
 
 - What are signals? What signal does the "kill" command send by default? What happens if the signal is not caught by the target process?
@@ -208,7 +212,13 @@ If a parent process doesn't handle the SIGCHLD and call wait(), you end up with 
 Read more about the user and system separation in :ref:`linux-internals`.
 
 - How can disk performance be improved?
-Caching, sequential reads/writes, block/stripe alignment.
+Caching, sequential reads/writes, block/stripe alignment, separate disk for journal, filesystem-specific settings to make RAID-aware (chunk size, num of disks)
+
+The disk firmware has all of the disk mapped out into sectors, usually 4KB on today's drives. 
+
+An application at the OS level might assume that the disk operates on 512B sectors (old), and as such may request a 512B sector at some-disk-address. When this happens, either the disk or (more likely these days) the filesystem has to translate that smaller sector request to which larger 4KB sector the data is a part of.
+
+In addition to this problem, a partitioning application may have defined the partition start-sector to be in one of these 512B spaces rather than at the start of an on-disk-mapped 4KB sector. Avoiding this issue and starting your partitions at the start of a disk's 4KB sector is called partition alignment. Alternately, you can avoid partition misalignment issues by simply throwing the filesystem directly on disk without creating a partition table, ie: "mkfs.xfs /dev/sdb"
 
 - Explain in every single step about what will happen after you type "ls (asterisk-symbol-redacted)" or "ps" in your terminal, down to machine language
 Variant of :ref:`rabbithole`
@@ -298,6 +308,8 @@ See above, "What are signals?"
 
 Design
 ------
+Look in :ref:`design` for this stuff!
+
 Reference stackshare.io for ideas.
 
 * (googs)How would you design Gmail?
@@ -350,10 +362,10 @@ Python 3's translate method expects a translation table (ie: dict) passed to it 
   charTransTable = str.maketrans('', '', 'aeiou')
   # or
   charTransTable = str.maketrans('', '', string2)
+  # now pass the translation table to yourstring.translate()
   string1.translate(charTransTable)
 
 - implement quicksort. Determine its running time.
-
 
 - Given a numerym (first letter + length of omitted characters + last letter), how would you return all possible original words? E.G. i18n the numeronym of internationalization
 - Find the shortest path between two words (like "cat" and "dog), changing only one letter at a time.
@@ -447,7 +459,7 @@ Facebook Glassdoor
   python3 -m cProfile -o out.profile wordfreq.py short-story.txt ; python runsnake.py out.profile
   - Memory. There is a module called memory_profiler that will output, line by line, how much memory your script uses:
   pip install -U memory_profiler
-  pip instlal psutil #this is for better memory_profiler module performance
+  pip install psutil #this is for better memory_profiler module performance
   vim freqgen #add @profile decorator above the function you're interested in
   python -m memory_profiler freqgen.py short-story.txt
 
@@ -472,11 +484,232 @@ General
 - re-implement grep in python
 - make a url shortener in python
 
-Quickies
---------
-Make immutable, can't delete this file:
+Cheat Sheet
+-----------
+**Make immutable**, can't delete this file:
     chattr +i filename
 
 Special file being a douche to rm? eg: $!filename, -filename, 'filename-
     ls -i    #list by inode
     find . -inum 1234 -exec rm {} \;
+
+Low CPU usage, but slow performance?
+    tasks in sleep waiting for IO do not count against cpu time. Usually uninterruptible sleep.
+High CPU usage, but no high cpu task showing up in top?
+    Could be short-lived processes crash-looping. Troubleshoot with atop, or bgregg execsnoop, or systemtap
+
+How does **strace** work?
+    Uses the ptrace() system call to temporarily re-parent a target process to itself.
+    When a process is ptraced, the tracer can ask for the child to stop whenever various events happen, such as making a system call. When this happens, the kernel will stop the child with SIGTRAP. This is why strace is bad for perf.
+    Since the tracer is now the child's parents, it can watch for the SIGTRAP using the standard unix waitpid() system call, do stuff, then mark child runnable again
+
+**RAID levels**:
+    XOR Table
+    0 : 0 = 0
+    1 : 0 = 1
+    0 : 1 = 1
+    1 : 1 = 0
+    
+    Raid breaks up data into stripes (across disks), and further into segments (per disk). If you choose a 256KB stripe size(width) and have 4 disks (raid0) or 5 disks (raid5, 4d+1p), your segment size is 256/4 = 64KB. Optimally, you're looking to have a segment size that is larger than your average IO request such that, say, 4 IO requests can all be done in one stripe without any segments having to cross over across multiple disks. This saves iops.
+
+    RAID4 - like raid5 but doesn't stagger parity disk. Slow because all writes have to wait for single parity disk.
+    RAID5 - req's 3 disks. Can support one disk loss no matter how many disks in array. Distributes parity writes. XORs each bit of data on disk1 against disk2. If disk1 bit is 1 and parity bit is 0, then failed disk2 must have had bit 1 as well.
+    RAID6 - same as raid5 but two parity bits. Req's 4 disks. Can handle two concurrent disk losses. First parity write is a simple XOR, second parity write is based on galois fields
+
+**Process states**:
+    TASK_RUNNING - running or on run-queue waiting to run
+    TASK_INTERRUPTIBLE - sleeping (blocked). Waiting for kernel to wake it up, or for a signal
+    TASK_UNINTERRUPTIBLE - sleeping (blocked), but does not wake up for a signal. Typical: IO blocked
+    __TASK_TRACED - task is being ptraced
+    __TASK_STOPPED - sigstop, sigtstp, sigttin, or sigttou received, or any signal received while being debugged
+
+    "PS" Process States  # 'ps' will read additional fields in the task_struct in order to come up with its own states: 
+     R  running or runnable (on run queue)
+     D  uninterruptible sleep (usually IO)
+     S  interruptible sleep (waiting for an event to complete)
+     Z  defunct/zombie, terminated but not reaped by its parent
+     T  stopped, either by a job control signal or because
+        it is being traced (interruptible sleep)
+
+**Context Switch**: Switch from one runnable task to another. Store execution state of a task so that execution can be resumed from the same point at a later time (switch_mm(), switch_to()).
+    High cost context switching may include: swapping tasks which do not share memory, dirtying/filling cpu cache for original process once it's swapped back in. Or, swapping tasks which do share memory, but new task ends up on a different processor core, such that it doesn't have access to the same cache memory without a NUMA hop, or a trip to main memory
+
+
+**SIGNALS** : software interrupts. 
+Kill sends SIGTERM default. 
+- Process send signal via syscall (raise, kill, killpg...). Permissions checked. Signal written to target task_struct
+- Signals checked upon task re-entry to userspace. do_signal() ran until all signals clear
+- do_signal uses actions table (has default actions per signal)
+- proc can set actions, and pointer to its own signal handler func, via sigaction()
+
+*SIGSTOP and SIGKILL* cannot be blocked.
+
+* SIGHUP hangup. Send this to a terminal and it will likely log you out. Other applications may instead use this signal as an indication to reload their configuration without terminating themselves.
+* SIGINT is sent when you ctrl-c something. It is intended to provide a mechanism for an orderly, graceful shutdown of the foreground process. Interactive shells (mysql, other) may take it to mean "terminate current query" rather than the whole process.
+* SIGQUIT signals a process to terminate and do a core dump
+* SIGSTOP suspends a processes execution. If you are experiencing some sort of intermittent socket/buffer full or backflow buildup related bug, SIGSTOP is a good way to reproduce the issue. File handles will be kept open.
+* SIGKILL is the ol' kill -9
+
+**what module a device is using**
+
+  lspci | grep Eth    # 84:00.0 Ethernet controller: Solarfla ....
+  find /sys/ -name '*84:00*'   # /sys/bus/pci/drivers/sfc/0000:84:00.0  ,  so, module "sfc"
+  (alternately) lspci -nk
+  (alternately) readlink /sys/class/net/<eth-device>/device/driver  # symlinks to loaded mod
+  (alternately) lshw   # driver=something under each entry.
+
+
+Print the **last column in each line** of output:
+
+  cat something | awk '{print $NF}'
+
+**See detected block devices** (much better than ls /dev/xda<tab><tab>), list hardware nicely
+
+  lsblk
+  lshw
+
+**tcpdump**  # perf warning: large dumps dirty system cache, i/o implications (disk&network)
+
+    tcpdump -e -vvv -i any "host 1.2.3.4 and dst portrange 1-1023"
+    tcpdump -c 1000 -n "dst host 10.10.10.123 and (dst port 80 or dst port 443)"  # stop after 1000 packets
+    tcpdump -n "broadcast or multicast"
+    tcpdump -s 500   # capture 500B of packet data rather than default 68B. Use 0 for capture all data
+
+**tshark**  # html, AMQP, SMPP, other dissectors
+
+    # filter just packets that have HTTP GET, then print out for each packet the request method and URI
+    tshark -i any -Y 'http.request.method == "GET"' -T fields -e http.request.method -e http.request.uri -e ip.dst
+
+**strace**  # high perf overhead. Not so good at finding latency problems. limited to syscall interface
+
+    strace -c -p 1234  # returns summary of syscalls, time, etc
+    strace -f -P /tmp -p 1234  # return calls where /tmp is accessed, follow children
+    strace -eopen,stat,connect,accept -p 1234  # only print those syscalls
+
+
+60s:
+**dmesg / syslog / cat /etc/[os-issue|release]**
+**top** : just a glance. Press 1 to view all cpus.
+**vmstat** 
+- r: num of procs running and waiting for a turn. if gt num procs, saturation is occurring!
+- free: too many digits to count? you have enough free. Use free -m
+- si,so : swapins, swapouts. Non-zero = you're out of memory
+- us,sy,id,wa,st : averages across all cpus.
+**iostat -xz 1**
+- -x(tended output), -z(omit inactive)
+- r/s, w/s, rkB/s, wkB/s
+- await : avg wait time for the I/O in ms. This is the wait the application suffers.
+- avgqu-sz : avg num requests issued to device. gt 1 might be saturation (depending on num of backend disks)
+- %util : percent time each second device was doing wrk. 60%-100% might mean poor performance/saturation, but not necessarily. Correlate with await.
+**free -m** -m(egabytes): 
+**sar -n DEV 1** -n(etwork) stats, per DEVice
+**sar -n TCP,ETCP 1** -n(etwork) stats, TCP
+- active/s: num of locally-initiated conns/sec (eg:via connect())
+- passive/s: num of remote-initiated conns/sec (eg:via accept())
+- retrans/s: num of retransmits/sec
+
+**/proc**
+    cat /proc/PID/maps  # see mapped memory for a PID (text, data, bss...repeated). *pmap -x PID* is more readable!
+    cat /proc/PID/wchan  # kernel function where process is sleeping. Alt: ps -flp 1234 , shows proc state too
+    cat /proc/PID/status  # run a couple times and watch ctxt_switches. If not moving, proc is stuck
+    cat /proc/PID/sched  # shows more scheduling/ctxt_switch info
+    cat /proc/PID/stack  # kernel stack for pid
+
+
+PDNTSPA!
+"All People Seem To Need Data Processing" Applic Presenta Sessio Transpo Networ Data Phys
+**TCP**
+- HEADER: sport, dport, seq#, ack#, offset, reserv, flags (9 bits), wsize, chksum, urg ptr, options, padding
+- TCP SEGMENT: Header section and data section
+- FLAGS: RST(reset conn), FIN(no more data from sender), SYN, ACK...
+- SYN, seq#1234 ----> SYN-ACK, ack#1235, syn#5432 ----> ACK, seq#5432, ack#5433
+- After handshake, seq#'s represent *each byte of data*, not each tcp segment. If seq# counter rollover, tcp timestamp used as fallback
+- *Recv Window*: amnt of data a computer can receive without ack'ing the sender. Original val: 64KB. TCP window scaling bit shifts this!
+- "Bandwidth Delay Product" :: (bits/sec) * RTTms = BDP. If more than 64KB of data is "in flight", then a bit shift is in order to raise window size
+
+**MTU**
+- Path MTU Discovery
+  - ipv4: set *DF* (don't fragment) in ip header. If ICMP *fragmentation needed* response from device along path, set to its MTU and retry.
+  - ipv6: does not support fragmentation. Send pmtud, if ICMPv6 *packet too big* response, set to its MTU and retry.
+- Blanket icmp firewall deny? bad! pmtud fail. Hacky workaround: modify maximum segment size (MSS) smaller until traffic goes through. This affects amnt of data put in each packet
+- Interwebs trouble? tcpdump/wireshark traffic outbound, ensure crappy hardware is not adding extra layers onto packets, exceeding 1500Bytes
+
+**IPv6**
+- 128bits. 8 groups of 16 bits. 4 bits = one hex value
+- fe80:: link local, ::1/128 localhost, fc00::/7 Unique Local Addr (avoid), 2xxx|3xxx::/7 current public release, FFxx: multicast
+- Shrink consec 0:0:0's to :: only once. Every host joins FF02::1 mcast group. FF02::1:FF is general mcast group prefix
+- link local addrs used solely for ipv6 orchestration (neighbour discovery, dhcpv6...). *will not route*
+- EUI64 Addressing: take 48-bit MAC, inject FFEE in middle, flip 7th bit (7th bit notes: is this IANA assigned mac? or administrator assigned? stupid rule). Only works with /64's
+- Feel free to use fe80::1 or similar for router gateways...ease of use
+**NeighbourDiscoveryProtocol**
+- *ARP and Broadcasts REMOVED in v6*. NDP is replacement. Comms via multicast
+- gateway not in neighbour cache? send *Neighbour Soliciation (NS)* to target multicast address group IP (determined by multicast prefix + last 24bits in dest addr. ie: dest machine auto-joins *FF01::1:FFlast-24-bits group* upon int up)
+- NS contains your link local addr. Dest responds directly to your link local with a *Neighbour Advertisement (NA)* containing its mac addr, etc. Added to neighb cache. STALE after 30s
+**DuplicateAddressDetection(DAD)**
+- Occurs on IP assignment to interface. *Send NS* to target mcast group to see if anything else responds that has the IP you want. If NA is received, DAD fails
+- If all good, *send an NA to FF02::1* (ie: everyone) that it now has desired ipv6 addr. Also send msg to FF02:16 "all routers" mcast group stating it is joining FF02::1:FFlast-24-bits mcast group
+**Routing/SLAAC**
+- Router to router: *All routers join FF02::2, FF02::16*. Routers send out *Router Advertisements (RA)* to all nodes in FF02::2, stating which subnets they can route. RA every 200s. Device notifies FF02::16 when it joins an mcast group.
+- If a device doesn't know its net prefix+gw, it sends *Router Solicitation (RS)* to FF02::2. Triggers an immediate RA response on FF02::1 (ie: everyone)
+- RA's sent to FF02::1 (everyone). RA contains ICMPv6 Option Prefix containing network prefix (ie: 2001:BEEF::/64)
+- Device reads RA, sets its network prefix + EUI-64 addr, and *sets its gateway to the source addr of the RA*
+- Device can query router for extra options (DNS). RA optionally has *managed flag* to disable SLAAC, get IP from DHCPv6 instead.
+
+
+**Curl**
+curl -k -O "https://blah.com/foo?bar=some_file"  # -k means allow insecure. -O download file.
+curl -i -H "Content-Type: application/json" -X POST -d myfile.json https://blah.com/rest/v1/Sessions # -i(nclude) response headers
+curl -A "MyBrowser/1.2" -e http://referal.header.com -b "name=mycookie" --user name:password http://someurl.com
+# Percentiles? histograms? much more power? Use vegeta
+
+read(), write(), open(), close(), lseek() : mv read/write ptr, unlink() : rm a file, chmod(), stat()
+
+
+**IOWait**: the percentage of time the CPU is idle AND there is at least one I/O in progress.
+- Can sometimes be misleading
+- Each CPU can be in one of four states: user, sys, idle, iowait. When a clock interrupt occurs on a cpu, the kernel checks the cpu to see if it is idle or not. If it's not idle, then the kernel determines if the instruction being executed at that point is in user space or in kernel space. If user, increment 'user' counter by one. If kernel, increment 'kernel' counter.
+- If the CPU is idle, the kernel then determines if there is at least one I/O currently in progress to either a local disk or a remotely mounted disk (such as NFS) which has been *initiated from that CPU*. If so, then the IOWait counter is incremented by one. If not, then the idle counter is incremented by one.
+- When a perf tool such as vmstat is invoked, it reads the current value of those four counters. It then sleeps for some number of seconds, and re-reads all the counters. It subtracts the newer counter value with the older to get the delta value (difference). Since vmstat knows that the counters are incremented at each clock tick (eg: 10ms), it then divides the delta value of each counter by the number of clock ticks that passed in its polling period. These values are then multiplied by 100 to get the percent value of each.
+- Problem: If there are two programs running on a CPU, and one is doing very slow IO to a disk that is taking a second to respond, and the other is doing all its work computationally in user or sys, the slow IO to disk is going to get drowned out as the CPU is never idle (it will continually be sleeping the IO task and running the runnable cpu intensive task). If the CPU is not idle, then iowait doesn't get checked/incremented
+- Problem: tools which give an all-cpu-average load can be misleading.
+
+
+
+Design Cheat Sheet
+------------------
+**Good design**: 
+- Nice abstractions. metrics/alerts/logging for ops people. Scalable. Simple. Maintenance=cost over time
+- Load profile. req/sec, size per req, conn persistence, desired resp time, read vs write ratio, cpu vs disk vs network vs memory, cacheable reads...
+**percentiles**: 
+- mean doesn't tell much. Use percentiles. p50=mean latency, 50% faster and 50% slower than #ms
+- p95, p99, p999 aka 95th, 99th, 99.9th percentile. If p99=100ms, 99 of 100 requests are served in under 100ms
+**NoSQL**: 
+- GOOD: Your app has a *document-like structure*, a *tree of one-to-many relationships*, where typically the *entire tree is loaded at once*
+- GOOD: *data locality*, all the data you want is in the same record. No need to span out a single request
+- GOOD: easy to achieve very large datasets, very high write throughput, specialized queries, unrestricted schema
+- BAD: many-to-one eg: many people in one region, many-to-many eg: many people's resume's referring to many others
+- BAD: anywhere a join relates data. This is very common. 
+- BAD: Anywhere normalization to save space makes more sense
+**RDBMS**: A relation (table) is simply a collection of tuples (rows)
+
+
+Python Cheat Sheet
+------------------
+
+**File Ops**:
+- content = f.read() # reads entire file into memory
+  content = f.read(1024) # read 1KB of file. Move ptr forward 1KB.
+- content = f.readlines() # reads entire file into memory, one list ele per line
+- oneline = f.readline() # generator. Reads a single line, moves file ptr
+- f.pos(0,2) # set ptr to end of file
+- f.seek(0) # set ptr to defined position. 0=start of file
+- f.tell() # get current ptr pos
+- ptr's go up one char at a time. 0 = first char, 1 = second char, ...
+
+    with open('api-examples', 'r') as f:
+      for line in f.readline():
+        for c in line:
+          if c.isalpha():
+            print(c, sep='', end='')  # end='' means don't print newline
+      print('\n')
+

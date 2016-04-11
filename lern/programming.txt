@@ -10,6 +10,8 @@ REGEX
   f = open('blah.txt', 'r') ; matches = re.findall(r'some_pattern', f.read())
 
 - re.finditer() returns an iterator over MatchObject objects
+  matcher = re.compile(r'(\w)\1*')   # match one or more word chars
+  [match.group() for match in matcher.finditer('aaaccbddaaaa')]  # return each grouping of unique chars
   
 - re.search() finds the first match. Will NOT find all matches. Use findall()
   match = re.search(r'..g', 'piiig') # re.search returns None if no match found, or a match object if found
@@ -42,7 +44,8 @@ if stringy[-1].isdigit() ...  .isalpha()
 
 str.maketrans('abc','123')  # Create a translation map dictionary. a->1, b->2, c->3
 stringy.translate(str.maketrans('abc','123'))  # Use the dict/map with translate
-
+stringy.replace('old', 'new'[, maxreplaceint])  # use python's builtin string replace
+# Use translate() in instances where you're running replace() more than once. It's much faster than a *series* of replace calls
 
 print('something', inty, stringy)  # no concatenation. simply prints each ele with a space between
 print('something ' + str(inty) + ' ' + stringy)  # concatenates, and then passes single string to print
@@ -57,11 +60,13 @@ d = {k:v for k,v in enumerate(some_list)}
 d = {k:'' for k in some_list}   # populate a dict with keys, value ''. Can also use None
 d = [k:v for k,v in zip(list1,list2)}   # dict keys will be from list1, vals from list2. list1 and list2 must be same length
 
+sorted(d, key=d.get, reverse=True)  # return KEYS, sorted by their value
+sorted(d.items(), key=lambda x: (x[1],x[0]))  # return key,val tuple, sorted by 2nd tuple (value)
+sorted(d.values())  ;  sorted(d.keys())   # return sorted values only, return sorted keys only
 
 PERF/PROFILE
 ------------
   python -m cProfile myscript.py
-
 
 UNIT TEST
 ---------
@@ -75,7 +80,6 @@ pip3 install pytest
 
 Test from cmd line:
   py.test my_fib_unit_test.py
-
 
 FILE OPS
 --------
@@ -96,16 +100,16 @@ https://pymotw.com/2/subprocess
   os.popen('ls -l').read()
 - Modern
   import subprocess
-  subprocess.call('ls -l'), shell=True)
-  subprocess.check_call('ls -l'), shell=True)  # same as call, but raise exception if exit code 2
-  subprocess.check_call(['ls', '-l'])  # Optionally, put each arg into a [list]. No shell=True needed.
-  output = subprocess.check_call(['ls', '-l'])  ;  print('{} bytes in output'.format(len(output))) ; print(output)
+  output = subprocess.Popen(['ls', '-l'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)  # open some shells to capture child process stdout and stderr
+  stdout,stderr = output.communicate()   # bytestring output. Can only run communicate() on an obj once
+  stdout.decode(encoding='UTF-8')   # convert bytestring to regular string
+
+  subprocess.call(['ls -l'], shell=True)  # only the return code is given back to python. Output goes to stdout
+  subprocess.check_call(['ls', '-l'], shell=True)  # same as call, but raise exception if exit code 2
 - Pipes
   proc = subprocess.Popen(
 - Misc
   sys.stdout.write('durrrr')
-
-
 
 MUTABLE: lists, dictionaries
 IMMUTABLE: strings, tuples
