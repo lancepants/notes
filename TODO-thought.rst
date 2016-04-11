@@ -4,6 +4,7 @@ Architecture
 TODO:
 - Note summary kleppmann's designing data intensive applications book
 - Put "how would you design x" thoughts here where x is some big thing like facebook
+- What was the hardest bug you've faced?
 
 Broad/Architectural
 Concerns with distributed architectures - moving to stateful microservices, or microservices that talk to other microservices in order to do their tasks. Start worrying about network latency, fault tolerance, message serialization, unreliable networks, asynchronicity, versioning, varying loads within the application tiers etc. etc. Moving to a cloud service shares some of these problems too.
