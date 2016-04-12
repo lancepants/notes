@@ -51,6 +51,8 @@ count_gold((
     (4, 4, 4, 4)
 )) == 18
 
+
+
 - calculate all possible paths
   - extrapolate maximum number of paths by counting at each depth,
     looking for a pattern
@@ -64,10 +66,32 @@ count_gold((
   all available paths are a combination of 0 and 1 in len(maxpaths)
 '''
 
+import itertools
 def count_gold(tuplist):
-  depth = len(tuplist) - 1
-  maxpaths = 2**depth
-  steps = {}
+  depth = len(tuplist)
+  maxpaths = 2**depth - 1
+
+  # itertools.product will return all possible combo's of  given elements,
+  # within a length given (repeat). Normally returns an iter object that
+  # returns tuples, so we use list comprehension here to generate a list
+  # of lists.
+  combos = [list(c) for c in itertools.product([0, 1], repeat=depth)]
+  print(combos)
+
+  '''
+  currently erroring because final [1,1,1,1] combo tries to get tuple[0][1]
+  when it does not exist (first ele of first tuple has len=1)
+  '''
+  for combo in combos:
+    starting_element = 0
+    tup_element = 0
+    product = 0
+    for c in combo:
+      product += tuplist[starting_element][tup_element + c]
+      starting_element += 1
+      tup_element += c
+      print(product)
+    print(combo, product)
 
 
 if __name__ == '__main__':
@@ -95,5 +119,5 @@ if __name__ == '__main__':
       (3, 3, 3),
       (4, 4, 4, 4)
   )
-  for tuppy in tup1, tup2, tup3:
-    count_gold(tuppy)
+  count_gold(tup2)
+  count_gold(tup3)
