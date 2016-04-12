@@ -109,6 +109,19 @@ def count_gold(tuplist):
   print(max_so_far)
 
 
+'''
+a checkio one
+'''
+def count_gold_checkio1(pyramid):
+    """Return the maximal sum of a path in 'pyramid'."""
+    max_values = list(pyramid[0])
+    for row in pyramid[1:]:
+        max_values = [0] + max_values + [0]
+        max_values = [
+            value + max(max_values[i], max_values[i + 1])
+            for i, value in enumerate(row)]
+    return max(max_values)
+
 if __name__ == '__main__':
   tup1 = (
       (1,),
