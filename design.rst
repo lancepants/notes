@@ -217,9 +217,57 @@ On the other hand, in a "statically typed" database schema, you would typically 
 
 Schema changes have a bad rep of being slow and requiring downtime. While this is often true for MySQL, other relational db's can do the ALTER in milliseconds.
 
-So to summarize, *a nosql solution might be ideal if your data*:
-- Are mostly self-contained *objects/documents*
-- Elements have a *one to many* or *tree-like* structure (heading: "multiple, things")
-- The entire tree is typically loaded at once (good *data locality*)
+Documents offer additional benefit in that they are typically read in their entirety, in one contiguous string or binary blob. This allows efficient read-ahead. However, a significant downside to this is that each time a document needs to be updated, the entire thing needs to be read and then re-put into the document store. This severely limits the practical size-per-document. Only modifications that don't change the encoded size of a document can easily be performed in-place, otherwise the document has to be re-written.
 
-Otherwise use a relational DB, especially if your data is relational in a many-to-one, or many-to-many relationship where you need to run joins, or desire normalized data.
+Note that the data locality of a document store can also be leveraged in certain databases. Google's Spanner database allows the schema to declare that a table's rows should be interleaved (nested) within a parent table. If a row is a tuple, then this feature would mean a tuple could be one (or all) of the elements inside a tuple. Oracle allows this feature as well - they call it "multi-table index cluster tables". This nested table (*column-family*) concept is also found in databases that follow the Bigtable data model (cassandra and hbase)
+
+Note that postgres and others (not mysql) already support JSON documents to some extent (expand), and some document databases support relational-like joins (such as RethinkDB).
+
+So to summarize, *a nosql solution might be ideal if your data*:
+- Are mostly small, self-contained *objects/documents*
+- Elements have a *one to many* or *tree-like* structure (heading: "multiple, things")
+- The entire tree is typically loaded at once (good *data locality*), in a continuous string/binary (good read-ahead)
+- Your data is heterogeneous - ie: many minor differences
+
+Otherwise use a relational DB, especially if your data is relational in a many-to-one, or many-to-many relationship where you need to run joins. Also choose relational if your data is homogenous and/or you desire normalized data.
+
+Query Languages for Data
+------------------------
+
+Imperative vs Declarative
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Most commonly-used programming languages are *imperative*. For example, if you have a list of animals and you only wanted to return sharks, in an imperitive language you might do this:
+
+    def getSharks():
+      sharks = []
+      for animalObj in animals:
+        if animalObj.family == "Shark":
+          sharks.append(animal)
+      return sharks
+
+On the other hand, in a *declarative* language, you might do this:
+
+    SELECT * FROM animals WHERE family = 'Sharks';
+
+As to the first example, an imperative language tells the computer to perform certain operations in a certain order. You can imagine stepping through the code, line by line, evaluating conditions as you go. In a declarative query language, like SQL or relational algebra, you just specify the pattern of the data you want - what conditions the results must meet, and how you want it to be transformed (eg: sorted, grouped, and aggregated), but not *how* to achieve that goal. It is up to the database's query optimizer to decide which indexes and which join methods to use, and in which order to execute various parts of the query.
+
+Also consider CSS, making certain elements blue when selected vs in javascript where making things blue when selected would require a loop over page contents looking for all elements that match selected and then changing them blue.
+
+MapReduce Querying
+^^^^^^^^^^^^^^^^^^
+
+Graph-like Data Models
+^^^^^^^^^^^^^^^^^^^^^^
+
+The relational model can handle simple cases of many-to-many relationships, but as connections within your data become more complex, it becomes more natural to start modeling your data as a graph.
+
+A graph consists of two kinds of object: *vertices* (also known as *nodes* or *entities*), and *edges* (also known as *relationships*).
+
+Many types of data can be modeled as a graph. Examples include:
+
+Social graphs: vertices are people, edges indicate which people know each other
+Web graphs: vertices are web pages, edges indicate HTML links to other pages
+Road or rail networks: Vertices are junctions, and edges represent the roads or railway lines between them
+
+

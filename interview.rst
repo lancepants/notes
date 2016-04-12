@@ -687,10 +687,24 @@ Design Cheat Sheet
 - GOOD: Your app has a *document-like structure*, a *tree of one-to-many relationships*, where typically the *entire tree is loaded at once*
 - GOOD: *data locality*, all the data you want is in the same record. No need to span out a single request
 - GOOD: easy to achieve very large datasets, very high write throughput, specialized queries, unrestricted schema
+- GOOD: flex/no schema = easily support heterogeneous (different) documents
 - BAD: many-to-one eg: many people in one region, many-to-many eg: many people's resume's referring to many others
 - BAD: anywhere a join relates data. This is very common. 
 - BAD: Anywhere normalization to save space makes more sense
+- BAD: document updates (that change the doc size) req re-writing the whole doc. Restricts you to using small documents
 **RDBMS**: A relation (table) is simply a collection of tuples (rows)
+**Imperative vs declarative**: (python,c,ruby) vs (SQL,css)
+- Declarative easy to work with = attractive
+- DB engine can intro perf improvements without req'ing changes to queries
+- Declarative easy to scale to multiple machines/cores, due to not being specific about instructions (unlike imperative)
+**Graph Data Model**:
+- use when you have a lot of many-to-many relationships
+- Have *vertices* and *edges*
+  - Social graph: vertices are people, edges indicate which people know each other
+  - Web graph: vertices are websites, edges indicate HTML links between them
+  - Road/Rail networks: vertices are junctions, edges represent roads or railway lines between them
+
+
 
 
 Python Cheat Sheet
