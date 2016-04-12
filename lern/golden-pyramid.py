@@ -50,16 +50,24 @@ count_gold((
     (3, 3, 3),
     (4, 4, 4, 4)
 )) == 18
+
+- calculate all possible paths
+  - extrapolate maximum number of paths by counting at each depth,
+    looking for a pattern
+
+1 2 4 8 16 32 64  # max paths
+0 1 2 3 4  5  6   # tree depth (starts at 0, root node=0)
+
+- Looks like 2^tree_depth = maxpaths.
+  - tree_depth = len(last_ele)-1 or len(input_list)-1
+- if remain at same index is 0, and go down and right is 1, then
+  all available paths are a combination of 0 and 1 in len(maxpaths)
 '''
 
 def count_gold(tuplist):
-  depth = len(tuplist)
-  maxpaths = 2**(depth-1)
+  depth = len(tuplist) - 1
+  maxpaths = 2**depth
   steps = {}
-
-1 2 4 8 16 32 64
-1 2 3 4  5  6  7
-
 
 
 if __name__ == '__main__':
