@@ -64,34 +64,49 @@ count_gold((
   - tree_depth = len(last_ele)-1 or len(input_list)-1
 - if remain at same index is 0, and go down and right is 1, then
   all available paths are a combination of 0 and 1 in len(maxpaths)
+
+TODO:
+- Currently O(n^2). This can very likely be done in less time...
+- Avoid duplicate work by remembering already-calculated products
 '''
 
 import itertools
 def count_gold(tuplist):
-  depth = len(tuplist)
-  maxpaths = 2**depth - 1
+  # A tree's depth starts at 0
+  depth = len(tuplist) - 1
+
+  # maximum number of paths in this case happens to be 2^tree_depth
+  maxpaths = 2**depth
 
   # itertools.product will return all possible combo's of  given elements,
-  # within a length given (repeat). Normally returns an iter object that
-  # returns tuples, so we use list comprehension here to generate a list
-  # of lists.
+  # within a length given (repeat). Using list comp to output lists instead
+  # of tups from the iter object.
   combos = [list(c) for c in itertools.product([0, 1], repeat=depth)]
-  print(combos)
 
-  '''
-  currently erroring because final [1,1,1,1] combo tries to get tuple[0][1]
-  when it does not exist (first ele of first tuple has len=1)
-  '''
+  # Initialize largest product we've seen so far
+  max_so_far = tuplist[0][0]
+
   for combo in combos:
-    starting_element = 0
+    # Set initial product to the item we will always be adding from
+    product = tuplist[0][0]
+    # Start at the second element in tuplist
+    starting_element = 1
+    # Start at index 0 for each combo
     tup_element = 0
-    product = 0
+
+    # Store the largest product seen so far
+
     for c in combo:
       product += tuplist[starting_element][tup_element + c]
       starting_element += 1
       tup_element += c
-      print(product)
-    print(combo, product)
+
+    #print(combo, product, max_so_far)
+
+    if product > max_so_far:
+      max_so_far = product
+
+  print(max_so_far)
 
 
 if __name__ == '__main__':
@@ -119,5 +134,7 @@ if __name__ == '__main__':
       (3, 3, 3),
       (4, 4, 4, 4)
   )
-  count_gold(tup2)
-  count_gold(tup3)
+  count_gold(tup1)  # 23
+  count_gold(tup2)  # 15
+  count_gold(tup3)  # 18
+
