@@ -109,18 +109,48 @@ def count_gold(tuplist):
   print(max_so_far)
 
 
-'''
-a checkio one
-'''
-def count_gold_checkio1(pyramid):
-    """Return the maximal sum of a path in 'pyramid'."""
-    max_values = list(pyramid[0])
-    for row in pyramid[1:]:
-        max_values = [0] + max_values + [0]
-        max_values = [
-            value + max(max_values[i], max_values[i + 1])
-            for i, value in enumerate(row)]
-    return max(max_values)
+
+def checkio_top(pyramid):
+  '''
+  Approach
+  --------
+  
+  This algorithm is a greedy approach to solving the problem.  
+  Instead of working forward through the pyramid, we will work backwards.
+  The idea is to start in the second to bottom row and select maxium of the
+  the next two possible values from the current node and add that value to 
+  the current node.
+  
+  After that we continue to roll up the rows and repeat the process for each
+  node in that row.  When we reach the starting node we will have the sum
+  of the maximum path.  
+  
+  *Note*: we are not finding the best path; we are only finding the maxium sum 
+  from that path.  
+  
+  Code
+  ----
+  
+  I want a mutable copy of the pyramid to work with.  
+  Get the number of rows from the **len** function.  
+  The last row is not in play to start hence **rows-1**
+  Also we're working backwards so use the **reversed** function.
+  Need to itertate over each item in the row. Note the plus 1, range(0) 
+  returns an empty list.
+  The possible nodes to examine are 1) the on directly below i+1,j
+  and the one below and to the right i+1, j+1.  We use the **max** 
+  function to select the largest one and then add it to the current
+  node.  
+  
+  '''
+  py = [list(i) for i in pyramid]
+  for i in reversed(range(len(py)-1)):   
+    for j in range(i+1):
+      py[i][j] +=(max(py[i+1][j], py[i+1][j+1]))
+  return py[0][0]
+
+
+
 
 if __name__ == '__main__':
   tup1 = (

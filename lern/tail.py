@@ -22,15 +22,12 @@ def main(f):
     # 100chars)
     silence = f.readline()
   while True:
-    # The method tell() returns the current position of the file read/write pointer within the file.
-    position = f.tell()
     # readline() reads a line and then advances the position read/write pointer on the file object
     line = f.readline()
     # If readline doesn't return anything, sleep for a second
     # Not sure exactly why the seek to prev pos is needed. Sometimes readline sucks?
     if not line:
       time.sleep(1)
-      #f.seek(position)
     else:
       print line,
 

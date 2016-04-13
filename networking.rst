@@ -131,7 +131,7 @@ A PVLAN acheives this by dividing a VLAN (*Primary*) into sub-VLANs (*Secondary*
 
 - *Primary VLAN*: The original VLAN. Used to forward frames downstream to all Secondary VLANs.
 - *Secondary VLAN*: These are configured with one of the following types:
-  - *Isolated*: Any switchports associated with an Isolated VLAN can reac the primary VLAN, but not any other Secondary VLAN. Additionally, hosts associated witht he same isolated VLAN cannot even reach each other. There can be multiple isolated VLANs in one private VLAN domain.
+  - *Isolated*: Any switchports associated with an Isolated VLAN can reach the primary VLAN, but not any other Secondary VLAN. Additionally, hosts associated with the same isolated VLAN cannot even reach each other. There can be multiple isolated VLANs in one private VLAN domain.
   - *Community*: Any switchports associated with a common community VLAN can communicate with each other and with the primary VLAN, but not with any other secondary VLAN. There can be multiple different community VLANs within one private VLAN domain.
 
 There are mainly two types of ports in a Private VLAN: *Promiscuous* and *Host*. A Host port further divides into Isolated port, and Community port. From the above description, we can derive that an uplink or cross-connect to a router/firewall/other switch would be configured as Promiscuous, while ports going to physical servers would be configured as host ports in either isolated or community.
