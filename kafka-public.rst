@@ -533,13 +533,14 @@ In the case of adding a new broker, 0.8.2+ will automatically rebalance partitio
   "version":1
   }
   #Run the tool to --generate a json line you need to use later
-  #--broker-list includes your new broker, and excludes your broken one.
-  ./kafka-reassign-partitions.sh --generate --broker-list 1005,1007,1008 --topics-to-move-json-file topics-to-move.json --zookeeper srv1002:2181 
+  #--broker-list includes your new broker(s), and excludes any broken one(s).
+  ./kafka-reassign-partitions.sh --generate --broker-list "0,1,2" --topics-to-move-json-file topics-to-move.json --zookeeper srv1002:2181 
   #Look at the output. If it's doing what you want, put the final line into a file
   !! | tail -1 > my-generated.json
   #Now run the tool with --execute and --reassignment-json-file in place of generate and topics-to-move
-  ./kafka-reassign-partitions.sh --execute --broker-list 1005,1007,1008 --reassignment-json-file my-generated.json --zookeeper srv1002:2181
+  ./kafka-reassign-partitions.sh --execute --broker-list "0,1,2" --reassignment-json-file my-generated.json --zookeeper srv1002:2181
   #All this thing does is modify zookeeper, then kafka picks up the changes.
+  #After all replication looks complete (hdd activity dies down, new brokers have expected disk space used, etc), run with --verify to check if all went accordingly
   #You may want to run kafka-preferred-replica-election.sh after this if your LEADER is not your PREFERRED replica.
 
 
