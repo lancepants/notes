@@ -1,0 +1,4 @@
+avr-libc gcc-avr dfu-programmer
+
+Keymap code info:
+https://github.com/cub-uanic/tmk_keyboard/blob/master/tmk_core/doc/keymap.md
